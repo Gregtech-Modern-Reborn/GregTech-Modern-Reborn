@@ -9,6 +9,9 @@ plugins {
     alias libs.plugins.spotless
     alias libs.plugins.lombok
 }
+plugins {
+    id "com.matthewprenger.cursegradle" version "1.4.0"
+}
 
 group = maven_group
 // Formats the mod version to include the loader, Minecraft version, and '-SNAPSHOT-<timestamp>' if enabled.
@@ -84,7 +87,7 @@ apply from: "$rootDir/gradle/scripts/moddevgradle.gradle"
 apply from: "$rootDir/gradle/scripts/repositories.gradle"
 apply from: "$rootDir/dependencies.gradle"
 apply from: "$rootDir/gradle/scripts/resources.gradle"
-apply from: "$rootDir/gradle/scripts/publishing.gradle"
+//apply from: "$rootDir/gradle/scripts/publishing.gradle"
 apply from: "$rootDir/gradle/scripts/spotless.gradle"
 apply from: "$rootDir/gradle/scripts/docs.gradle"
 

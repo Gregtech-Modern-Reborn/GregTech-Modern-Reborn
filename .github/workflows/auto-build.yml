@@ -36,7 +36,7 @@ jobs:
       - name: Build
         run: ./gradlew build
       - name: Publish to Maven
-        if: ${{ github.repository_owner == 'GregTechCEu' && env.PUBLISH == 'true' }}
+        if: ${{ github.repository_owner == 'reborn' && env.PUBLISH == 'true' }}
         run: ./gradlew publish
       - name: Rename Jars
         if: ${{ env.PUBLISH == 'true' }}
@@ -67,6 +67,6 @@ jobs:
           prerelease: true
           body: |
             The latest build of GTM for Minecraft ${{ github.ref_name }}.
-            Please report any [issues](https://github.com/GregTechCEu/GregTech-Modern/issues).
+            Please report any [issues](https://github.com/reborn/GregTech-Modern/issues).
             ${{ steps.changelog.outputs.changelog }}
           files: build/libs/*.jar

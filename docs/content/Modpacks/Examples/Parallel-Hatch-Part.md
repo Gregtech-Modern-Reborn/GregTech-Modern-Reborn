@@ -9,7 +9,7 @@ title: "Custom Parallel Hatch"
 
 ```js title="extra_parallel_hatch.js"
 const $ParallelHatchPartMachine = Java.loadClass(
-    "com.gregtechceu.gtceu.common.machine.multiblock.part.ParallelHatchPartMachine"
+    "com.reborn.gtceu.common.machine.multiblock.part.ParallelHatchPartMachine"
 ); // (1)
 
 GTCEuStartupEvents.registry("gtceu:machine", (event) => {
@@ -37,7 +37,7 @@ GTCEuStartupEvents.registry("gtceu:machine", (event) => {
         }
 
         const $RecipeLogic = Java.loadClass(
-            "com.gregtechceu.gtceu.api.machine.trait.RecipeLogic"
+            "com.reborn.gtceu.api.machine.trait.RecipeLogic"
         );
         builder
             .langValue(name + " Parallel Control Hatch")
@@ -48,7 +48,7 @@ GTCEuStartupEvents.registry("gtceu:machine", (event) => {
                 GTMachineModels.createWorkableTieredHullMachineModel(
                     GTCEu.id("block/machines/parallel_hatch_mk4") // (6)
                 )[
-                    "andThen(com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder$ModelInitializer)"
+                    "andThen(com.reborn.gtceu.api.registry.registrate.MachineBuilder$ModelInitializer)"
                     ]((ctx, prov, model) => {
                   model.addReplaceableTextures("bottom", "top", "side");
                 })
