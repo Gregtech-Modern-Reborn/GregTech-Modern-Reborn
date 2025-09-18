@@ -1,6 +1,6 @@
-package com.gregtechceu.gtceu.gametest.example;
+package com.reborn.gtceu.gametest.example;
 
-import com.gregtechceu.gtceu.GTCEu;
+import com.reborn.gtceu.GTCEu;
 
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;

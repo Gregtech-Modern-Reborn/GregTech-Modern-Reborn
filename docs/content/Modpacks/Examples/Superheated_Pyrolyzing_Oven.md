@@ -11,7 +11,7 @@ Below is an example of a multiblock using the CoilWorkableElectricMultiblockMach
 === "JavaScript"
     ```js title="superheated_pyrolyzing_oven_multiblock.js"
     // In order to use multiblock logic extending beyond the normal WorkableElectricMultiblockMachine, (This is the multiblock type used by default for kubejs) you need to load a class. Coil multiblocks such as the Electric Blast Furnace, Pyrolyse Oven, and the Cracker use this class.
-    const CoilWorkableElectricMultiblockMachine = Java.loadClass("com.gregtechceu.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine")
+    const CoilWorkableElectricMultiblockMachine = Java.loadClass("com.reborn.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine")
     
     GTCEuStartupEvents.registry('gtceu:machine', event => {
         event.create("superheated_pyrolyzing_oven", "multiblock")

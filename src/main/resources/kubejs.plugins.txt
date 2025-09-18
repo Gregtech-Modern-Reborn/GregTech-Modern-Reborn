@@ -1,1 +1,1 @@
-com.gregtechceu.gtceu.integration.kjs.GregTechKubeJSPlugin
+com.reborn.gtceu.integration.kjs.GregTechKubeJSPlugin

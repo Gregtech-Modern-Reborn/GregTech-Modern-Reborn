@@ -16,7 +16,7 @@
 
 ## Defining a Test Class
 
-- Put it in the same class path as the main element you're trying to test, e.g. `test/java/com/gregtechceu/gtceu/api/machine/trait/RecipeLogicTest.java`
+- Put it in the same class path as the main element you're trying to test, e.g. `test/java/com/reborn/gtceu/api/machine/trait/RecipeLogicTest.java`
 - Annotate with `@GameTestHolder(GTCEu.MOD_ID)` to register the class for testing.
 - Use `@PrefixGameTestTemplate(false)` to ignore the automatic template prefix
     - Without annotation: looks for `data/gtceu/structures/MyTests.basicBlockTest.singleblock.nbt`
@@ -92,7 +92,7 @@ To make your own templates:
 It can also help you interact with the world, spawn mock/fake players, assert conditions, etc. etc.
 
 You can also write your own utility methods for repeated patterns (e.g., checking inventories). 
-These go in `test/java/com/gregtechceu/gtceu/gametest/util/TestUtils.java`
+These go in `test/java/com/reborn/gtceu/gametest/util/TestUtils.java`
 
 ## Ensuring something does (not) happen
 To ensure something does happen:

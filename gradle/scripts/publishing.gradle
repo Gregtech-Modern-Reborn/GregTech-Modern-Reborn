@@ -1,21 +1,37 @@
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId = base.archivesName.get()
-            artifact(reobfSlimJar)
-            from components.java
-        }
-    }
+// ============================================================================
+// publish.gradle  — 仅上传到 CurseForge（自动进入 Curse Maven）
+// ============================================================================
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        maven {
-            url = "https://maven.gtceu.com"
-            credentials {
-                username = System.getenv("MAVEN_USER")
-                password = System.getenv("MAVEN_PASSWORD")
-            }
+curseforge {
+    // API Key 从 gradle.properties 或环境变量读取
+    apiKey = project.findProperty("curseApiKey") ?: System.getenv("CURSEFORGE_TOKEN")
+    println("Using CurseForge API Key: ${apiKey}")
+
+    project {
+        // CurseForge 项目数字 ID
+        id = project.findProperty("curseProjectId") ?: "000000"
+
+        // 发布类型：release | beta | alpha
+        releaseType = "release"
+
+        // 支持的 Minecraft 版本
+        addGameVersion(project.findProperty("minecraftVersion") ?: "1.20.1")
+
+        // 主要上传文件（Forge/Fabric 可用 remapJar，否则 jar）
+        mainArtifact(tasks.findByName("remapJar") ?: tasks.jar) {
+            displayName = "GTM Reborn ${project.findProperty("mod_version") ?: "1.0.0"}"
         }
+
+        // 如果有依赖可在此声明
+        // relations {
+        //     requiredDependency "fabric-api"
+        // }
     }
+}
+
+// 便捷任务：一键构建并上传
+tasks.register("publishCurseForge") {
+    group = "publishing"
+    description = "Build and upload the mod to CurseForge (syncs to Curse Maven)."
+    dependsOn("build", "curseforge")
 }
