@@ -25,7 +25,7 @@ You can change the properties of the material by adding any combination of the f
 - `.secondaryColor(int colorCode)` gives the material a secondary color. If this is not being called, the secondary value will default to white(0xffffff).
 - The secondary color is the overlay over the primary color on the material. This can be seen in the dust of a material, as the secondary color outline is visible. Rotors are another solid example.
 - `.flags(flag1, flag2, ...)` can be used to select certain properties of the material, like generating gears, or disabling decomposition.
-  Examples of use can be found in [Material Flags](https://gregtechceu.github.io/GregTech-Modern/Modpacks/Materials-and-Elements/Material-Flags/)
+  Examples of use can be found in [Material Flags](https://reborn.github.io/GregTech-Modern/Modpacks/Materials-and-Elements/Material-Flags/)
 - `.element(element)` -> similar to `.components()`, but is used when the material represents an element.
 - `.rotorStats(/* int */ power, /* int */ efficiency, /* float */ damage, /* int */ durability)` -> this will create a turbine rotor from this material
   1. Power is the EU/t and fuel consumption multiplier the turbine gets when  equipped with this rotor.

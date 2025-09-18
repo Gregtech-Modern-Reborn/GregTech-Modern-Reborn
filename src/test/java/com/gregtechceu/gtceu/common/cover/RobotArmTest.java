@@ -1,13 +1,13 @@
-package com.gregtechceu.gtceu.common.cover;
+package com.reborn.gtceu.common.cover;
 
-import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.common.cover.data.TransferMode;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.data.GTMachines;
-import com.gregtechceu.gtceu.common.machine.storage.CrateMachine;
-import com.gregtechceu.gtceu.gametest.util.TestUtils;
+import com.reborn.gtceu.GTCEu;
+import com.reborn.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.reborn.gtceu.api.capability.recipe.IO;
+import com.reborn.gtceu.common.cover.data.TransferMode;
+import com.reborn.gtceu.common.data.GTItems;
+import com.reborn.gtceu.common.data.GTMachines;
+import com.reborn.gtceu.common.machine.storage.CrateMachine;
+import com.reborn.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,7 +18,7 @@ import net.minecraft.world.item.Items;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
-import static com.gregtechceu.gtceu.common.data.GTCovers.*;
+import static com.reborn.gtceu.common.data.GTCovers.*;
 
 @PrefixGameTestTemplate(false)
 @GameTestHolder(GTCEu.MOD_ID)

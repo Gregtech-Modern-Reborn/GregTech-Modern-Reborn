@@ -1,13 +1,13 @@
-package com.gregtechceu.gtceu.common.cover;
+package com.reborn.gtceu.common.cover;
 
-import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.item.modules.TextModuleBehaviour;
-import com.gregtechceu.gtceu.common.machine.electric.BatteryBufferMachine;
-import com.gregtechceu.gtceu.common.machine.multiblock.electric.CentralMonitorMachine;
-import com.gregtechceu.gtceu.common.machine.multiblock.electric.monitor.MonitorGroup;
-import com.gregtechceu.gtceu.common.machine.multiblock.part.DataAccessHatchMachine;
-import com.gregtechceu.gtceu.gametest.util.TestUtils;
+import com.reborn.gtceu.GTCEu;
+import com.reborn.gtceu.common.data.GTItems;
+import com.reborn.gtceu.common.item.modules.TextModuleBehaviour;
+import com.reborn.gtceu.common.machine.electric.BatteryBufferMachine;
+import com.reborn.gtceu.common.machine.multiblock.electric.CentralMonitorMachine;
+import com.reborn.gtceu.common.machine.multiblock.electric.monitor.MonitorGroup;
+import com.reborn.gtceu.common.machine.multiblock.part.DataAccessHatchMachine;
+import com.reborn.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

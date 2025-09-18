@@ -1,13 +1,13 @@
-package com.gregtechceu.gtceu.api.recipe;
+package com.reborn.gtceu.api.recipe;
 
-import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
-import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
-import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
-import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
-import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
-import com.gregtechceu.gtceu.gametest.util.TestUtils;
+import com.reborn.gtceu.GTCEu;
+import com.reborn.gtceu.api.GTValues;
+import com.reborn.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.reborn.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
+import com.reborn.gtceu.api.misc.EnergyContainerList;
+import com.reborn.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
+import com.reborn.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
+import com.reborn.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.BeforeBatch;
@@ -22,8 +22,8 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import java.util.List;
 import java.util.Optional;
 
-import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.gametest.util.TestUtils.getMetaMachine;
+import static com.reborn.gtceu.api.GTValues.*;
+import static com.reborn.gtceu.gametest.util.TestUtils.getMetaMachine;
 
 @PrefixGameTestTemplate(false)
 @GameTestHolder(GTCEu.MOD_ID)

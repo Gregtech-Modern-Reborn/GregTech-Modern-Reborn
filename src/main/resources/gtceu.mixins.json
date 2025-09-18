@@ -2,9 +2,9 @@
     "required": true,
     "minVersion": "0.8",
     "refmap": "gtceu.refmap.json",
-    "package": "com.gregtechceu.gtceu.core.mixins",
+    "package": "com.reborn.gtceu.core.mixins",
     "compatibilityLevel": "JAVA_17",
-    "plugin": "com.gregtechceu.gtceu.core.mixins.GTMixinPlugin",
+    "plugin": "com.reborn.gtceu.core.mixins.GTMixinPlugin",
     "client": [
         "client.AbstractClientPlayerAccessor",
         "client.BakedQuadMixin",

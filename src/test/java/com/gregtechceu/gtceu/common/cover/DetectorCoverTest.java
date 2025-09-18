@@ -1,10 +1,10 @@
-package com.gregtechceu.gtceu.common.cover;
+package com.reborn.gtceu.common.cover;
 
-import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
-import com.gregtechceu.gtceu.api.machine.MetaMachine;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.gametest.util.TestUtils;
+import com.reborn.gtceu.GTCEu;
+import com.reborn.gtceu.api.machine.IMachineBlockEntity;
+import com.reborn.gtceu.api.machine.MetaMachine;
+import com.reborn.gtceu.common.data.GTItems;
+import com.reborn.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

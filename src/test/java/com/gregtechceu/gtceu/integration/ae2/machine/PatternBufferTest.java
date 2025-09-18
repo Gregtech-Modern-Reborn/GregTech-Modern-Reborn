@@ -1,12 +1,12 @@
-package com.gregtechceu.gtceu.integration.ae2.machine;
+package com.reborn.gtceu.integration.ae2.machine;
 
-import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
-import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
-import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
-import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
-import com.gregtechceu.gtceu.gametest.util.TestUtils;
+import com.reborn.gtceu.GTCEu;
+import com.reborn.gtceu.api.GTValues;
+import com.reborn.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
+import com.reborn.gtceu.api.recipe.GTRecipeType;
+import com.reborn.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
+import com.reborn.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
+import com.reborn.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -33,7 +33,7 @@ import appeng.parts.encoding.PatternEncodingTerminalPart;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.gregtechceu.gtceu.gametest.util.TestUtils.getMetaMachine;
+import static com.reborn.gtceu.gametest.util.TestUtils.getMetaMachine;
 
 @PrefixGameTestTemplate(false)
 @GameTestHolder(GTCEu.MOD_ID)

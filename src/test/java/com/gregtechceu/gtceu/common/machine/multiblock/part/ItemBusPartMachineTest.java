@@ -1,10 +1,10 @@
-package com.gregtechceu.gtceu.common.machine.multiblock.part;
+package com.reborn.gtceu.common.machine.multiblock.part;
 
-import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
-import com.gregtechceu.gtceu.common.data.GTMachines;
-import com.gregtechceu.gtceu.common.machine.storage.CrateMachine;
-import com.gregtechceu.gtceu.gametest.util.TestUtils;
+import com.reborn.gtceu.GTCEu;
+import com.reborn.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.reborn.gtceu.common.data.GTMachines;
+import com.reborn.gtceu.common.machine.storage.CrateMachine;
+import com.reborn.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
