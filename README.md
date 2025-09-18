@@ -9,7 +9,7 @@ This Project use a lot of Open Source Project: <br/>
     GTNH(Dreammaster)(CC BY-NC-SA)<br/>
     GT++(Draknyte1)(BSD License)<br/>
     GT--(Arborsm)(MIT License)<br/>
-    GTM Things(lianshishen)(All right reversed)<br/>
+
     GTSteam(MeowmelMuku)(LGPLv3)<br/>
     DrTech(MeowmelMuku)(LGPL v3)<br/>
     BetterGTAE(ialdaiaxiariyay)(LGPLv3)<br/>
