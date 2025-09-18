@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/takanashisatou/GregTech-Modern-Reborn/blob/1.20.1/GregTechModernRebornLogo.png" alt="Logo" size = 50></p>
+<p align="center"><img src="https://github.com/takanashisatou/GregTech-Modern-Reborn/blob/1.20.1/GregTechModernRebornLogo.png" alt="Logo" width = 300 height = 200></p>
 <h1 align="center">GregTech CEu: Modern Reborn</h1>
 <p align="center">GregTech:CEu for modern Reborn Minecraft versions MinecraftForge (1.20.1)</p>
 <p>
