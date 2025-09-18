@@ -646,6 +646,54 @@ public class GTMultiMachines {
                                     BoilerFireboxType.BRONZE_FIREBOX, CASING_BRONZE_BRICKS))))
             .register();
 
+    //蒸汽合金炉
+    public static final MultiblockMachineDefinition STEAM_ALLOY_SMELTER = REGISTRATE
+            .multiblock("steam_alloy_smelter", SteamParallelMultiblockMachine::new)
+            .rotationState(RotationState.ALL)
+            .appearanceBlock(CASING_BRONZE_BRICKS)
+            .recipeType(GTRecipeTypes.ALLOY_SMELTER_RECIPES)
+            .recipeModifier(SteamParallelMultiblockMachine::recipeModifier, true)
+            .addOutputLimit(ItemRecipeCapability.CAP, 1)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("FFF", "XXX", "XXX")
+                    .aisle("FFF", "X#X", "XXX")
+                    .aisle("FFF", "XSX", "XXX")
+                    .where('S', Predicates.controller(blocks(definition.getBlock())))
+                    .where('#', Predicates.air())
+                    .where(' ', Predicates.any())
+                    .where('X', blocks(CASING_BRONZE_BRICKS.get()).setMinGlobalLimited(6)
+                            .or(Predicates.abilities(PartAbility.STEAM_IMPORT_ITEMS).setPreviewCount(1))
+                            .or(Predicates.abilities(PartAbility.STEAM_EXPORT_ITEMS).setPreviewCount(1)))
+                    .where('F', blocks(FIREBOX_BRONZE.get())
+                            .or(Predicates.abilities(PartAbility.STEAM).setExactLimit(1)))
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_bronze_plated_bricks"),
+                    GTCEu.id("block/multiblock/steam_oven"))
+            .register();
+
+    //蒸汽压缩机
+    public static final MultiblockMachineDefinition STEAM_COMPRESSOR = REGISTRATE
+            .multiblock("steam_compressor", SteamParallelMultiblockMachine::new)
+            .rotationState(RotationState.ALL)
+            .appearanceBlock(CASING_BRONZE_BRICKS)
+            .recipeType(GTRecipeTypes.COMPRESSOR_RECIPES)
+            .recipeModifier(SteamParallelMultiblockMachine::recipeModifier, true)
+            .addOutputLimit(ItemRecipeCapability.CAP, 1)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("XXX", "XXX", "XXX")
+                    .aisle("XXX", "X#X", "XXX")
+                    .aisle("XXX", "XSX", "XXX")
+                    .where('S', Predicates.controller(blocks(definition.getBlock())))
+                    .where('#', Predicates.air())
+                    .where('X', blocks(CASING_BRONZE_BRICKS.get()).setMinGlobalLimited(14)
+                            .or(Predicates.abilities(PartAbility.STEAM_IMPORT_ITEMS).setPreviewCount(1))
+                            .or(Predicates.abilities(PartAbility.STEAM_EXPORT_ITEMS).setPreviewCount(1))
+                            .or(Predicates.abilities(PartAbility.STEAM).setExactLimit(1)))
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_bronze_plated_bricks"),
+                    GTCEu.id("block/multiblock/steam_grinder"))
+            .register();
+
     public static final MultiblockMachineDefinition[] FUSION_REACTOR = registerTieredMultis("fusion_reactor",
             FusionReactorMachine::new, (tier, builder) -> builder
                     .rotationState(RotationState.ALL)

@@ -1093,6 +1093,8 @@
     "block.gtceu.steam_machine_casing": "蒸汽机械方块",
     "block.gtceu.steam_output_bus": "蒸汽输出总线",
     "block.gtceu.steam_oven": "蒸汽熔炼炉",
+    "block.gtceu.steam_alloy_smelter": "蒸汽合金炉",
+    "block.gtceu.steam_compressor": "蒸汽压缩机",
     "block.gtceu.steam_solid_boiler.bronze": "小型蒸汽固体燃料锅炉",
     "block.gtceu.steel_brick_casing": "砖砌锻铁外壳",
     "block.gtceu.steel_crate": "钢板条箱",
