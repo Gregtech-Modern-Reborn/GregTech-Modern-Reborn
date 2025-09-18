@@ -66,6 +66,22 @@ public class RecipeAddition {
                     'F', GTMachines.STEAM_MACERATOR.right().asStack(),
                     'C', GTBlocks.CASING_STEEL_SOLID.asStack());
 
+            VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_alloy_smelter",
+                    GTMultiMachines.STEAM_ALLOY_SMELTER.asStack(),
+                    "CGC", "FMF", "CGC",
+                    'F', GTBlocks.FIREBOX_STEEL.asStack(),
+                    'C', GTBlocks.CASING_STEEL_SOLID.asStack(),
+                    'M', GTMachines.STEAM_ALLOY_SMELTER.right().asStack(),
+                    'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Invar));
+
+            VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_compressor",
+                    GTMultiMachines.STEAM_COMPRESSOR.asStack(),
+                    "CGC", "FMF", "CGC",
+                    'F', GTBlocks.FIREBOX_STEEL.asStack(),
+                    'C', GTBlocks.CASING_STEEL_SOLID.asStack(),
+                    'M', GTMachines.STEAM_COMPRESSOR.right().asStack(),
+                    'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Invar));
+
             VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_hatch",
                     GTMachines.STEAM_HATCH.asStack(),
                     "BPB", "BTB", "BPB",
@@ -115,6 +131,38 @@ public class RecipeAddition {
                     'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Potin),
                     'F', GTMachines.STEAM_MACERATOR.right().asStack(),
                     'C', GTBlocks.CASING_BRONZE_BRICKS.asStack());
+
+            VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_alloy_smelter_from_lp",
+                    GTMultiMachines.STEAM_ALLOY_SMELTER.asStack(),
+                    "CGC", "FMF", "CGC",
+                    'F', GTBlocks.FIREBOX_BRONZE.asStack(),
+                    'C', GTBlocks.CASING_BRONZE_BRICKS.asStack(),
+                    'M', GTMachines.STEAM_ALLOY_SMELTER.left().asStack(),
+                    'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Invar));
+
+            VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_alloy_smelter_from_hp",
+                    GTMultiMachines.STEAM_ALLOY_SMELTER.asStack(),
+                    "CGC", "FMF", "CGC",
+                    'F', GTBlocks.FIREBOX_BRONZE.asStack(),
+                    'C', GTBlocks.CASING_BRONZE_BRICKS.asStack(),
+                    'M', GTMachines.STEAM_ALLOY_SMELTER.right().asStack(),
+                    'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Invar));
+
+            VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_compressor_from_lp",
+                    GTMultiMachines.STEAM_COMPRESSOR.asStack(),
+                    "CGC", "FMF", "CGC",
+                    'F', GTBlocks.FIREBOX_BRONZE.asStack(),
+                    'C', GTBlocks.CASING_BRONZE_BRICKS.asStack(),
+                    'M', GTMachines.STEAM_COMPRESSOR.left().asStack(),
+                    'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Invar));
+
+            VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_compressor_from_hp",
+                    GTMultiMachines.STEAM_COMPRESSOR.asStack(),
+                    "CGC", "FMF", "CGC",
+                    'F', GTBlocks.FIREBOX_BRONZE.asStack(),
+                    'C', GTBlocks.CASING_BRONZE_BRICKS.asStack(),
+                    'M', GTMachines.STEAM_COMPRESSOR.right().asStack(),
+                    'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Invar));
 
             VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_hatch",
                     GTMachines.STEAM_HATCH.asStack(),
