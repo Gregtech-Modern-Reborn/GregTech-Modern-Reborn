@@ -69,7 +69,7 @@ public interface IMaterialRegistryManager {
      * Get a material from a String in formats:
      * <ul>
      * <li>{@code "modid:registry_name"}</li>
-     * <li>{@code "registry_name"} - where modid is inferred to be {@link com.reborn.gtceu.GTCEu#MOD_ID}</li>
+     * <li>{@code "registry_name"} - where modid is inferred to be {@link com.reborn.gtceu.GTCEu;#MOD_ID}</li>
      * </ul>
      *
      * Intended for use in reading/writing materials from/to NBT tags.

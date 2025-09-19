@@ -1,5 +1,6 @@
 package com.reborn.gtceu.common;
 
+import com.reborn.bettergtae.common.data.BGTAEBlocks;
 import com.reborn.gtceu.GTCEu;
 import com.reborn.gtceu.api.GTCEuAPI;
 import com.reborn.gtceu.api.GTValues;
@@ -97,6 +98,7 @@ public class CommonProxy {
         IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
         eventBus.register(this);
         eventBus.addListener(AlloyBlastPropertyAddition::addAlloyBlastProperties);
+
         // must be set here because of KubeJS compat
         // trying to read this before the pre-init stage
         GTCEuAPI.materialManager = MaterialRegistryManager.getInstance();
@@ -153,7 +155,7 @@ public class CommonProxy {
         GTRecipeCategories.init();
         GTMachineUtils.init();
         GTMachines.init();
-
+        BGTAEBlocks.init();
         GTFoods.init();
         GTItems.init();
         GTDimensionMarkers.init();

@@ -30,6 +30,7 @@ import static com.reborn.gtceu.common.data.GTMaterials.*;
 public class CraftingRecipeLoader {
 
     public static void init(Consumer<FinishedRecipe> provider) {
+        // Add Coal Block To Coal Recipe
         // todo facades
         // registerFacadeRecipe(provider, Iron, 4);
 

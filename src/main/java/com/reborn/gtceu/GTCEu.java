@@ -1,5 +1,6 @@
 package com.reborn.gtceu;
 
+import com.reborn.bettergtae.data.StorageManager;
 import com.reborn.gtceu.api.GTCEuAPI;
 import com.reborn.gtceu.api.GTValues;
 import com.reborn.gtceu.client.ClientProxy;
@@ -9,6 +10,8 @@ import com.reborn.gtceu.utils.FormattingUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -23,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 @Mod(GTCEu.MOD_ID)
 public class GTCEu {
@@ -31,11 +35,19 @@ public class GTCEu {
     private static final ResourceLocation TEMPLATE_LOCATION = new ResourceLocation(MOD_ID, "");
     public static final String NAME = "reborn";
     public static final Logger LOGGER = LogManager.getLogger(NAME);
+    public static StorageManager STORAGE_INSTANCE = new StorageManager();
 
     public GTCEu() {
         GTCEu.init();
         GTCEuAPI.instance = this;
         DistExecutor.unsafeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
+        MinecraftForge.EVENT_BUS.addListener(this::worldTick);
+    }
+
+    public void worldTick(TickEvent.LevelTickEvent event) {
+        if (event.phase == TickEvent.Phase.START && event.side.isServer()) {
+            STORAGE_INSTANCE = StorageManager.getInstance(Objects.requireNonNull(event.level.getServer()));
+        }
     }
 
     public static void init() {

@@ -646,7 +646,7 @@ public class GTMultiMachines {
                                     BoilerFireboxType.BRONZE_FIREBOX, CASING_BRONZE_BRICKS))))
             .register();
 
-    //蒸汽合金炉
+    // 蒸汽合金炉
     public static final MultiblockMachineDefinition STEAM_ALLOY_SMELTER = REGISTRATE
             .multiblock("steam_alloy_smelter", SteamParallelMultiblockMachine::new)
             .rotationState(RotationState.ALL)
@@ -671,7 +671,7 @@ public class GTMultiMachines {
                     GTCEu.id("block/multiblock/steam_oven"))
             .register();
 
-    //蒸汽压缩机
+    // 蒸汽压缩机
     public static final MultiblockMachineDefinition STEAM_COMPRESSOR = REGISTRATE
             .multiblock("steam_compressor", SteamParallelMultiblockMachine::new)
             .rotationState(RotationState.ALL)

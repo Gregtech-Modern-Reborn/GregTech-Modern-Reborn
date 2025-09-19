@@ -33,6 +33,8 @@
         "xaeroworldmap.WorldMapSessionMixin"
     ],
     "mixins": [
+        "ae.CraftingCPUClusterMixin",
+        "ae.TooltipsMixin",
         "AnvilMenuMixin",
         "BlockBehaviourAccessor",
         "BlockMixin",

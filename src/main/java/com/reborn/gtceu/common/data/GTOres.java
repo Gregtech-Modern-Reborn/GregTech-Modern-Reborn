@@ -28,11 +28,11 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.reborn.gtceu.api.data.tag.TagPrefix.ore;
-import static com.reborn.gtceu.api.data.tag.TagPrefix.oreNetherrack;
+import static com.reborn.gtceu.api.data.tag.TagPrefix.*;
 import static com.reborn.gtceu.api.data.worldgen.generator.veins.DikeVeinGenerator.DikeBlockDefinition;
 import static com.reborn.gtceu.api.data.worldgen.generator.veins.VeinedVeinGenerator.VeinBlockDefinition;
 import static com.reborn.gtceu.common.data.GTMaterials.*;
+import static net.minecraft.world.level.block.Blocks.COAL_BLOCK;
 
 @SuppressWarnings("unused")
 public class GTOres {
@@ -379,16 +379,18 @@ public class GTOres {
             .surfaceIndicatorGenerator(indicator -> indicator
                     .surfaceRock(Cassiterite)));
 
-    public static final GTOreDefinition COAL_VEIN = create("coal_vein", vein -> vein
-            .clusterSize(UniformInt.of(38, 44)).density(0.25f).weight(80)
+    public static final GTOreDefinition COAL_BLOCK_VEIN = create("coal_block_vein", vein -> vein
+            .clusterSize(UniformInt.of(70, 80)).density(1.0f).weight(50)
             .layer(WorldGenLayers.STONE)
             .heightRangeUniform(10, 140)
             .biomes(BiomeTags.IS_OVERWORLD)
-            .layeredVeinGenerator(generator -> generator
-                    .withLayerPattern(() -> GTLayerPattern.builder(OVERWORLD_RULES)
-                            .layer(l -> l.weight(3).mat(Coal).size(2, 4))
-                            .layer(l -> l.weight(3).mat(Coal).size(2, 4))
-                            .build()))
+            .veinedVeinGenerator(generator -> generator
+                    .oreBlock(COAL_BLOCK.defaultBlockState(), 50)
+                    .minRichness(1.0f)
+                    .maxRichness(1.0f)
+                    .veininessThreshold(0.01f)
+                    .maxRichnessThreshold(0.05f))
+
             .surfaceIndicatorGenerator(indicator -> indicator
                     .surfaceRock(Coal)));
 

@@ -28,7 +28,6 @@ public class LangHandler {
         MachineLang.init(provider);
         ToolLang.init(provider);
         ConfigurationLang.init(provider);
-
         provider.add("gtceu.gui.editor.tips.citation", "Number of citations");
         provider.add("gtceu.gui.editor.group.recipe_type", "cap");
         provider.add("ldlib.gui.editor.register.editor.gtceu.rtui", "RecipeType UI Project");
