@@ -611,6 +611,24 @@ public class MachineLang {
         // Hatch Limits - Mostly for GCYM Multiblocks that are Hardcoded into GTCEU
         provider.add("gtceu.multiblock.exact_hatch_1.tooltip", "§fAccepts Exactly §6One §fEnergy Hatch.");
         // More tooltips
+
+        // BetterGTAE tooltips
+        provider.add("gtceu.gui.circuit.middle_click_tooltip", "Left-click to set and right-click to clear");
+        provider.add("gtceu.gui.circuit_configurator_slot.title", "Set the programming circuit for each slot");
+        provider.add("gtceu.extend_me_pattern_buffer.tips.0",
+                "Increase the pattern slots to 81, with independent programming circuits for each slot that do not interfere with each other.");
+        provider.add("gtceu.machine.me_stocking_dual_input_hatch.tooltip.0", "Item and Fluid Input for Multiblocks");
+        provider.add("gtceu.machine.me_stocking_dual_input_hatch.tooltip.1",
+                "Retrieves items and fluids directly from the ME network");
+        provider.add("gtceu.machine.me_stocking_dual_input_hatch.tooltip.2", "Keeps 16 item and fluid types in stock");
+        provider.add("gtceu.machine.me_stocking_dual_input_hatch.tooltip.3",
+                "Auto-Pull from ME mode will automatically stock the first 16 items and fluids in the ME system, updated every 5 seconds.");
+        provider.add("gtceu.machine.me.dual_stocking.data_stick.name", "Me Stocking Dual Input Hatch Data Stick");
+        provider.add("gtceu.crafting_unit_tips.0",
+                "Can be simultaneously used for the fabrication of memory and parallel processing units");
+        provider.add("gtceu.machine.advanced_assembly_line.0",
+                "A more advanced assembly line that does not require sequential assembly");
+        provider.add("gtceu.machine.advanced_assembly_line.1", "Supports the ME Pattern Buffer and Parallel Hatch");
         provider.add("gtceu.machine.primitive_water_pump.tooltip", "Endervoir at Home");
         provider.add("gtceu.machine.primitive_blast_furnace.bronze.tooltip", "Making your first Steel");
         provider.add("gtceu.machine.electric_blast_furnace.tooltip", "Where's the electric smoker?");

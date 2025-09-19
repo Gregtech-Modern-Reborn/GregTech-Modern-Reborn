@@ -1,5 +1,6 @@
 package com.reborn.gtceu.data.tags;
 
+import com.reborn.gtceu.api.data.tag.TagUtil;
 import com.reborn.gtceu.common.data.GTMachines;
 import com.reborn.gtceu.common.data.GTMaterials;
 import com.reborn.gtceu.data.recipe.CustomTags;
@@ -12,9 +13,15 @@ import net.minecraftforge.common.Tags;
 
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 
+import static net.minecraft.world.level.block.Blocks.COAL_BLOCK;
+
 public class BlockTagLoader {
 
     public static void init(RegistrateTagsProvider.IntrinsicImpl<Block> provider) {
+        var oreTag = TagUtil.createBlockTag("ores");
+        provider.addTag(oreTag)
+                .add(COAL_BLOCK);
+        // Add ores tag to Coal Block
         provider.addTag(CustomTags.CONCRETE_BLOCK)
                 .add(Blocks.WHITE_CONCRETE, Blocks.ORANGE_CONCRETE, Blocks.MAGENTA_CONCRETE, Blocks.LIGHT_BLUE_CONCRETE,
                         Blocks.YELLOW_CONCRETE, Blocks.LIME_CONCRETE, Blocks.PINK_CONCRETE, Blocks.GRAY_CONCRETE,

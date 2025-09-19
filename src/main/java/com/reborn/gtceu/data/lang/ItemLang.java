@@ -55,7 +55,9 @@ public class ItemLang {
     }
 
     private static void initItemNames(RegistrateLangProvider provider) {
-        replace(provider, "item.gtceu.tungsten_steel_fluid_cell", "%s Tungstensteel Cell");
+        replace(provider, "config.jade.plugin_gtceu.extend_me_pattern_buffer", " Extend Pattern Buffer Info");
+        replace(provider, "config.jade.plugin_gtceu.extend_me_pattern_buffer_proxy",
+                " Extend Pattern Buffer Proxy Info");
     }
 
     private static void initItemTooltips(RegistrateLangProvider provider) {

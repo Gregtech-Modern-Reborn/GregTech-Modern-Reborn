@@ -283,9 +283,9 @@ public class MixinHelpers {
                             BLOCK_LOOT.applyExplosionDecay(block,
                                     LootItem.lootTableItem(dropItem.getItem())
                                             .apply(SetItemCountFunction
-                                                    .setCount(ConstantValue.exactly(oreMultiplier)))));
-                    // .apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE)))); //disable fortune for
-                    // balance reasons. (for now, until we can think of a better solution.)
+                                                    .setCount(
+                                                            ConstantValue.exactly(oreMultiplier)))
+                                            .apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE))));
 
                     LootPool.Builder pool = LootPool.lootPool();
                     boolean isEmpty = true;

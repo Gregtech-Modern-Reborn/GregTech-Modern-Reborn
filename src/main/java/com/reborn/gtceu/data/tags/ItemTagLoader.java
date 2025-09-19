@@ -81,7 +81,6 @@ public class ItemTagLoader {
                 .add(GTMaterialItems.MATERIAL_ITEMS.get(lens, Sapphire).get());
         provider.addTag(ChemicalHelper.getTag(lens, Color.Purple))
                 .add(GTMaterialItems.MATERIAL_ITEMS.get(lens, Amethyst).get());
-
         provider.addTag(CustomTags.PISTONS).add(Items.PISTON, Items.STICKY_PISTON);
 
         // add treated wood stick to vanilla sticks tag

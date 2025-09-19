@@ -1,5 +1,6 @@
 package com.reborn.gtceu.common.data;
 
+import com.reborn.bettergtae.common.data.machine.BGTAEMachines;
 import com.reborn.gtceu.GTCEu;
 import com.reborn.gtceu.api.GTCEuAPI;
 import com.reborn.gtceu.api.GTValues;
@@ -1086,7 +1087,7 @@ public class GTMachines {
         GTMultiMachines.init();
         GCYMMachines.init();
         GTResearchMachines.init();
-
+        BGTAEMachines.init();
         if (GTCEu.Mods.isAE2Loaded()) {
             GTAEMachines.init();
         }

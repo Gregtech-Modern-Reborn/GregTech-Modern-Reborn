@@ -1,5 +1,6 @@
 package com.reborn.gtceu.common.data;
 
+import com.reborn.bettergtae.data.recipe.AddAllRecipes;
 import com.reborn.gtceu.GTCEu;
 import com.reborn.gtceu.api.GTCEuAPI;
 import com.reborn.gtceu.api.addon.AddonFinder;
@@ -84,7 +85,7 @@ public class GTRecipes {
         AssemblyLineLoader.init(consumer);
         BatteryRecipes.init(consumer);
         DecorationRecipes.init(consumer);
-
+        AddAllRecipes.init(consumer);
         CircuitRecipes.init(consumer);
         ComponentRecipes.init(consumer);
         MetaTileEntityLoader.init(consumer);

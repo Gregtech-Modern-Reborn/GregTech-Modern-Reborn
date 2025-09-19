@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 public class GTCEuAPI {
 
     /** Will always be available */
-    public static com.reborn.gtceu.GTCEu instance;
+    public static GTCEu instance;
     /** Will be available at the Construction stage */
     public static IMaterialRegistryManager materialManager;
 
