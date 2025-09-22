@@ -3,8 +3,7 @@
 <p align="center">GregTech:CEu for modern Reborn Minecraft versions MinecraftForge (1.20.1)</p>
 <p>
 This Project is a hard fork of GregTech CEU Modern <br/>
-This Project use AGPL V3 License<br/>
-For the code referenced and modified above, if the same license must be maintained, then maintain the same license; otherwise, use AGPL v3 License.<br/>
+This Project use LGPL V3 License<br/>
 For Developers,We advised to use Cursemaven.<br/>
 For lastest version.(1.0.1)<br/>
 implementation fg.deobf("curse.maven:gregtech-modern-reborn-1347911:7005950")<br/>
