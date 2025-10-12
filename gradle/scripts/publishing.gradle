@@ -19,7 +19,7 @@ curseforge {
 
         // 主要上传文件（Forge/Fabric 可用 remapJar，否则 jar）
         mainArtifact(tasks.findByName("remapJar") ?: tasks.jar) {
-            displayName = "GTM Reborn ${project.findProperty("mod_version") ?: "1.0.0"}"
+            displayName = "GTM gregtechceu ${project.findProperty("mod_version") ?: "1.0.0"}"
         }
 
         // 如果有依赖可在此声明

@@ -1,15 +1,15 @@
-package com.reborn.gtceu.common.cover;
+package com.gregtechceu.gtceu.common.cover;
 
-import com.reborn.gtceu.GTCEu;
-import com.reborn.gtceu.api.GTValues;
-import com.reborn.gtceu.api.blockentity.MetaMachineBlockEntity;
-import com.reborn.gtceu.api.capability.recipe.IO;
-import com.reborn.gtceu.api.cover.filter.SimpleItemFilter;
-import com.reborn.gtceu.common.cover.data.FilterMode;
-import com.reborn.gtceu.common.data.GTItems;
-import com.reborn.gtceu.common.data.GTMachines;
-import com.reborn.gtceu.common.machine.storage.BufferMachine;
-import com.reborn.gtceu.gametest.util.TestUtils;
+import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.cover.filter.SimpleItemFilter;
+import com.gregtechceu.gtceu.common.cover.data.FilterMode;
+import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.common.data.GTMachines;
+import com.gregtechceu.gtceu.common.machine.storage.BufferMachine;
+import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

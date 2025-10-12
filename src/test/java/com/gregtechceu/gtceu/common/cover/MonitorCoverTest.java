@@ -1,11 +1,11 @@
-package com.reborn.gtceu.common.cover;
+package com.gregtechceu.gtceu.common.cover;
 
-import com.reborn.gtceu.GTCEu;
-import com.reborn.gtceu.api.GTValues;
-import com.reborn.gtceu.common.data.GTItems;
-import com.reborn.gtceu.common.data.GTMachines;
-import com.reborn.gtceu.common.machine.electric.BatteryBufferMachine;
-import com.reborn.gtceu.gametest.util.TestUtils;
+import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.common.data.GTMachines;
+import com.gregtechceu.gtceu.common.machine.electric.BatteryBufferMachine;
+import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

@@ -1,7 +1,7 @@
 # All other changes require the primary team
-* @reborn/gregtech-modern-devs
+* @gregtechceu/gregtech-modern-devs
 
 # Specific files requiring admin approval
-CODEOWNERS @reborn/admin
-LICENSE @reborn/admin
-/README.md @reborn/admin
+CODEOWNERS @gregtechceu/admin
+LICENSE @gregtechceu/admin
+/README.md @gregtechceu/admin

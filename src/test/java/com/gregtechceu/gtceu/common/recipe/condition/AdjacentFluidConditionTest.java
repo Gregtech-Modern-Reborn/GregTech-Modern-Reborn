@@ -1,13 +1,13 @@
-package com.reborn.gtceu.common.recipe.condition;
+package com.gregtechceu.gtceu.common.recipe.condition;
 
-import com.reborn.gtceu.GTCEu;
-import com.reborn.gtceu.api.GTValues;
-import com.reborn.gtceu.api.capability.recipe.IO;
-import com.reborn.gtceu.api.capability.recipe.ItemRecipeCapability;
-import com.reborn.gtceu.api.machine.SimpleTieredMachine;
-import com.reborn.gtceu.api.machine.trait.NotifiableItemStackHandler;
-import com.reborn.gtceu.api.recipe.GTRecipeType;
-import com.reborn.gtceu.gametest.util.TestUtils;
+import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
+import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
+import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
+import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.BeforeBatch;
@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
-import static com.reborn.gtceu.gametest.util.TestUtils.getMetaMachine;
+import static com.gregtechceu.gtceu.gametest.util.TestUtils.getMetaMachine;
 
 @PrefixGameTestTemplate(false)
 @GameTestHolder(GTCEu.MOD_ID)

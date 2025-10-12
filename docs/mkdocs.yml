@@ -1,8 +1,8 @@
 site_name: GregTech Modern Docs
-site_url: https://reborn.github.io/GregTech-Modern
+site_url: https://gregtechceu.github.io/GregTech-Modern
 
 repo_name: GregTech Modern
-repo_url: https://github.com/reborn/GregTech-Modern
+repo_url: https://github.com/gregtechceu/GregTech-Modern
 edit_uri: blob/1.20.1/docs/content/
 
 docs_dir: content
@@ -51,11 +51,11 @@ extra:
     - icon: fontawesome/brands/discord
       link: https://discord.gg/bWSWuYvURP
     - icon: simple/curseforge
-      link: https://www.curseforge.com/minecraft/mc-mods/reborn-modern/files
+      link: https://www.curseforge.com/minecraft/mc-mods/gregtechceu-modern/files
     - icon: simple/modrinth
-      link: https://modrinth.com/mod/reborn-modern
+      link: https://modrinth.com/mod/gregtechceu-modern
     - icon: fontawesome/brands/github
-      link: https://github.com/reborn/GregTech-Modern
+      link: https://github.com/gregtechceu/GregTech-Modern
 
 markdown_extensions:
   - admonition

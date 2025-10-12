@@ -1,5 +1,5 @@
 {
     "net/minecraft/client/renderer/block/model/BakedQuad": [
-        "com/reborn/gtceu/core/IGTBakedQuad"
+        "com/gregtechceu/gtceu/core/IGTBakedQuad"
     ]
 }
