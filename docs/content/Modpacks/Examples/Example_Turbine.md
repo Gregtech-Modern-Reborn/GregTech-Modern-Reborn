@@ -11,7 +11,7 @@ Below is an example of a multiblock using the LargeTurbineMachine class for maki
 === "JavaScript"
     ```js title="hyper_gas_turbine.js"
     // In order to use multiblock logic extending beyond the normal WorkableElectricMultiblockMachine, (This is the multiblock type used by default for kubejs) you need to load a class. LargeTurbineMachines such as the gas, steam, and plasma turbines use this class.
-    const $LargeTurbineMachine = Java.loadClass("com.reborn.gtceu.common.machine.multiblock.generator.LargeTurbineMachine")
+    const $LargeTurbineMachine = Java.loadClass("com.gregtechceu.gtceu.common.machine.multiblock.generator.LargeTurbineMachine")
     
     GTCEuStartupEvents.registry('gtceu:machine', event => {
         event.create('hyper_gas_turbine', 'multiblock')

@@ -1,21 +1,21 @@
-package com.reborn.gtceu.gametest.util;
+package com.gregtechceu.gtceu.gametest.util;
 
-import com.reborn.gtceu.GTCEu;
-import com.reborn.gtceu.api.GTValues;
-import com.reborn.gtceu.api.blockentity.MetaMachineBlockEntity;
-import com.reborn.gtceu.api.capability.recipe.IO;
-import com.reborn.gtceu.api.cover.CoverBehavior;
-import com.reborn.gtceu.api.cover.CoverDefinition;
-import com.reborn.gtceu.api.item.IComponentItem;
-import com.reborn.gtceu.api.item.component.IItemComponent;
-import com.reborn.gtceu.api.machine.IMachineBlockEntity;
-import com.reborn.gtceu.api.machine.MachineDefinition;
-import com.reborn.gtceu.api.machine.MetaMachine;
-import com.reborn.gtceu.api.machine.multiblock.MultiblockControllerMachine;
-import com.reborn.gtceu.api.placeholder.MultiLineComponent;
-import com.reborn.gtceu.api.recipe.GTRecipeType;
-import com.reborn.gtceu.api.registry.GTRegistries;
-import com.reborn.gtceu.common.item.CoverPlaceBehavior;
+import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.cover.CoverBehavior;
+import com.gregtechceu.gtceu.api.cover.CoverDefinition;
+import com.gregtechceu.gtceu.api.item.IComponentItem;
+import com.gregtechceu.gtceu.api.item.component.IItemComponent;
+import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
+import com.gregtechceu.gtceu.api.machine.MachineDefinition;
+import com.gregtechceu.gtceu.api.machine.MetaMachine;
+import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
+import com.gregtechceu.gtceu.api.placeholder.MultiLineComponent;
+import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
+import com.gregtechceu.gtceu.common.item.CoverPlaceBehavior;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-import static com.reborn.gtceu.common.data.GTRecipeTypes.ELECTRIC;
+import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ELECTRIC;
 
 public class TestUtils {
 

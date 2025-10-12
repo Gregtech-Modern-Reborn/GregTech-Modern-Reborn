@@ -3,8 +3,9 @@ dependencies {
 
     // LDLib
     jarJar(modApi(forge.ldlib.get()))
-
+    jarJar(forge.flywheel.forge)
     // Registrate
+    jarJar("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
     jarJar(modApi(forge.registrate.get()))
 
     // Configuration
@@ -34,7 +35,7 @@ dependencies {
     modCompileOnly(forge.ae2wtlib)
 
     // Create
-    modCompileOnly(forge.ponder)
+    //modCompileOnly(forge.ponder)
     modCompileOnly(variantOf(forge.create) { classifier("slim") })
     modCompileOnly(forge.flywheel.forge.api)
 
@@ -64,6 +65,8 @@ dependencies {
     modCompileOnly(forge.journeymap.api)
     modCompileOnly(forge.journeymap.forge)
 
+    modCompileOnly("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
+
     // GameStages
     modCompileOnly(forge.gamestages)
 
@@ -84,7 +87,7 @@ dependencies {
 
     // Client-only runtime mods //
     modClientLocalRuntime(forge.embeddium)
-    modClientLocalRuntime(forge.oculus)
+    //modClientLocalRuntime(forge.oculus)
     renderNurseCfg(libs.renderNurse)
 
     //////////////////////////////////////////////////////
@@ -115,8 +118,9 @@ dependencies {
 
     modExtraLocalRuntime(forge.kotlinforforge)
     modExtraLocalRuntime(forge.observable)
+    modRuntimeOnly("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
+    //modRuntimeOnly(forge.ponder)
+    modRuntimeOnly(variantOf(forge.create) { classifier("slim") })
 
-    modExtraLocalRuntime(forge.ponder)
-    modExtraLocalRuntime(variantOf(forge.create) { classifier("slim") })
-    modExtraLocalRuntime(forge.flywheel.forge)
+    modRuntimeOnly(forge.flywheel.forge)
 }

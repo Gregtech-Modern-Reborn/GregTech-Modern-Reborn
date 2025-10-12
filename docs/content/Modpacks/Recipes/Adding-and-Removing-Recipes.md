@@ -180,7 +180,7 @@ ServerEvents.recipes(event => {
 
 Rock breaker recipes use AdjacentFluidConditions.
 
-To add a condition, you can use the `adjacentFluid(Fluid...)` methods, see [our other condition builder methods](https://github.com/reborn/GregTech-Modern/blob/1.20.1/src/main/java/com/reborn/gtceu/integration/kjs/recipe/GTRecipeSchema.java#L894).
+To add a condition, you can use the `adjacentFluid(Fluid...)` methods, see [our other condition builder methods](https://github.com/gregtechceu/GregTech-Modern/blob/1.20.1/src/main/java/com/gregtechceu/gtceu/integration/kjs/recipe/GTRecipeSchema.java#L894).
 
 ```js title="rock_breaker.js"
 ServerEvents.recipes(event => {
