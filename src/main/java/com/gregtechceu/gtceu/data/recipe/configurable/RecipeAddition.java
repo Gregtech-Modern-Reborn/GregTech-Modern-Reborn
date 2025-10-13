@@ -163,7 +163,13 @@ public class RecipeAddition {
                     'C', GTBlocks.CASING_BRONZE_BRICKS.asStack(),
                     'M', GTMachines.STEAM_COMPRESSOR.right().asStack(),
                     'G', new MaterialEntry(TagPrefix.gear, GTMaterials.Invar));
-
+            VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_centrifuge_from_hp",
+                    GTMultiMachines.STEAM_CENTRIFUGE.asStack(),
+                    "CGC", "FMF", "CGC",
+                    'F', GTBlocks.CASING_BRONZE_GEARBOX.asStack(),
+                    'C', GTBlocks.CASING_BRONZE_PIPE.asStack(),
+                    'M', GTBlocks.STEEL_BRICKS_HULL.asStack(),
+                    'G', new MaterialEntry(TagPrefix.gear, Steel));
             VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_hatch",
                     GTMachines.STEAM_HATCH.asStack(),
                     "BPB", "BTB", "BPB",

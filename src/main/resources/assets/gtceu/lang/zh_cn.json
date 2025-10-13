@@ -5924,5 +5924,8 @@
     "gtceu.machine.multi_parallel_hatch_mk11.tooltip": "允许在跨配方并行中运行最多 88个配方。",
     "gtceu.machine.multi_parallel_hatch_mk12.tooltip": "允许在跨配方并行中运行最多 96个配方。",
     "gtceu.machine.multi_parallel_hatch_mk13.tooltip": "允许在跨配方并行中运行最多 104个配方。",
-    "gtceu.machine.multi_parallel_hatch_mk14.tooltip": "允许在跨配方并行中允许最多 112个配方。"
+    "gtceu.machine.multi_parallel_hatch_mk14.tooltip": "允许在跨配方并行中允许最多 112个配方。",
+    "block.gtceu.steam_centrifuge": "蒸汽离心机",
+    "gtceu.multiblock.steam_centrifuge.description": "一个可以在蒸汽时代运行离心机配方的一个多方块结构，允许使用正常的 输入/输出 总线/仓",
+    "gtceu.machine.steam_centrifuge.tooltip": "一个可以在蒸汽时代运行离心机配方的多方块结构"
 }
