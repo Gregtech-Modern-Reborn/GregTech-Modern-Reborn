@@ -541,7 +541,8 @@ public class MachineLang {
                 "The GUI can be opened with a right-click of a screwdriver.",
                 "The proxy mode of Digital Interface Cover can delegate machines' capabilities and GUI. (Yes, you can connect pipes directly on the screen.)",
                 "The screen also supports plugins.");
-
+        provider.add("gtceu.multiblock.steam_centrifuge.description",
+                "A Multiblock can run centrifuge recipe at the Steam Age.Can use normal input/output bus/hatch.");
         provider.add("gtceu.multiblock.steam_grinder.description",
                 "A Multiblock Macerator at the Steam Age. Requires at least 14 Bronze Casings to form. Cannot use normal Input/Output busses, nor Fluid Hatches other than the Steam Hatch.");
         provider.add("gtceu.multiblock.steam.low_steam", "Not enough Steam to run!");
@@ -667,6 +668,7 @@ public class MachineLang {
         provider.add("gtceu.machine.large_chemical_reactor.tooltip", "Black Box Reactor");
         provider.add("gtceu.machine.steam_oven.tooltip", "Not to be confused with Multi-Smelter");
         provider.add("gtceu.machine.steam_grinder.tooltip", "A multiblock Macerator without the Byproducts");
+        provider.add("gtceu.machine.steam_centrifuge.tooltip", "A multiblock centrifuge at the Steam Age");
         provider.add("gtceu.machine.large_miner.ev.tooltip", "Digging Ore instead of You");
         provider.add("gtceu.machine.large_miner.iv.tooltip", "Biome Excavator");
         provider.add("gtceu.machine.large_miner.luv.tooltip", "Terrestrial Harvester");
