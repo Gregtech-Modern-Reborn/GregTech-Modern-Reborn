@@ -1,5 +1,7 @@
 package com.gregtechceu.gtceu.api;
 
+import com.gregtechceu.gtceu.GTCEu;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
 import java.time.LocalDate;
@@ -257,6 +259,15 @@ public class GTValues {
             "XIV",
     };
 
+
+    public static final int[] HighTiersArray = new int[] { ULV, LV, MV, HV, EV, IV, LuV, ZPM, UV, UHV, UEV, UIV, UXV,
+            OpV, MAX };
+    public static final int[] LowTiersArray = new int[] { ULV, LV, MV, HV, EV, IV, LuV, ZPM, UV };
+
+    public static ResourceLocation getResourceLocation(int tier) {
+        //ResourceLocation提供的tier只有1 2 3 4
+        return GTCEu.id("block/machines/parallel_hatch_mk" + (tier/4 +1));
+    }
     /**
      * Color values for the voltages
      */

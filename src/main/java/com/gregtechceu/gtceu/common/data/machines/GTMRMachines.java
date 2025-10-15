@@ -1,6 +1,7 @@
 package com.gregtechceu.gtceu.common.data.machines;
 
 import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
@@ -19,9 +20,6 @@ import static com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWor
 
 public class GTMRMachines {
 
-    private static final int[] HighTiersArray = new int[] { ULV, LV, MV, HV, EV, IV, LuV, ZPM, UV, UHV, UEV, UIV, UXV,
-            OpV, MAX };
-    private static final int[] LowTiersArray = new int[] { ULV, LV, MV, HV, EV, IV, LuV, ZPM, UV };
     public static final MachineDefinition[] MULTI_PARALLEL_HATCH = registerTieredMachines("multi_parallel_hatch",
             MultiParallelHatchPartMachine::new,
             (tier, builder) -> builder
@@ -31,7 +29,7 @@ public class GTMRMachines {
                     .modelProperty(IS_FORMED, false)
                     .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
                     .model(createWorkableTieredHullMachineModel(
-                            GTCEu.id("block/machines/parallel_hatch_mk4"))
+                            GTValues.getResourceLocation(tier))
                             .andThen((ctx, prov, model) -> {
                                 model.addReplaceableTextures("bottom", "top", "side");
                             }))

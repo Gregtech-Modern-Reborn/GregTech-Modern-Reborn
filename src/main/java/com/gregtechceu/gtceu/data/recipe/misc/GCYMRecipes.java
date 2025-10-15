@@ -6,6 +6,7 @@ import com.gregtechceu.gtceu.api.data.chemical.material.Material;
 import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.common.data.*;
+import com.gregtechceu.gtceu.common.data.machines.GTMRMachines;
 import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
@@ -28,6 +29,9 @@ import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLER_RECIPES;
 import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.MIXER_RECIPES;
 import static com.gregtechceu.gtceu.common.data.machines.GCYMMachines.*;
 import static com.gregtechceu.gtceu.data.recipe.CustomTags.*;
+import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.*;
+import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.HULL;
+import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.ROBOT_ARM;
 
 public class GCYMRecipes {
 
@@ -167,18 +171,21 @@ public class GCYMRecipes {
                 new MaterialEntry(plate, TantalumCarbide), 'D',
                 ChemicalHelper.get(plateDouble, MolybdenumDisilicide), 'R', ChemicalHelper.get(rotor, Titanium), 'L',
                 ChemicalHelper.get(rodLong, MolybdenumDisilicide));
-        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk1", PARALLEL_HATCH[IV].asStack(1), "SZE", "ZHZ",
-                "CZC", 'S', SENSOR_IV.asStack(), 'E', EMITTER_IV.asStack(), 'Z', LuV_CIRCUITS, 'H', HULL[IV].asStack(),
-                'C', new MaterialEntry(cableGtDouble, Platinum));
-        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk2", PARALLEL_HATCH[LuV].asStack(1), "SZE",
-                "ZHZ", "CZC", 'S', SENSOR_LuV.asStack(), 'E', EMITTER_LuV.asStack(), 'Z', ZPM_CIRCUITS, 'H',
-                HULL[LuV].asStack(), 'C', new MaterialEntry(cableGtDouble, NiobiumTitanium));
-        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk3", PARALLEL_HATCH[ZPM].asStack(1), "SZE",
-                "ZHZ", "CZC", 'S', SENSOR_ZPM.asStack(), 'E', EMITTER_ZPM.asStack(), 'Z', UV_CIRCUITS, 'H',
-                HULL[ZPM].asStack(), 'C', new MaterialEntry(cableGtDouble, VanadiumGallium));
-        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk4", PARALLEL_HATCH[UV].asStack(1), "SZE", "ZHZ",
-                "CZC", 'S', SENSOR_UV.asStack(), 'E', EMITTER_UV.asStack(), 'Z', UHV_CIRCUITS, 'H', HULL[UV].asStack(),
-                'C', new MaterialEntry(cableGtDouble, YttriumBariumCuprate));
+
+        for (var machine : PARALLEL_HATCH) {
+            if (machine == null) continue;;
+            int tier = machine.getTier();
+            GTRecipeTypes.ASSEMBLER_RECIPES
+                    .recipeBuilder("parallel_hatch_mk" + tier)
+                    .inputItems(HULL.get(tier))
+                    .inputItems(SENSOR.get(tier), 4)
+                    .inputItems(CIRCUIT.get(tier), 4)
+                    .inputItems(EMITTER.get(tier), 4)
+                    .inputFluids(Polyethylene.getFluid(144 * (1 << tier)))
+                    .circuitMeta(3)
+                    .outputItems(machine)
+                    .save(provider);
+        }
     }
 
     private static void registerMachineRecipes(Consumer<FinishedRecipe> provider) {

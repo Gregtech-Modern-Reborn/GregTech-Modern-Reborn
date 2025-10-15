@@ -31,6 +31,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
@@ -60,26 +61,20 @@ public class GCYMMachines {
     public static final MachineDefinition[] PARALLEL_HATCH = registerTieredMachines("parallel_hatch",
             ParallelHatchPartMachine::new,
             (tier, builder) -> builder
-                    .langValue(switch (tier) {
-                        case 5 -> "Elite";
-                        case 6 -> "Master";
-                        case 7 -> "Ultimate";
-                        case 8 -> "Super";
-                        default -> "Simple"; // Should never be hit.
-                    } + " Parallel Control Hatch")
+                    .langValue(VNF[tier] + " Parallel Control Hatch")
                     .rotationState(RotationState.ALL)
                     .abilities(PartAbility.PARALLEL_HATCH)
                     .modelProperty(IS_FORMED, false)
                     .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
                     .model(createWorkableTieredHullMachineModel(
-                            GTCEu.id("block/machines/parallel_hatch_mk" + (tier - 4)))
+                            GTValues.getResourceLocation(tier))
                             .andThen((ctx, prov, model) -> {
                                 model.addReplaceableTextures("bottom", "top", "side");
                             }))
                     .tooltips(Component.translatable("gtceu.machine.parallel_hatch_mk" + tier + ".tooltip"),
                             Component.translatable("gtceu.part_sharing.disabled"))
                     .register(),
-            IV, LuV, ZPM, UV);
+            ConfigHolder.INSTANCE.machines.highTierContent ? HighTiersArray : LowTiersArray);
 
     public final static MultiblockMachineDefinition LARGE_MACERATION_TOWER = REGISTRATE
             .multiblock("large_maceration_tower", LargeMacerationTowerMachine::new)
