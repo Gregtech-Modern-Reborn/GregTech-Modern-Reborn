@@ -25,8 +25,7 @@ import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_TEMPERED_GLASS;
 import static com.gregtechceu.gtceu.common.data.GTItems.*;
 import static com.gregtechceu.gtceu.common.data.GTMachines.*;
 import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLER_RECIPES;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.MIXER_RECIPES;
+import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
 import static com.gregtechceu.gtceu.common.data.machines.GCYMMachines.*;
 import static com.gregtechceu.gtceu.data.recipe.CustomTags.*;
 import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.*;
@@ -114,12 +113,35 @@ public class GCYMRecipes {
                 FIELD_GENERATOR_ZPM.asStack(), 'P', new MaterialEntry(spring, Naquadah), 'D',
                 new MaterialEntry(plateDense, NaquadahAlloy), 'W',
                 new MaterialEntry(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate));
+
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "mega_alloy_blast_smelter", MEGA_ALLOY_BLAST_SMELTER.asStack(), "PCP",
+                "FSF", "DWD", 'C', ZPM_CIRCUITS, 'S', BLAST_ALLOY_SMELTER.asStack(), 'F',
+                VOLTAGE_COIL_LuV.asStack(), 'P',
+                new MaterialEntry(pipeNormalFluid, NiobiumTitanium), 'D',
+                new MaterialEntry(plateDense, RhodiumPlatedPalladium), 'W',
+                new MaterialEntry(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate));
+
         VanillaRecipeHelper.addShapedRecipe(provider, true, "mega_vacuum_freezer", MEGA_VACUUM_FREEZER.asStack(), "PCP",
                 "FSF", "DWD", 'C', ZPM_CIRCUITS, 'S', GTMultiMachines.VACUUM_FREEZER.asStack(), 'F',
                 FIELD_GENERATOR_ZPM.asStack(), 'P',
                 new MaterialEntry(pipeNormalFluid, NiobiumTitanium), 'D',
                 new MaterialEntry(plateDense, RhodiumPlatedPalladium), 'W',
                 new MaterialEntry(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate));
+
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "mega_chemical_reactor", MEGA_CHEMICAL_REACTOR.asStack(), "PCP",
+                "FSF", "DWD", 'C', ZPM_CIRCUITS, 'S', INDUSTRY_CHEMICAL_REACTOR.asStack(), 'F',
+                ELECTRIC_PUMP_LuV.asStack(), 'P',
+                new MaterialEntry(pipeNormalFluid, NiobiumTitanium), 'D',
+                new MaterialEntry(plateDense, RhodiumPlatedPalladium), 'W',
+                new MaterialEntry(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate));
+
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "mega_oil_cracking_unit", MEGA_OIL_CRACKING_UNIT.asStack(), "PCP",
+                "FSF", "DWD", 'C', ZPM_CIRCUITS, 'S', GTMultiMachines.CRACKER.asStack(), 'F',
+                ELECTRIC_PUMP_LuV.asStack(), 'P',
+                new MaterialEntry(pipeNormalFluid, NiobiumTitanium), 'D',
+                new MaterialEntry(plateDense, RhodiumPlatedPalladium), 'W',
+                new MaterialEntry(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate));
+
         VanillaRecipeHelper.addShapedRecipe(provider, true, "large_autoclave", LARGE_AUTOCLAVE.asStack(), "PCP", "PAP",
                 "BKB", 'C', CustomTags.IV_CIRCUITS, 'A', AUTOCLAVE[IV].asStack(), 'P',
                 new MaterialEntry(plateDouble, HSLASteel), 'B', ELECTRIC_PUMP_IV.asStack(), 'K',
@@ -153,6 +175,11 @@ public class GCYMRecipes {
                 new MaterialEntry(cableGtSingle, Platinum));
         VanillaRecipeHelper.addShapedRecipe(provider, true, "large_wiremill", LARGE_WIREMILL.asStack(), "PZP", "SWS",
                 "MKM", 'Z', CustomTags.IV_CIRCUITS, 'W', WIREMILL[IV].asStack(), 'P',
+                new MaterialEntry(plate, HSLASteel), 'S', new MaterialEntry(spring, HSLASteel), 'M',
+                ELECTRIC_MOTOR_IV.asStack(), 'K', new MaterialEntry(cableGtSingle, Platinum));
+
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "industry_chemical_reactor", INDUSTRY_CHEMICAL_REACTOR.asStack(), "PZP", "SWS",
+                "MKM", 'Z', CustomTags.IV_CIRCUITS, 'W', CHEMICAL_REACTOR[IV].asStack(), 'P',
                 new MaterialEntry(plate, HSLASteel), 'S', new MaterialEntry(spring, HSLASteel), 'M',
                 ELECTRIC_MOTOR_IV.asStack(), 'K', new MaterialEntry(cableGtSingle, Platinum));
     }

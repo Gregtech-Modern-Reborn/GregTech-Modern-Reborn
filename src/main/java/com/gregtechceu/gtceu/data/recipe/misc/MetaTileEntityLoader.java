@@ -702,6 +702,42 @@ public class MetaTileEntityLoader {
                 GTItems.ELECTRIC_MOTOR_HV, 'C', CustomTags.HV_CIRCUITS, 'W',
                 new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Gold), 'G',
                 new MaterialEntry(TagPrefix.gear, GTMaterials.StainlessSteel));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "diesel_generator_ev", GTMachines.COMBUSTION[EV].asStack(),
+                "PCP", "EME", "GWG", 'M', GTMachines.HULL[EV].asStack(), 'P', GTItems.ELECTRIC_PISTON_EV, 'E',
+                GTItems.ELECTRIC_MOTOR_EV, 'C', CustomTags.EV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Aluminium), 'G',
+                new MaterialEntry(TagPrefix.gear, GTMaterials.Titanium));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "diesel_generator_iv", GTMachines.COMBUSTION[IV].asStack(),
+                "PCP", "EME", "GWG", 'M', GTMachines.HULL[IV].asStack(), 'P', GTItems.ELECTRIC_PISTON_IV, 'E',
+                GTItems.ELECTRIC_MOTOR_IV, 'C', CustomTags.IV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Platinum), 'G',
+                new MaterialEntry(TagPrefix.gear, GTMaterials.TungstenSteel));
+
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "semi_fluid_generator_lv", GTMachines.SEMI_FLUID_GENERATOR[LV].asStack(),
+                "PCP", "EME", "GWG", 'M', GTMachines.HULL[GTValues.LV].asStack(), 'P', GTItems.ELECTRIC_PISTON_LV, 'E',
+                GTItems.ELECTRIC_PUMP_LV, 'C', CustomTags.LV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Tin), 'G',
+                new MaterialEntry(TagPrefix.gear, GTMaterials.Steel));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "semi_fluid_generator_mv", GTMachines.SEMI_FLUID_GENERATOR[MV].asStack(),
+                "PCP", "EME", "GWG", 'M', GTMachines.HULL[GTValues.MV].asStack(), 'P', GTItems.ELECTRIC_PISTON_MV, 'E',
+                GTItems.ELECTRIC_PUMP_MV, 'C', CustomTags.MV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Copper), 'G',
+                new MaterialEntry(TagPrefix.gear, GTMaterials.Aluminium));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "semi_fluid_generator_hv", GTMachines.SEMI_FLUID_GENERATOR[HV].asStack(),
+                "PCP", "EME", "GWG", 'M', GTMachines.HULL[HV].asStack(), 'P', GTItems.ELECTRIC_PISTON_HV, 'E',
+                GTItems.ELECTRIC_PUMP_HV, 'C', CustomTags.HV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Gold), 'G',
+                new MaterialEntry(TagPrefix.gear, GTMaterials.StainlessSteel));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "semi_fluid_generator_ev", GTMachines.SEMI_FLUID_GENERATOR[EV].asStack(),
+                "PCP", "EME", "GWG", 'M', GTMachines.HULL[EV].asStack(), 'P', GTItems.ELECTRIC_PISTON_EV, 'E',
+                GTItems.ELECTRIC_PUMP_EV, 'C', CustomTags.EV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Aluminium), 'G',
+                new MaterialEntry(TagPrefix.gear, GTMaterials.Titanium));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "diesel_generator_iv", GTMachines.SEMI_FLUID_GENERATOR[IV].asStack(),
+                "PCP", "EME", "GWG", 'M', GTMachines.HULL[IV].asStack(), 'P', GTItems.ELECTRIC_PISTON_IV, 'E',
+                GTItems.ELECTRIC_PUMP_IV, 'C', CustomTags.IV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Platinum), 'G',
+                new MaterialEntry(TagPrefix.gear, GTMaterials.TungstenSteel));
 
         VanillaRecipeHelper.addShapedRecipe(provider, true, "gas_turbine_lv", GTMachines.GAS_TURBINE[LV].asStack(),
                 "CRC", "RMR", "EWE", 'M', GTMachines.HULL[GTValues.LV].asStack(), 'E', GTItems.ELECTRIC_MOTOR_LV, 'R',
@@ -715,6 +751,14 @@ public class MetaTileEntityLoader {
                 "CRC", "RMR", "EWE", 'M', GTMachines.HULL[HV].asStack(), 'E', GTItems.ELECTRIC_MOTOR_HV, 'R',
                 new MaterialEntry(TagPrefix.rotor, GTMaterials.Steel), 'C', CustomTags.HV_CIRCUITS, 'W',
                 new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Gold));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "gas_turbine_ev", GTMachines.GAS_TURBINE[EV].asStack(),
+                "CRC", "RMR", "EWE", 'M', GTMachines.HULL[EV].asStack(), 'E', GTItems.ELECTRIC_MOTOR_EV, 'R',
+                new MaterialEntry(TagPrefix.rotor, GTMaterials.Steel), 'C', CustomTags.EV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Aluminium));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "gas_turbine_iv", GTMachines.GAS_TURBINE[IV].asStack(),
+                "CRC", "RMR", "EWE", 'M', GTMachines.HULL[IV].asStack(), 'E', GTItems.ELECTRIC_MOTOR_IV, 'R',
+                new MaterialEntry(TagPrefix.rotor, GTMaterials.Steel), 'C', CustomTags.IV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Platinum));
 
         VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_turbine_lv", GTMachines.STEAM_TURBINE[LV].asStack(),
                 "PCP", "RMR", "EWE", 'M', GTMachines.HULL[GTValues.LV].asStack(), 'E', GTItems.ELECTRIC_MOTOR_LV, 'R',
@@ -731,6 +775,16 @@ public class MetaTileEntityLoader {
                 new MaterialEntry(TagPrefix.rotor, GTMaterials.Steel), 'C', CustomTags.HV_CIRCUITS, 'W',
                 new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Gold), 'P',
                 new MaterialEntry(TagPrefix.pipeNormalFluid, GTMaterials.StainlessSteel));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_turbine_ev", GTMachines.STEAM_TURBINE[EV].asStack(),
+                "PCP", "RMR", "EWE", 'M', GTMachines.HULL[EV].asStack(), 'E', GTItems.ELECTRIC_MOTOR_EV, 'R',
+                new MaterialEntry(TagPrefix.rotor, GTMaterials.Steel), 'C', CustomTags.EV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Aluminium), 'P',
+                new MaterialEntry(TagPrefix.pipeNormalFluid, GTMaterials.Titanium));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "steam_turbine_iv", GTMachines.STEAM_TURBINE[IV].asStack(),
+                "PCP", "RMR", "EWE", 'M', GTMachines.HULL[IV].asStack(), 'E', GTItems.ELECTRIC_MOTOR_IV, 'R',
+                new MaterialEntry(TagPrefix.rotor, GTMaterials.Steel), 'C', CustomTags.IV_CIRCUITS, 'W',
+                new MaterialEntry(TagPrefix.cableGtSingle, GTMaterials.Platinum), 'P',
+                new MaterialEntry(TagPrefix.pipeNormalFluid, GTMaterials.TungstenSteel));
 
         // TODO Crafting station
         // VanillaRecipeHelper.addShapedRecipe(provider, true, "workbench_bronze", GTMachines.WORKBENCH.getStackForm(),

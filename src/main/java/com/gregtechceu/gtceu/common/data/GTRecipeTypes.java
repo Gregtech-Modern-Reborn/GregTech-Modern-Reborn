@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.gregtechceu.gtceu.api.GTValues.V;
 import static com.lowdragmc.lowdraglib.gui.texture.ProgressTexture.FillDirection.*;
 
 public class GTRecipeTypes {
@@ -482,6 +483,13 @@ public class GTRecipeTypes {
             .setProgressBar(GuiTextures.PROGRESS_BAR_GAS_COLLECTOR, LEFT_TO_RIGHT)
             .setSound(GTSoundEntries.TURBINE);
 
+    //SEMI_FLUID_GENERATOR
+    public final static GTRecipeType SEMI_FLUID_GENERATOR_FUELS = register("semi_fluid_generator", GENERATOR)
+            .setMaxIOSize(1, 0, 1, 1).setEUIO(IO.OUT)
+            .setSlotOverlay(false, true, true, GuiTextures.CENTRIFUGE_OVERLAY)
+            .setProgressBar(GuiTextures.PROGRESS_BAR_GAS_COLLECTOR, LEFT_TO_RIGHT)
+            .setSound(GTSoundEntries.TURBINE);
+
     //////////////////////////////////////
     // ******* Multiblock *******//
     //////////////////////////////////////
@@ -489,6 +497,12 @@ public class GTRecipeTypes {
             .setMaxIOSize(1, 0, 1, 1)
             .setProgressBar(GuiTextures.PROGRESS_BAR_BOILER_FUEL.get(true), DOWN_TO_UP)
             .setMaxTooltips(1)
+            .onRecipeBuild((builder, provider) -> {
+                var duration = builder.duration * 10;
+                if (duration > 0) {
+                    GTRecipeTypes.SEMI_FLUID_GENERATOR_FUELS.copyFrom(builder).duration(duration).EUt(-V[GTValues.LV]).save(provider);
+                }
+            })
             .setSound(GTSoundEntries.FURNACE);
 
     public final static GTRecipeType COKE_OVEN_RECIPES = register("coke_oven", MULTIBLOCK).setMaxIOSize(1, 1, 0, 1)

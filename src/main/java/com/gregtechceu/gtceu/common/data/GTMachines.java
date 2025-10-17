@@ -283,14 +283,19 @@ public class GTMachines {
     //////////////////////////////////////
     public static final MachineDefinition[] COMBUSTION = registerSimpleGenerator("combustion",
             GTRecipeTypes.COMBUSTION_GENERATOR_FUELS, genericGeneratorTankSizeFunction, 0.1f, GTValues.LV, GTValues.MV,
-            GTValues.HV);
+            GTValues.HV, GTValues.EV, GTValues.IV);
     public static final MachineDefinition[] STEAM_TURBINE = registerSimpleGenerator("steam_turbine",
             GTRecipeTypes.STEAM_TURBINE_FUELS, steamGeneratorTankSizeFunction, 0.0f, GTValues.LV, GTValues.MV,
-            GTValues.HV);
+            GTValues.HV, GTValues.EV, GTValues.IV);
     public static final MachineDefinition[] GAS_TURBINE = registerSimpleGenerator("gas_turbine",
             GTRecipeTypes.GAS_TURBINE_FUELS, genericGeneratorTankSizeFunction, 0.1f, GTValues.LV, GTValues.MV,
-            GTValues.HV);
-
+            GTValues.HV, GTValues.EV, GTValues.IV);
+    public static final MachineDefinition[] SEMI_FLUID_GENERATOR = registerSimpleGenerator("semi_fluid_generator",
+            GTRecipeTypes.SEMI_FLUID_GENERATOR_FUELS, genericGeneratorTankSizeFunction, 0.1f, GTValues.LV, GTValues.MV,
+            GTValues.HV, GTValues.EV, GTValues.IV);
+    public static final MachineDefinition[] PLASMA_GENERATOR = registerSimpleGenerator("plasma_generator",
+            GTRecipeTypes.PLASMA_GENERATOR_FUELS, genericGeneratorTankSizeFunction, 0.1f, GTValues.IV,GTValues.LuV,GTValues.ZPM, GTValues.UV,
+            GTValues.UHV);
     //////////////////////////////////////
     // ******** Electric ********//
     //////////////////////////////////////
