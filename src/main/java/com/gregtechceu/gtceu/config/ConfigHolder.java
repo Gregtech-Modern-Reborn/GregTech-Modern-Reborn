@@ -560,8 +560,8 @@ public class ConfigHolder {
                 "Items and Machines enabled with this config will have missing recipes by default.",
                 "This is intended for modpack developers only, and is not playable without custom tweaks or addons.",
                 "Other mods can override this to true, regardless of the config file.",
-                "Default: false" })
-        public boolean highTierContent = false;
+                "Default: true" })
+        public boolean highTierContent = true;
 
         @Configurable
         @Configurable.Comment({ "Whether the Assembly Line should require the item inputs to be in order.",
