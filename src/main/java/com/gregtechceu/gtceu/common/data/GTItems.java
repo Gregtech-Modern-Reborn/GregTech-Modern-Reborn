@@ -841,7 +841,6 @@ public class GTItems {
                     })))
                     .register() :
             null;
-
     public static ItemEntry<ComponentItem> ELECTRIC_PUMP_UXV = GTCEuAPI.isHighTier() ?
             REGISTRATE.item("uxv_electric_pump", ComponentItem::create)
                     .lang("UXV Electric Pump")
