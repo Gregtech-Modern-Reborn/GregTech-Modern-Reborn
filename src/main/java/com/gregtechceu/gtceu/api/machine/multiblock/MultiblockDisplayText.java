@@ -4,6 +4,7 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
+import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
@@ -450,14 +451,31 @@ public class MultiblockDisplayText {
         /**
          * Adds a line indicating the current mode of the multi
          */
-        public Builder addMachineModeLine(GTRecipeType recipeType, boolean hasMultipleModes) {
+        public Builder addMachineModeLine(GTRecipeType recipeType, boolean hasMultipleModes, RecipeLogic recipeLogic,
+                                          WorkableElectricMultiblockMachine workableElectricMultiblockMachine) {
             if (!isStructureFormed || !hasMultipleModes)
                 return this;
-            textList.add(Component
-                    .translatable("gtceu.gui.machinemode",
-                            Component.translatable(recipeType.registryName.toLanguageKey()))
-                    .withStyle(ChatFormatting.AQUA));
-            return this;
+            if (recipeLogic.isMultiParallelLogic()) {
+                for (int i = 0; i < workableElectricMultiblockMachine.recipeLogic.machine.getRecipeLogic()
+                        .getActiveModesList().size(); i++) {
+                    if (workableElectricMultiblockMachine.recipeLogic.machine.getRecipeLogic().getActiveModesList()
+                            .get(i)) {
+                        textList.add(Component
+                                .translatable("gtceu.gui.machinemode",
+                                        Component.translatable(
+                                                workableElectricMultiblockMachine.getRecipeTypes()[i].registryName
+                                                        .toLanguageKey()))
+                                .withStyle(ChatFormatting.AQUA));
+                    }
+                }
+                return this;
+            } else {
+                textList.add(Component
+                        .translatable("gtceu.gui.machinemode",
+                                Component.translatable(recipeType.registryName.toLanguageKey()))
+                        .withStyle(ChatFormatting.AQUA));
+                return this;
+            }
         }
 
         public Builder addParallelsLine(int numParallels) {

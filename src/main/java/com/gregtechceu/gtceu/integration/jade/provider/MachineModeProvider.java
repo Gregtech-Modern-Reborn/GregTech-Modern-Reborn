@@ -3,7 +3,11 @@ package com.gregtechceu.gtceu.integration.jade.provider;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
+import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
+import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.common.machine.multiblock.part.MultiParallelHatchPartMachine;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -25,7 +29,8 @@ public class MachineModeProvider implements IBlockComponentProvider, IServerData
     @Override
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
         CompoundTag serverData = blockAccessor.getServerData();
-        if (serverData.contains("RecipeTypes") && serverData.contains("CurrentRecipeType")) {
+        if (serverData.contains("RecipeTypes") && serverData.contains("CurrentRecipeType") &&
+                !serverData.contains("RecipeTypesOKList")) {
             int currentRecipeTypeIndex = serverData.getInt("CurrentRecipeType");
             ListTag recipeTypesTagList = serverData.getList("RecipeTypes", StringTag.TAG_STRING);
             if (blockAccessor.showDetails()) {
@@ -48,6 +53,33 @@ public class MachineModeProvider implements IBlockComponentProvider, IServerData
                 iTooltip.add(Component.translatable("gtceu.top.machine_mode").append(
                         Component.translatable("%s.%s".formatted(recipeType.getNamespace(), recipeType.getPath()))));
             }
+        } else {
+            ListTag RecipeTypesOKList = serverData.getList("RecipeTypesOKList", StringTag.TAG_STRING);
+            ListTag recipeTypesTagList = serverData.getList("RecipeTypes", StringTag.TAG_STRING);
+
+            if (blockAccessor.showDetails()) {
+                for (int i = 0; i < recipeTypesTagList.size(); i++) {
+                    ResourceLocation recipeType = new ResourceLocation(recipeTypesTagList.getString(i));
+                    MutableComponent text;
+                    if (RecipeTypesOKList.getString(i).equals("1")) {
+                        text = Component.literal(" > ").withStyle(ChatFormatting.BLUE);
+                    } else {
+                        text = Component.literal("   ");
+                    }
+                    text.append(
+                            Component.translatable("%s.%s".formatted(recipeType.getNamespace(), recipeType.getPath())));
+                    iTooltip.add(text);
+                }
+            } else {
+                for (int i = 0; i < recipeTypesTagList.size(); i++) {
+                    if (RecipeTypesOKList.getString(i).equals("1")) {
+                        ResourceLocation recipeType = new ResourceLocation(recipeTypesTagList.getString(i));
+                        iTooltip.add(Component.translatable("gtceu.top.machine_mode").append(
+                                Component.translatable(
+                                        "%s.%s".formatted(recipeType.getNamespace(), recipeType.getPath()))));
+                    }
+                }
+            }
         }
     }
 
@@ -58,17 +90,45 @@ public class MachineModeProvider implements IBlockComponentProvider, IServerData
             GTRecipeType[] recipeTypes = blockEntity.getMetaMachine().getDefinition().getRecipeTypes();
             if (recipeTypes != null && recipeTypes.length > 1) {
                 if (blockEntity.getMetaMachine() instanceof IRecipeLogicMachine recipeLogicMachine) {
-                    ListTag recipeTypesTagList = new ListTag();
-                    GTRecipeType currentRecipeType = recipeLogicMachine.getRecipeType();
-                    int currentRecipeTypeIndex = -1;
-                    for (int i = 0; i < recipeTypes.length; i++) {
-                        if (recipeTypes[i] == currentRecipeType) {
-                            currentRecipeTypeIndex = i;
+                    if (!recipeLogicMachine.getRecipeLogic().isMultiParallelLogic()) {
+                        ListTag recipeTypesTagList = new ListTag();
+                        GTRecipeType currentRecipeType = recipeLogicMachine.getRecipeType();
+
+                        int currentRecipeTypeIndex = -1;
+                        for (int i = 0; i < recipeTypes.length; i++) {
+                            if (recipeTypes[i] == currentRecipeType) {
+                                currentRecipeTypeIndex = i;
+                            }
+                            recipeTypesTagList.add(StringTag.valueOf(recipeTypes[i].registryName.toString()));
                         }
-                        recipeTypesTagList.add(StringTag.valueOf(recipeTypes[i].registryName.toString()));
+                        compoundTag.put("RecipeTypes", recipeTypesTagList);
+                        compoundTag.putInt("CurrentRecipeType", currentRecipeTypeIndex);
+                    } else {
+                        ListTag recipeTypesTagList = new ListTag();
+                        ListTag recipeTypesOKList = new ListTag();
+                        RecipeLogic recipeLogic = recipeLogicMachine.getRecipeLogic();
+                        if (blockEntity
+                                .getMetaMachine() instanceof WorkableMultiblockMachine workableMultiblockMachine) {
+                            for (IMultiPart part : workableMultiblockMachine.getParts()) {
+                                if (part instanceof MultiParallelHatchPartMachine) {
+                                    ((MultiParallelHatchPartMachine) part).setCurrentMultiParallel(
+                                            ((MultiParallelHatchPartMachine) part).getCurrentMultiParallel());
+                                }
+                            }
+                        } else {
+                            return;
+                        }
+                        for (int i = 0; i < recipeLogic.getActiveModesList().size(); i++) {
+                            if (recipeLogic.getActiveModesList().get(i)) {
+                                recipeTypesOKList.add(StringTag.valueOf("1"));
+                            } else {
+                                recipeTypesOKList.add(StringTag.valueOf("0"));
+                            }
+                            recipeTypesTagList.add(StringTag.valueOf(recipeTypes[i].registryName.toString()));
+                        }
+                        compoundTag.put("RecipeTypes", recipeTypesTagList);
+                        compoundTag.put("RecipeTypesOKList", recipeTypesOKList);
                     }
-                    compoundTag.put("RecipeTypes", recipeTypesTagList);
-                    compoundTag.putInt("CurrentRecipeType", currentRecipeTypeIndex);
                 }
             }
         }

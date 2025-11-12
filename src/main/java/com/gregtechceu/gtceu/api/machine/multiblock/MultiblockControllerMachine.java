@@ -199,6 +199,7 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
             }
             if (part instanceof IMultiParallelHatch pHatch) {
                 this.parallelMultiHatch = pHatch;
+
             }
             part.addedToController(this);
         }

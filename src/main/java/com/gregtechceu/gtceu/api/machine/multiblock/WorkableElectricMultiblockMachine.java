@@ -123,7 +123,7 @@ public class WorkableElectricMultiblockMachine extends WorkableMultiblockMachine
                 .setWorkingStatus(recipeLogic.isWorkingEnabled(), recipeLogic.isActive())
                 .addEnergyUsageLine(energyContainer)
                 .addEnergyTierLine(tier)
-                .addMachineModeLine(getRecipeType(), getRecipeTypes().length > 1)
+                .addMachineModeLine(getRecipeType(), getRecipeTypes().length > 1, this.recipeLogic, this)
                 .addParallelsLine(numParallels, exact)
                 .addBatchModeLine(isBatchEnabled(), batchParallels)
                 .addWorkingStatusLine()
