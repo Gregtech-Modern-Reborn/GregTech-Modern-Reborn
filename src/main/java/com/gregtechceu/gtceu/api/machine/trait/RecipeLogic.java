@@ -401,12 +401,12 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             }
             recipeDirty = false;
         } else {
-            int sumOfParallelsCount = 0;
+
             GTRecipe recipeAll = null;
             for (int i = 0; i < machine.getRecipeTypes().length; ++i) {
                 if (!ActiveModesList.get(i)) continue;
                 List<GTRecipe> Recipe_List = new ArrayList<>();
-
+                int sumOfParallelsCount = 0;
                 int LoopCount = 0;
                 int FailesCount = 0;
                 while (true) {
