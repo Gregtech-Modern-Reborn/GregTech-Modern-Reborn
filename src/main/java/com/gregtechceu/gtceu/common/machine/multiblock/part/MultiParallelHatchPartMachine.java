@@ -73,9 +73,9 @@ public class MultiParallelHatchPartMachine extends TieredPartMachine implements 
 
     public static int processTierToMaxMultiParallel(int tier) {
         if (ConfigHolder.INSTANCE.machines.multiParallelHatchSettings) {
-            return Math.max(2, tier * 8);
+            return Math.max(1, tier * 2);
         } else {
-            return (1 << (tier + 1));
+            return Math.min(32, Math.max(2, tier * 4));
         }
     }
 }
