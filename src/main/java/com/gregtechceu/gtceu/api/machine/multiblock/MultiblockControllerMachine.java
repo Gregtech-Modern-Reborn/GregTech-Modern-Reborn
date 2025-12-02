@@ -36,11 +36,9 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -70,6 +68,22 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
     @Persisted
     @DescSynced
     protected boolean isFlipped;
+
+    private final AtomicBoolean isBuilding = new AtomicBoolean(false);
+    @Getter
+    private Queue<BlockPos> buildQueue = new ConcurrentLinkedQueue<>();
+
+    public boolean tryStartBuilding() {
+        return isBuilding.compareAndSet(false, true);
+    }
+
+    public void finishBuilding() {
+        isBuilding.set(false);
+    }
+
+    public boolean isBuilding() {
+        return isBuilding.get();
+    }
 
     public MultiblockControllerMachine(IMachineBlockEntity holder) {
         super(holder);

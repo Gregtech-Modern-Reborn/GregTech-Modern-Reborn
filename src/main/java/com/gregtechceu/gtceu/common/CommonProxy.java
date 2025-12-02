@@ -155,7 +155,10 @@ public class CommonProxy {
         GTRecipeCategories.init();
         GTMachineUtils.init();
         GTMachines.init();
-        BGTAEBlocks.init();
+        if (GTCEu.Mods.isAE2Loaded()) {
+            BGTAEBlocks.init();
+        }
+
         GTFoods.init();
         GTItems.init();
         GTDimensionMarkers.init();

@@ -213,7 +213,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             }
             ActiveModesList.add(false);
         }
-        onStatusSynced(Status.IDLE, Status.SUSPEND);
         updateTickSubscription();
     }
 

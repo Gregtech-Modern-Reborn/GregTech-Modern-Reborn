@@ -936,6 +936,7 @@ public class MetaTileEntityLoader {
                     .inputFluids(fluidMap[1].getFluid(144 * (1 << tier)))
                     .circuitMeta(3)
                     .outputItems(machine)
+                    .EUt(VA[tier])
                     .save(provider);
         }
         for (var machine : GTMachines.FLUID_EXPORT_HATCH) {
