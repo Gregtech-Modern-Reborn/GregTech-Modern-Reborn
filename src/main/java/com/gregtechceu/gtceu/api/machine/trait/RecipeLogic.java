@@ -529,10 +529,14 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         if (recipe.inputChanceLogics != null && afterMergeRecipe.inputChanceLogics != null) {
             afterMergeRecipe.inputChanceLogics = RecipeUtils.mergeChanceLogicMap(afterMergeRecipe.inputChanceLogics,
                     recipe.inputChanceLogics);
+        } else if (afterMergeRecipe.inputChanceLogics == null && recipe.inputChanceLogics != null) {
+            afterMergeRecipe.inputChanceLogics = recipe.inputChanceLogics;
         }
         if (recipe.outputChanceLogics != null && afterMergeRecipe.outputChanceLogics != null) {
             afterMergeRecipe.outputChanceLogics = RecipeUtils.mergeChanceLogicMap(afterMergeRecipe.outputChanceLogics,
                     recipe.outputChanceLogics);
+        } else if (recipe.outputChanceLogics == null && recipe.outputChanceLogics != null) {
+            afterMergeRecipe.outputChanceLogics = recipe.outputChanceLogics;
         }
         if (recipe.tickInputs != null && afterMergeRecipe.tickInputs != null) {
             if (isOutputEU) {

@@ -71,6 +71,7 @@ public final class InternalSlotRecipeHandler {
             super(buffer);
             this.slot = slot;
             this.priority = IFilteredHandler.HIGH + index + 1;
+
             slot.setOnContentsChanged(this::notifyListeners);
         }
 

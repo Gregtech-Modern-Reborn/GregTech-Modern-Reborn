@@ -934,7 +934,7 @@ public class MetaTileEntityLoader {
                     .inputItems(CIRCUIT.get(tier), 4)
                     .inputItems(ROBOT_ARM.get(tier), 4)
                     .inputFluids(fluidMap[1].getFluid(144 * (1 << tier)))
-                    .circuitMeta(3)
+                    .circuitMeta(32)
                     .outputItems(machine)
                     .EUt(VA[tier])
                     .save(provider);

@@ -102,6 +102,7 @@ public interface ModifierFunction {
         private int batchParallels = 1;
         private int addOCs = 0;
         private ContentModifier eutModifier = ContentModifier.IDENTITY;
+        private ContentModifier amperageModifier = ContentModifier.IDENTITY;
         private ContentModifier durationModifier = ContentModifier.IDENTITY;
         private ContentModifier inputModifier = ContentModifier.IDENTITY;
         private ContentModifier outputModifier = ContentModifier.IDENTITY;
@@ -126,6 +127,11 @@ public interface ModifierFunction {
 
         public FunctionBuilder eutMultiplier(double multiplier) {
             eutModifier = ContentModifier.multiplier(multiplier);
+            return this;
+        }
+
+        public FunctionBuilder amperageMultiplier(double multiplier) {
+            amperageModifier = ContentModifier.multiplier(multiplier);
             return this;
         }
 
@@ -170,6 +176,7 @@ public interface ModifierFunction {
                 if (eutModifier != ContentModifier.IDENTITY) {
                     var preEUt = RecipeHelper.getRealEUtWithIO(recipe);
                     EnergyStack eut = EURecipeCapability.CAP.copyWithModifier(preEUt.stack(), eutModifier);
+                    eut = eut.multiplyAmperage((amperageModifier.apply(1)));
                     EURecipeCapability.putEUContent(preEUt.isInput() ? copied.tickInputs : copied.tickOutputs, eut);
                 }
                 return copied;

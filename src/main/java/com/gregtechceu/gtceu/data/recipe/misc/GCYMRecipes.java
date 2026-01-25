@@ -6,7 +6,6 @@ import com.gregtechceu.gtceu.api.data.chemical.material.Material;
 import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.common.data.*;
-import com.gregtechceu.gtceu.common.data.machines.GTMRMachines;
 import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
@@ -31,7 +30,6 @@ import static com.gregtechceu.gtceu.common.data.machines.GCYMMachines.*;
 import static com.gregtechceu.gtceu.data.recipe.CustomTags.*;
 import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.*;
 import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.HULL;
-import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.ROBOT_ARM;
 
 public class GCYMRecipes {
 
@@ -182,8 +180,9 @@ public class GCYMRecipes {
                     .inputItems(CIRCUIT.get(tier), 4)
                     .inputItems(EMITTER.get(tier), 4)
                     .inputFluids(Polyethylene.getFluid(144 * (1 << tier)))
-                    .circuitMeta(3)
+                    .circuitMeta(30)
                     .outputItems(machine)
+                    .EUt(VA[tier])
                     .save(provider);
         }
     }

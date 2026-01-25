@@ -193,7 +193,7 @@ public class BlockPattern {
                 }
                 validRepetitions++;
             }
-            // Repetitions out of range
+            // Repetitions out of range or Fail Match
             if (r < aisleRepetitions[c][0] || worldState.hasError() || !findFirstAisle) {
                 if (!worldState.hasError()) {
                     worldState.setError(new PatternError());
