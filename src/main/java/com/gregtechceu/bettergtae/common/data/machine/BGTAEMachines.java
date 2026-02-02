@@ -15,6 +15,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
+import static com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties.IS_FORMED;
 import static com.gregtechceu.gtceu.common.registry.GTRegistration.REGISTRATE;
 
 public class BGTAEMachines {
@@ -83,6 +84,7 @@ public class BGTAEMachines {
             .langValue("CleanRoom Sterile Maintenance Hatch")
             .rotationState(RotationState.ALL)
             .abilities(PartAbility.MAINTENANCE)
+            .modelProperty(IS_FORMED, false)
             .tooltips(Component.translatable("gtceu.part_sharing.disabled"),
                     Component.translatable("gtceu.machine.maintenance_hatch_cleanroom_auto.tooltip.0"),
                     Component.translatable("gtceu.machine.maintenance_hatch_cleanroom_auto.tooltip.1"))

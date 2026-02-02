@@ -166,7 +166,8 @@ public class GCYMRecipes {
                 "ZKZ", 'W', new MaterialEntry(wireGtDouble, Platinum), 'Z', CustomTags.IV_CIRCUITS, 'C',
                 CASING_NONCONDUCTING.asStack(), 'K', ChemicalHelper.get(cableGtSingle, Tungsten));
         VanillaRecipeHelper.addShapedRecipe(provider, "heat_vent", HEAT_VENT.asStack(2), "PDP", "RLR", "PDP", 'P',
-                new MaterialEntry(plate, TantalumCarbide), 'D',giisilicide), 'R', ChemicalHelper.get(rotor, Titanium), 'L',
+                new MaterialEntry(plate, TantalumCarbide), 'D',
+                ChemicalHelper.get(plateDouble, MolybdenumDisilicide), 'R', ChemicalHelper.get(rotor, Titanium), 'L',
                 ChemicalHelper.get(rodLong, MolybdenumDisilicide));
 
         for (var machine : PARALLEL_HATCH) {

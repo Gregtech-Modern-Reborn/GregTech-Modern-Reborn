@@ -41,7 +41,7 @@ dependencies {
     modCompileOnly(forge.flywheel.forge.api)
 
     // KJS
-    modCompileOnly(forge.kubejs)
+   modCompileOnly(forge.kubejs)
     modCompileOnly(forge.architectury)
     modCompileOnly(forge.rhino)
 
@@ -83,7 +83,7 @@ dependencies {
 
     // Runtime Recipe Viewers - uncomment whichever one you want to use //
     //modLocalRuntime(forge.emi)
- modLocalRuntime(forge.jei.forge.impl)
+    modLocalRuntime(forge.jei.forge.impl)
 //    modLocalRuntime(forge.bundles.rei.runtime)
 
     // Client-only runtime mods //
@@ -99,7 +99,6 @@ dependencies {
     modExtraLocalRuntime(forge.curios)
 //    modExtraLocalRuntime(forge.worldstripper)
 //    modExtraLocalRuntime(forge.cc.tweaked.forge.impl) for some reason this breaks create
-
     modExtraLocalRuntime(forge.bundles.kjs)
 
     modExtraLocalRuntime(forge.ftblibrary)

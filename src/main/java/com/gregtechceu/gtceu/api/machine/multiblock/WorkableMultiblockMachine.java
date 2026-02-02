@@ -116,6 +116,9 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        if (this.getMultiParallelHatch().isPresent()) {
+            this.recipeLogic.setMultiParallelLogic(true);
+        }
         // attach parts' traits
         activeBlocks = getMultiblockState().getMatchContext().getOrDefault("vaBlocks", LongSets.emptySet());
         capabilitiesProxy.clear();

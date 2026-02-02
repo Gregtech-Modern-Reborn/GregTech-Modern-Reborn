@@ -18,6 +18,8 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.api.sound.AutoReleasedSound;
 import com.gregtechceu.gtceu.common.cover.MachineControllerCover;
@@ -79,7 +81,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     @Getter
     @Setter
     @Persisted
-    @UpdateListener(methodName = "onStatusSynced")
+    // @UpdateListener(methodName = "onStatusSynced")
     @DescSynced
     private boolean isMultiParallelLogic;// This Flag control the "MultiParallel Mode" ON/OFF, when the MultiParallel
     // Mode on,the machine can merge the different recipes to one recipe and run
@@ -88,7 +90,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     @Getter
     @Setter
     @DescSynced
-    @UpdateListener(methodName = "onStatusSynced")
+    // @UpdateListener(methodName = "onStatusSynced")
     private List<Boolean> ActiveModesList = new ArrayList<>();
     @Getter
     @Setter
@@ -535,7 +537,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         if (recipe.outputChanceLogics != null && afterMergeRecipe.outputChanceLogics != null) {
             afterMergeRecipe.outputChanceLogics = RecipeUtils.mergeChanceLogicMap(afterMergeRecipe.outputChanceLogics,
                     recipe.outputChanceLogics);
-        } else if (recipe.outputChanceLogics == null && recipe.outputChanceLogics != null) {
+        } else if (recipe.outputChanceLogics == null && afterMergeRecipe.outputChanceLogics != null) {
             afterMergeRecipe.outputChanceLogics = recipe.outputChanceLogics;
         }
         if (recipe.tickInputs != null && afterMergeRecipe.tickInputs != null) {
@@ -683,8 +685,8 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             runAttempt = 0;
             runDelay = 0;
             consecutiveRecipes++;
+            modifyChanceRecipes(lastRecipe);
             handleRecipeIO(lastRecipe, IO.OUT);
-
             if (machine.alwaysTryModifyRecipe()) {
                 if (lastOriginRecipe != null) {
                     var modified = machine.fullModifyRecipe(lastOriginRecipe.copy());
@@ -720,6 +722,63 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             lastRecipe = null;
             lastOriginRecipe = null;
             lastFailedMatches = null;
+        }
+    }
+
+    private void modifyChanceRecipes(@Nullable GTRecipe lastRecipe) {
+        for (var entry : lastRecipe.outputs.entrySet()) {
+            var contents = entry.getValue();
+            for (var content : contents) {
+                if (content.getContent() instanceof SizedIngredient sizedIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            sizedIngredient.setAmount(
+                                    (int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+                if (content.getContent() instanceof FluidIngredient fluidIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            fluidIngredient.setAmount(
+                                    (int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+            }
+        }
+        for (var entry : lastRecipe.inputs.entrySet()) {
+            var contents = entry.getValue();
+            for (var content : contents) {
+                if (content.getContent() instanceof SizedIngredient sizedIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            sizedIngredient.setAmount(
+                                    (int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+                if (content.getContent() instanceof FluidIngredient fluidIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            fluidIngredient.setAmount(
+                                    (int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+            }
         }
     }
 
