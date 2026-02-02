@@ -245,7 +245,7 @@ public class PatternPreviewWidget extends WidgetGroup {
                 scrollableWidgetGroup.removeWidget(slotWidget);
             }
         }
-        slotWidgets = new SlotWidget[Math.min(pattern.parts.size(), 18)];
+        slotWidgets = new SlotWidget[pattern.parts.size()];
         var itemHandler = new CycleItemStackHandler(pattern.parts);
         int xOffset = 0;
         for (int i = 0; i < slotWidgets.length; i++) {
@@ -291,6 +291,7 @@ public class PatternPreviewWidget extends WidgetGroup {
                     removeWidget(candidate);
                 }
             }
+
             List<List<ItemStack>> candidateStacks = new ArrayList<>();
             List<List<Component>> predicateTips = new ArrayList<>();
             for (SimplePredicate simplePredicate : predicates) {

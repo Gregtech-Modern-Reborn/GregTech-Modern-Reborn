@@ -33,6 +33,7 @@ public final class GTRecipeConditions {
     public static final RecipeConditionType<ResearchCondition> RESEARCH = register("research", ResearchCondition::new, ResearchCondition.CODEC);
     public static final RecipeConditionType<EnvironmentalHazardCondition> ENVIRONMENTAL_HAZARD = register("environmental_hazard", EnvironmentalHazardCondition::new, EnvironmentalHazardCondition.CODEC);
     public static final RecipeConditionType<DaytimeCondition> DAYTIME = register("daytime", DaytimeCondition::new, DaytimeCondition.CODEC);
+
     // spotless:on
     public static RecipeConditionType<FTBQuestCondition> FTB_QUEST;
     public static RecipeConditionType<GameStageCondition> GAMESTAGE;

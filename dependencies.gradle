@@ -3,6 +3,7 @@ dependencies {
 
     // LDLib
     jarJar(modApi(forge.ldlib.get()))
+    api(forge.ldlib.get())
     jarJar(forge.flywheel.forge)
     // Registrate
     jarJar("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
@@ -40,7 +41,7 @@ dependencies {
     modCompileOnly(forge.flywheel.forge.api)
 
     // KJS
-    modCompileOnly(forge.kubejs)
+   modCompileOnly(forge.kubejs)
     modCompileOnly(forge.architectury)
     modCompileOnly(forge.rhino)
 
@@ -81,8 +82,8 @@ dependencies {
     modLocalRuntime(forge.modernfix)
 
     // Runtime Recipe Viewers - uncomment whichever one you want to use //
-    modLocalRuntime(forge.emi)
-//    modLocalRuntime(forge.jei.forge.impl)
+    //modLocalRuntime(forge.emi)
+    modLocalRuntime(forge.jei.forge.impl)
 //    modLocalRuntime(forge.bundles.rei.runtime)
 
     // Client-only runtime mods //
@@ -98,7 +99,6 @@ dependencies {
     modExtraLocalRuntime(forge.curios)
 //    modExtraLocalRuntime(forge.worldstripper)
 //    modExtraLocalRuntime(forge.cc.tweaked.forge.impl) for some reason this breaks create
-
     modExtraLocalRuntime(forge.bundles.kjs)
 
     modExtraLocalRuntime(forge.ftblibrary)

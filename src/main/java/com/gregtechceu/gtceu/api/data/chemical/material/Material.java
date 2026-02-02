@@ -1556,8 +1556,7 @@ public class Material implements Comparable<Material> {
          * Automatically adds a {@link DustProperty} to this Material.<br>
          * <br>
          * Sets Ore Multiplier to 1 if not already set.<br>
-         * Sets Byproduct Multiplier to 1 if not already set.
-         * <br>
+         * Sets Byproduct Multiplier to 1 if not already set.         * <br>
          * <br>
          * See {@link #ore(int, int, boolean)} for setting your own value(s).
          *

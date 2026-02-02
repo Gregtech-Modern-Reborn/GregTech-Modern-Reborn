@@ -45,7 +45,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class SteamParallelMultiblockMachine extends WorkableMultiblockMachine implements IDisplayUIMachine {
+public class SteamParallelMultiblockMachine extends WorkableMultiblockMachine
+                                            implements IDisplayUIMachine {
 
     @Getter
     @Setter

@@ -2,7 +2,6 @@ package com.gregtechceu.gtceu.api.machine.multiblock;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
-import com.gregtechceu.gtceu.api.capability.IMultiParallelHatch;
 import com.gregtechceu.gtceu.api.capability.IParallelHatch;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -106,24 +105,18 @@ public class WorkableElectricMultiblockMachine extends WorkableMultiblockMachine
             batchParallels = recipeLogic.getLastRecipe().batchParallels;
             exact = true;
         } else {
-            if (!recipeLogic.isMultiParallelLogic()) {
-                numParallels = getParallelHatch()
-                        .map(IParallelHatch::getCurrentParallel)
-                        .orElse(0);
-                batchParallels = 0;
-            } else {
-                numParallels = getMultiParallelHatch()
-                        .map(IMultiParallelHatch::getCurrentMultiParallel)
-                        .orElse(0);
-                batchParallels = 0;
-            }
+            numParallels = getParallelHatch()
+                    .map(IParallelHatch::getCurrentParallel)
+                    .orElse(0);
+            batchParallels = 0;
+
         }
 
         MultiblockDisplayText.builder(textList, isFormed())
                 .setWorkingStatus(recipeLogic.isWorkingEnabled(), recipeLogic.isActive())
                 .addEnergyUsageLine(energyContainer)
                 .addEnergyTierLine(tier)
-                .addMachineModeLine(getRecipeType(), getRecipeTypes().length > 1)
+                .addMachineModeLine(getRecipeType(), getRecipeTypes().length > 1, this.recipeLogic, this)
                 .addParallelsLine(numParallels, exact)
                 .addBatchModeLine(isBatchEnabled(), batchParallels)
                 .addWorkingStatusLine()

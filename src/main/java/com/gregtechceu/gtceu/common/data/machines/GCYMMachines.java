@@ -31,7 +31,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
@@ -74,7 +73,7 @@ public class GCYMMachines {
                     .tooltips(Component.translatable("gtceu.machine.parallel_hatch_mk" + tier + ".tooltip"),
                             Component.translatable("gtceu.part_sharing.disabled"))
                     .register(),
-            ConfigHolder.INSTANCE.machines.highTierContent ? HighTiersArray : LowTiersArray);
+            ALL_TIERS);
 
     public final static MultiblockMachineDefinition LARGE_MACERATION_TOWER = REGISTRATE
             .multiblock("large_maceration_tower", LargeMacerationTowerMachine::new)

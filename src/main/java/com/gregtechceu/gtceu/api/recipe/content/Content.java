@@ -32,7 +32,7 @@ public class Content {
 
     @Getter
     public final Object content;
-    public final int chance;
+    public int chance;
     public final int maxChance;
     public final int tierChanceBoost;
 

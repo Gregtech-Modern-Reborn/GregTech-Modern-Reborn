@@ -18,6 +18,8 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.api.sound.AutoReleasedSound;
 import com.gregtechceu.gtceu.common.cover.MachineControllerCover;
@@ -70,7 +72,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         }
     }
 
-    public static final EnumProperty<RecipeLogic.Status> STATUS_PROPERTY = GTMachineModelProperties.RECIPE_LOGIC_STATUS;
+    public static final EnumProperty<Status> STATUS_PROPERTY = GTMachineModelProperties.RECIPE_LOGIC_STATUS;
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(RecipeLogic.class);
     public final int maxLoopCount = 2048;
     public IRecipeLogicMachine machine;
@@ -79,9 +81,17 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     @Getter
     @Setter
     @Persisted
+    // @UpdateListener(methodName = "onStatusSynced")
+    @DescSynced
     private boolean isMultiParallelLogic;// This Flag control the "MultiParallel Mode" ON/OFF, when the MultiParallel
-                                         // Mode on,the machine can merge the different recipes to one recipe and run
-                                         // it(Must these recipes are in same recipe type;
+    // Mode on,the machine can merge the different recipes to one recipe and run
+    // it(Must these recipes are in same recipe type;
+    @Persisted
+    @Getter
+    @Setter
+    @DescSynced
+    // @UpdateListener(methodName = "onStatusSynced")
+    private List<Boolean> ActiveModesList = new ArrayList<>();
     @Getter
     @Setter
     @Persisted
@@ -129,11 +139,9 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     @Persisted
     @Getter
     @Setter
-    @DescSynced
     protected int progress;
     @Getter
     @Persisted
-    @DescSynced
     protected int duration;
     @Getter(onMethod_ = @VisibleForTesting)
     protected boolean recipeDirty;
@@ -154,11 +162,19 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     public RecipeLogic(IRecipeLogicMachine machine) {
         super(machine.self());
         this.isMultiParallelLogic = false;
+
         if (machine instanceof MultiblockControllerMachine) {
             this.isMultiParallelLogic = ((MultiblockControllerMachine) machine).getMultiParallelHatch().isPresent();
         }
+
         // In Default Situation,Use normal parallel;
         this.machine = machine;
+        if (this.getActiveModesList().isEmpty()) {
+            for (int i = 0; i < machine.getRecipeTypes().length; i++) {
+                this.ActiveModesList.add(false);
+            }
+            this.ActiveModesList.set(this.machine.getActiveRecipeType(), true);
+        }
     }
 
     @SuppressWarnings("unused")
@@ -187,6 +203,17 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         lastFailedMatches = null;
         if (status != Status.SUSPEND) {
             setStatus(Status.IDLE);
+        }
+        MultiParallelCount = 1;
+        isMultiParallelLogic = false;
+        ActiveModesList = new ArrayList<Boolean>();
+
+        for (int i = 0; i < machine.getRecipeTypes().length; i++) {
+            if (i == 0) {
+                ActiveModesList.add(true);
+                continue;
+            }
+            ActiveModesList.add(false);
         }
         updateTickSubscription();
     }
@@ -375,33 +402,43 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             }
             recipeDirty = false;
         } else {
-            List<GTRecipe> Recipe_List = new ArrayList<>();
-            int sumOfParallelsCount = 0;
-            int LoopCount = 0;
-            int FailesCount = 0;
-            while (true) {
 
-                handleSearchingRecipes(searchRecipe());
-                if (lastRecipe == null) break;
-                // First Find A Recipe
-                sumOfParallelsCount += lastRecipe.parallels;
-                if (sumOfParallelsCount > MultiParallelCount) break;
-                var handledIO = handleRecipeIO(lastRecipe, IO.IN);
-                if (handledIO.isSuccess()) {
-                    Recipe_List.add(lastRecipe);
-                    lastRecipe = null;
-                    lastOriginRecipe = null;
-                    lastFailedMatches = null;
-                } else {
-                    FailesCount++;
+            GTRecipe recipeAll = null;
+            for (int i = 0; i < machine.getRecipeTypes().length; ++i) {
+                if (!ActiveModesList.get(i)) continue;
+                List<GTRecipe> Recipe_List = new ArrayList<>();
+                int sumOfParallelsCount = 0;
+                int LoopCount = 0;
+                int FailesCount = 0;
+                while (true) {
+                    machine.setActiveRecipeType(i);
+                    sumOfParallelsCount++;
+                    if (sumOfParallelsCount > MultiParallelCount) break;
+                    handleSearchingRecipes(searchRecipe());
+                    if (lastRecipe == null) break;
+                    // First Find A Recipe
+
+                    var handledIO = handleRecipeIO(lastRecipe, IO.IN);
+                    if (handledIO.isSuccess()) {
+                        Recipe_List.add(lastRecipe);
+                        lastRecipe = null;
+                        lastOriginRecipe = null;
+                        lastFailedMatches = null;
+                    } else {
+                        FailesCount++;
+                    }
+                    if (FailesCount > 2) break;
+                    LoopCount++;
+                    if (LoopCount > maxLoopCount) break;;
                 }
-                if (FailesCount > 16) break;
-                LoopCount++;
-                if (LoopCount > maxLoopCount) break;;
+                GTRecipe recipe = mergeAllRecipes(Recipe_List);
+                if (recipe == null) continue;
+                recipeAll = mergeTwoRecipes(recipeAll, recipe);
+                // if (recipe == null) return;
+                // setupRecipe(recipe);
             }
-            GTRecipe recipe = mergeAllRecipes(Recipe_List);
-            if (recipe == null) return;
-            setupRecipe(recipe);
+            if (recipeAll == null) return;
+            setupRecipe(recipeAll);
         }
     }
 
@@ -468,9 +505,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         }
 
         afterMergeRecipe.duration = max(afterMergeRecipe.duration, recipe.duration);
-        if (afterMergeRecipe.recipeType != recipe.recipeType) {
-            throw new RuntimeException("Only support merge the recipes of the same type");
-        }
         afterMergeRecipe.getInputEUt();// Calculate the input EU and the output EU
         afterMergeRecipe.getOutputEUt();
         boolean isOutputEU = false;
@@ -497,10 +531,14 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         if (recipe.inputChanceLogics != null && afterMergeRecipe.inputChanceLogics != null) {
             afterMergeRecipe.inputChanceLogics = RecipeUtils.mergeChanceLogicMap(afterMergeRecipe.inputChanceLogics,
                     recipe.inputChanceLogics);
+        } else if (afterMergeRecipe.inputChanceLogics == null && recipe.inputChanceLogics != null) {
+            afterMergeRecipe.inputChanceLogics = recipe.inputChanceLogics;
         }
         if (recipe.outputChanceLogics != null && afterMergeRecipe.outputChanceLogics != null) {
             afterMergeRecipe.outputChanceLogics = RecipeUtils.mergeChanceLogicMap(afterMergeRecipe.outputChanceLogics,
                     recipe.outputChanceLogics);
+        } else if (recipe.outputChanceLogics == null && afterMergeRecipe.outputChanceLogics != null) {
+            afterMergeRecipe.outputChanceLogics = recipe.outputChanceLogics;
         }
         if (recipe.tickInputs != null && afterMergeRecipe.tickInputs != null) {
             if (isOutputEU) {
@@ -647,8 +685,8 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             runAttempt = 0;
             runDelay = 0;
             consecutiveRecipes++;
+            modifyChanceRecipes(lastRecipe);
             handleRecipeIO(lastRecipe, IO.OUT);
-
             if (machine.alwaysTryModifyRecipe()) {
                 if (lastOriginRecipe != null) {
                     var modified = machine.fullModifyRecipe(lastOriginRecipe.copy());
@@ -684,6 +722,63 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             lastRecipe = null;
             lastOriginRecipe = null;
             lastFailedMatches = null;
+        }
+    }
+
+    private void modifyChanceRecipes(@Nullable GTRecipe lastRecipe) {
+        for (var entry : lastRecipe.outputs.entrySet()) {
+            var contents = entry.getValue();
+            for (var content : contents) {
+                if (content.getContent() instanceof SizedIngredient sizedIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            sizedIngredient.setAmount(
+                                    (int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+                if (content.getContent() instanceof FluidIngredient fluidIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            fluidIngredient.setAmount(
+                                    (int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+            }
+        }
+        for (var entry : lastRecipe.inputs.entrySet()) {
+            var contents = entry.getValue();
+            for (var content : contents) {
+                if (content.getContent() instanceof SizedIngredient sizedIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            sizedIngredient.setAmount(
+                                    (int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+                if (content.getContent() instanceof FluidIngredient fluidIngredient) {
+                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
+                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
+                    else {
+                        if (((int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
+                            content.chance = content.maxChance;
+                            fluidIngredient.setAmount(
+                                    (int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
+                        }
+                    }
+                }
+            }
         }
     }
 

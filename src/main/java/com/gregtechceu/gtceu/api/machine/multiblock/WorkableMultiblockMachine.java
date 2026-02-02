@@ -77,6 +77,7 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     @Nullable
     @Getter
     protected LongSet activeBlocks;
+    private boolean flag = false;
 
     public WorkableMultiblockMachine(IMachineBlockEntity holder, Object... args) {
         super(holder);
@@ -115,6 +116,9 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        if (this.getMultiParallelHatch().isPresent()) {
+            this.recipeLogic.setMultiParallelLogic(true);
+        }
         // attach parts' traits
         activeBlocks = getMultiblockState().getMatchContext().getOrDefault("vaBlocks", LongSets.emptySet());
         capabilitiesProxy.clear();
@@ -156,13 +160,14 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     public void onStructureInvalid() {
         super.onStructureInvalid();
         updateActiveBlocks(false);
+        recipeLogic.resetRecipeLogic();
         activeBlocks = null;
         capabilitiesProxy.clear();
         capabilitiesFlat.clear();
         traitSubscriptions.forEach(ISubscription::unsubscribe);
         traitSubscriptions.clear();
+
         // reset recipe Logic
-        recipeLogic.resetRecipeLogic();
     }
 
     @Override
@@ -211,6 +216,8 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     }
 
     public void updateActiveBlocks(boolean active) {
+        if (flag) return;
+        flag = true;
         if (activeBlocks != null) {
             for (long pos : activeBlocks) {
                 var blockPos = BlockPos.of(pos);
@@ -218,11 +225,13 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
                 if (blockState.hasProperty(GTBlockStateProperties.ACTIVE)) {
                     var newState = blockState.setValue(GTBlockStateProperties.ACTIVE, active);
                     if (newState != blockState) {
+
                         getLevel().setBlock(blockPos, newState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
                     }
                 }
             }
         }
+        flag = false;
     }
 
     @Override
