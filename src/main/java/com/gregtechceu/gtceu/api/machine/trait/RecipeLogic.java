@@ -169,6 +169,11 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
 
         // In Default Situation,Use normal parallel;
         this.machine = machine;
+        try {
+            if (machine.getRecipeTypes() == null) return;
+        } catch (Exception e) {
+            return;
+        }
         if (this.getActiveModesList().isEmpty()) {
             for (int i = 0; i < machine.getRecipeTypes().length; i++) {
                 this.ActiveModesList.add(false);
@@ -404,6 +409,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         } else {
 
             GTRecipe recipeAll = null;
+            if (machine.getRecipeTypes() == null) return;
             for (int i = 0; i < machine.getRecipeTypes().length; ++i) {
                 if (!ActiveModesList.get(i)) continue;
                 List<GTRecipe> Recipe_List = new ArrayList<>();
