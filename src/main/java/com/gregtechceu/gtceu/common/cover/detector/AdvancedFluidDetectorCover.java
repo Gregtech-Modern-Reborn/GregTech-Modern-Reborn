@@ -19,25 +19,20 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import com.lowdragmc.lowdraglib.utils.LocalizationUtils;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import static com.gregtechceu.gtceu.utils.RedstoneUtil.computeLatchedRedstoneBetweenValues;
 import static com.gregtechceu.gtceu.utils.RedstoneUtil.computeRedstoneBetweenValues;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class AdvancedFluidDetectorCover extends FluidDetectorCover implements IUICover {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(

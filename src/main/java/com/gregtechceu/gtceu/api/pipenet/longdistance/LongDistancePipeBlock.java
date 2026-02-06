@@ -18,9 +18,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
 public class LongDistancePipeBlock extends Block implements ILDNetworkPart {
 
     @Getter

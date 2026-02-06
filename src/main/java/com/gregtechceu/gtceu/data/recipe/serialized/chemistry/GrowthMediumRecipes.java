@@ -2,29 +2,27 @@ package com.gregtechceu.gtceu.data.recipe.serialized.chemistry;
 
 import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
-import java.util.function.Consumer;
-
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.dust;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.dustTiny;
-import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.dust;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.dustTiny;
+import static com.gregtechceu.gtceu.data.item.GTItems.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public class GrowthMediumRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         // Bio Chaff
         MACERATOR_RECIPES.recipeBuilder("bio_chaff").EUt(4).duration(200)
                 .inputItems(PLANT_BALL, 2)
                 .outputItems(BIO_CHAFF)
                 .outputItems(BIO_CHAFF)
-                .chancedOutput(BIO_CHAFF.asStack(), 5000, 500)
-                .chancedOutput(BIO_CHAFF.asStack(), 2500, 500)
+                .chancedOutput(BIO_CHAFF.asStack(), 5000, 0)
+                .chancedOutput(BIO_CHAFF.asStack(), 2500, 0)
                 .save(provider);
 
         MACERATOR_RECIPES.recipeBuilder("dirt_from_bio_chaff").EUt(4).duration(300)

@@ -13,7 +13,7 @@ import com.gregtechceu.gtceu.api.machine.feature.IAutoOutputFluid;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
 import com.gregtechceu.gtceu.api.machine.feature.IUIMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableFluidTank;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
 
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
@@ -25,7 +25,6 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -33,15 +32,16 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.minecraftforge.fluids.capability.wrappers.BucketPickupHandlerWrapper;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.capability.wrappers.BucketPickupHandlerWrapper;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -56,10 +56,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class PumpMachine extends TieredEnergyMachine implements IAutoOutputFluid, IUIMachine, IMachineLife {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(PumpMachine.class,
@@ -231,7 +227,7 @@ public class PumpMachine extends TieredEnergyMachine implements IAutoOutputFluid
                 // Remember all the sources we find
                 boolean isSource = fluidState.isSource();
                 if (isSource) {
-                    var fluidHandler = new BucketPickupHandlerWrapper(liquidBlock, level, check);
+                    var fluidHandler = new BucketPickupHandlerWrapper(null, liquidBlock, level, check);
                     FluidStack drainStack = fluidHandler.drain(Integer.MAX_VALUE, FluidAction.SIMULATE);
                     if (!drainStack.isEmpty()) {
                         return new SearchResult(check, true);
@@ -458,7 +454,7 @@ public class PumpMachine extends TieredEnergyMachine implements IAutoOutputFluid
                 }
                 BlockState state = level.getBlockState(pos);
                 if (state.getBlock() instanceof LiquidBlock liquidBlock &&
-                        (liquidBlock.getFluidState(state)).getFluidType() == pumpQueue.fluidType()) {
+                        liquidBlock.fluid.getFluidType() == pumpQueue.fluidType()) {
                     states.add(new SourceState(state, pos));
                 } else {
                     break;
@@ -473,7 +469,7 @@ public class PumpMachine extends TieredEnergyMachine implements IAutoOutputFluid
                     states.removeLast();
                     FluidState fluidState = sourceState.state().getFluidState();
                     if (sourceState.state().getBlock() instanceof LiquidBlock liquidBlock && fluidState.isSource()) {
-                        var fluidHandler = new BucketPickupHandlerWrapper(liquidBlock, getLevel(), pos);
+                        var fluidHandler = new BucketPickupHandlerWrapper(null, liquidBlock, getLevel(), pos);
                         FluidStack drainStack = fluidHandler.drain(Integer.MAX_VALUE, FluidAction.SIMULATE);
                         if (!drainStack.isEmpty() &&
                                 cache.fillInternal(drainStack, FluidAction.SIMULATE) == drainStack.getAmount()) {
@@ -589,8 +585,8 @@ public class PumpMachine extends TieredEnergyMachine implements IAutoOutputFluid
     // ******* Rendering ********//
     //////////////////////////////////////
     @Override
-    public @Nullable ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
-                                              Direction side) {
+    public ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
+                                    ItemStack held, Direction side) {
         if (toolTypes.contains(GTToolType.WRENCH)) {
             if (player.isShiftKeyDown()) {
                 if (hasFrontFacing() && side != this.getFrontFacing() && isFacingValid(side)) {
@@ -598,6 +594,6 @@ public class PumpMachine extends TieredEnergyMachine implements IAutoOutputFluid
                 }
             }
         }
-        return super.sideTips(player, pos, state, toolTypes, side);
+        return super.sideTips(player, pos, state, toolTypes, held, side);
     }
 }

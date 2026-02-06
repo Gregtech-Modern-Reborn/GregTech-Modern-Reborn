@@ -17,7 +17,6 @@ import com.lowdragmc.lowdraglib.gui.widget.TextFieldWidget;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.entity.player.Player;
 
 import lombok.Getter;
@@ -26,10 +25,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class CreativeComputationProviderMachine extends MetaMachine
                                                 implements IUIMachine, IOpticalComputationProvider {
 

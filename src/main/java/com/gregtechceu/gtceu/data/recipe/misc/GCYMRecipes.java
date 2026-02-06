@@ -1,46 +1,46 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
-import com.gregtechceu.gtceu.common.data.*;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
+import com.gregtechceu.gtceu.data.recipe.GCYMRecipeTypes;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GCYMBlocks.*;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_TEMPERED_GLASS;
-import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTMachines.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLER_RECIPES;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.MIXER_RECIPES;
-import static com.gregtechceu.gtceu.common.data.machines.GCYMMachines.*;
-import static com.gregtechceu.gtceu.data.recipe.CustomTags.*;
-import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.*;
-import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.HULL;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.block.GCYMBlocks.*;
+import static com.gregtechceu.gtceu.data.block.GTBlocks.CASING_TEMPERED_GLASS;
+import static com.gregtechceu.gtceu.data.item.GTItems.*;
+import static com.gregtechceu.gtceu.data.machine.GCYMMachines.*;
+import static com.gregtechceu.gtceu.data.machine.GTMachines.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.ASSEMBLER_RECIPES;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.MIXER_RECIPES;
+import static com.gregtechceu.gtceu.data.tag.CustomTags.*;
 
 public class GCYMRecipes {
 
     private GCYMRecipes() {}
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         registerManualRecipes(provider);
         registerMachineRecipes(provider);
     }
 
-    private static void registerManualRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerManualRecipes(RecipeOutput provider) {
         registerPartsRecipes(provider);
         registerMultiblockControllerRecipes(provider);
         registerFormulaic(provider);
@@ -56,7 +56,7 @@ public class GCYMRecipes {
                 .save(provider);
     }
 
-    private static void registerMultiblockControllerRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerMultiblockControllerRecipes(RecipeOutput provider) {
         VanillaRecipeHelper.addShapedRecipe(provider, true, "large_macerator", LARGE_MACERATION_TOWER.asStack(), "PCP",
                 "BXB", "MKM", 'C', CustomTags.IV_CIRCUITS, 'P', new MaterialEntry(plate, TungstenCarbide), 'B',
                 ELECTRIC_PISTON_IV.asStack(), 'M', ELECTRIC_MOTOR_IV.asStack(), 'X', MACERATOR[IV].asStack(), 'K',
@@ -107,11 +107,12 @@ public class GCYMRecipes {
         VanillaRecipeHelper.addShapedRecipe(provider, true, "blast_alloy_smelter", BLAST_ALLOY_SMELTER.asStack(), "TCT",
                 "WXW", "TCT", 'C', CustomTags.EV_CIRCUITS, 'T', new MaterialEntry(plate, TantalumCarbide), 'W',
                 new MaterialEntry(cableGtSingle, Aluminium), 'X', ALLOY_SMELTER[EV].asStack());
-        VanillaRecipeHelper.addShapedRecipe(provider, true, "mega_blast_furnace", MEGA_BLAST_FURNACE.asStack(), "PCP",
-                "FSF", "DWD", 'C', ZPM_CIRCUITS, 'S', GTMultiMachines.ELECTRIC_BLAST_FURNACE.asStack(), 'F',
-                FIELD_GENERATOR_ZPM.asStack(), 'P', new MaterialEntry(spring, Naquadah), 'D',
-                new MaterialEntry(plateDense, NaquadahAlloy), 'W',
-                new MaterialEntry(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate));
+        VanillaRecipeHelper.addShapedRecipe(provider, true, "rotary_hearth_furnace", ROTARY_HEARTH_FURNACE.asStack(),
+                "PCP", "FSF", "DWD",
+                'C', ZPM_CIRCUITS, 'S', GTMultiMachines.ELECTRIC_BLAST_FURNACE.asStack(),
+                'F', FIELD_GENERATOR_ZPM.asStack(), 'P', new MaterialEntry(spring, Naquadah),
+                'D', new MaterialEntry(plateDense, NaquadahAlloy),
+                'W', new MaterialEntry(wireGtQuadruple, RutheniumTriniumAmericiumNeutronate));
         VanillaRecipeHelper.addShapedRecipe(provider, true, "mega_vacuum_freezer", MEGA_VACUUM_FREEZER.asStack(), "PCP",
                 "FSF", "DWD", 'C', ZPM_CIRCUITS, 'S', GTMultiMachines.VACUUM_FREEZER.asStack(), 'F',
                 FIELD_GENERATOR_ZPM.asStack(), 'P',
@@ -155,7 +156,7 @@ public class GCYMRecipes {
                 ELECTRIC_MOTOR_IV.asStack(), 'K', new MaterialEntry(cableGtSingle, Platinum));
     }
 
-    private static void registerPartsRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerPartsRecipes(RecipeOutput provider) {
         VanillaRecipeHelper.addShapedRecipe(provider, "crushing_wheels", CRUSHING_WHEELS.asStack(2), "TTT", "UCU",
                 "UMU", 'T', new MaterialEntry(gearSmall, TungstenCarbide), 'U', ChemicalHelper.get(gear, Ultimet),
                 'C', CASING_SECURE_MACERATION.asStack(), 'M', ELECTRIC_MOTOR_IV.asStack());
@@ -169,30 +170,26 @@ public class GCYMRecipes {
                 new MaterialEntry(plate, TantalumCarbide), 'D',
                 ChemicalHelper.get(plateDouble, MolybdenumDisilicide), 'R', ChemicalHelper.get(rotor, Titanium), 'L',
                 ChemicalHelper.get(rodLong, MolybdenumDisilicide));
-
-        for (var machine : PARALLEL_HATCH) {
-            if (machine == null) continue;;
-            int tier = machine.getTier();
-            GTRecipeTypes.ASSEMBLER_RECIPES
-                    .recipeBuilder("parallel_hatch_mk" + tier)
-                    .inputItems(HULL.get(tier))
-                    .inputItems(SENSOR.get(tier), 4)
-                    .inputItems(CIRCUIT.get(tier), 4)
-                    .inputItems(EMITTER.get(tier), 4)
-                    .inputFluids(Polyethylene.getFluid(144 * (1 << tier)))
-                    .circuitMeta(30)
-                    .outputItems(machine)
-                    .EUt(VA[tier])
-                    .save(provider);
-        }
+        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk1", PARALLEL_HATCH[IV].asStack(1), "SZE", "ZHZ",
+                "CZC", 'S', SENSOR_IV.asStack(), 'E', EMITTER_IV.asStack(), 'Z', LuV_CIRCUITS, 'H', HULL[IV].asStack(),
+                'C', new MaterialEntry(cableGtDouble, Platinum));
+        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk2", PARALLEL_HATCH[LuV].asStack(1), "SZE",
+                "ZHZ", "CZC", 'S', SENSOR_LuV.asStack(), 'E', EMITTER_LuV.asStack(), 'Z', ZPM_CIRCUITS, 'H',
+                HULL[LuV].asStack(), 'C', new MaterialEntry(cableGtDouble, NiobiumTitanium));
+        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk3", PARALLEL_HATCH[ZPM].asStack(1), "SZE",
+                "ZHZ", "CZC", 'S', SENSOR_ZPM.asStack(), 'E', EMITTER_ZPM.asStack(), 'Z', UV_CIRCUITS, 'H',
+                HULL[ZPM].asStack(), 'C', new MaterialEntry(cableGtDouble, VanadiumGallium));
+        VanillaRecipeHelper.addShapedRecipe(provider, "parallel_hatch_mk4", PARALLEL_HATCH[UV].asStack(1), "SZE", "ZHZ",
+                "CZC", 'S', SENSOR_UV.asStack(), 'E', EMITTER_UV.asStack(), 'Z', UHV_CIRCUITS, 'H', HULL[UV].asStack(),
+                'C', new MaterialEntry(cableGtDouble, YttriumBariumCuprate));
     }
 
-    private static void registerMachineRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerMachineRecipes(RecipeOutput provider) {
         registerAssemblerRecipes(provider);
         registerMixerRecipes(provider);
     }
 
-    private static void registerAssemblerRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerAssemblerRecipes(RecipeOutput provider) {
         ASSEMBLER_RECIPES.recipeBuilder("crushing_wheels")
                 .inputItems(gearSmall, TungstenCarbide, 2)
                 .inputItems(gear, Ultimet, 3)
@@ -326,7 +323,7 @@ public class GCYMRecipes {
                 .addMaterialInfo(true).save(provider);
     }
 
-    private static void registerMixerRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerMixerRecipes(RecipeOutput provider) {
         MIXER_RECIPES.recipeBuilder("tantalum_carbide")
                 .inputItems(dust, Tantalum)
                 .inputItems(dust, Carbon)
@@ -359,7 +356,7 @@ public class GCYMRecipes {
                 .save(provider);
     }
 
-    private static void registerFormulaic(Consumer<FinishedRecipe> provider) {
+    private static void registerFormulaic(RecipeOutput provider) {
         registerBinaryAlloy(GTMaterials.Copper, 3, GTMaterials.Tin, 1,
                 GTMaterials.Bronze, 4, 400, provider);
         registerBinaryAlloy(GTMaterials.Copper, 3, GTMaterials.Zinc, 1,
@@ -392,7 +389,7 @@ public class GCYMRecipes {
                 GTMaterials.Lead, 1, GTMaterials.Potin, 9, 400, provider);
     }
 
-    private static void registerManual(Consumer<FinishedRecipe> provider) {
+    private static void registerManual(RecipeOutput provider) {
         // NZF
         GCYMRecipeTypes.ALLOY_BLAST_RECIPES.recipeBuilder("nickel_zinc_ferrite")
                 .inputItems(TagPrefix.dust, GTMaterials.Nickel)
@@ -411,7 +408,7 @@ public class GCYMRecipes {
                                             @NotNull Material input2, int input2Amount,
                                             @NotNull Material output, int outputAmount,
                                             int duration,
-                                            Consumer<FinishedRecipe> provider) {
+                                            RecipeOutput provider) {
         GCYMRecipeTypes.ALLOY_BLAST_RECIPES.recipeBuilder(output.getName())
                 .inputItems(TagPrefix.dust, input1, input1Amount)
                 .inputItems(TagPrefix.dust, input2, input2Amount)
@@ -429,7 +426,7 @@ public class GCYMRecipes {
                                              @NotNull Material input3, int input3Amount,
                                              @NotNull Material output, int outputAmount,
                                              int duration,
-                                             Consumer<FinishedRecipe> provider) {
+                                             RecipeOutput provider) {
         GCYMRecipeTypes.ALLOY_BLAST_RECIPES.recipeBuilder(output.getName())
                 .inputItems(TagPrefix.dust, input1, input1Amount)
                 .inputItems(TagPrefix.dust, input2, input2Amount)

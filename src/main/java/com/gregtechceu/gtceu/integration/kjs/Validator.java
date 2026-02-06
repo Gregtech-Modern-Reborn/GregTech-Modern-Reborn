@@ -1,18 +1,12 @@
 package com.gregtechceu.gtceu.integration.kjs;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.resources.ResourceLocation;
 
-import dev.latvian.mods.kubejs.util.ConsoleJS;
-import dev.latvian.mods.rhino.Context;
+import dev.latvian.mods.kubejs.script.ConsoleJS;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 @FunctionalInterface
 public interface Validator {
 
@@ -32,7 +26,7 @@ public interface Validator {
                 .count(); // Ensure all errors are caught here
 
         if (errors > 0) {
-            ConsoleJS.getCurrent((Context) null).error("VALIDATION FAILED! Cannot build %s".formatted(id));
+            ConsoleJS.getCurrent(null).error("VALIDATION FAILED! Cannot build %s".formatted(id));
 
             throw new IllegalStateException(
                     "Validation failed for %s. Please check your KubeJS logs for details.".formatted(id));
@@ -62,7 +56,7 @@ public interface Validator {
             if (value != null)
                 return ValidationResult.SUCCESS;
 
-            ConsoleJS.getCurrent((Context) null)
+            ConsoleJS.getCurrent(null)
                     .warn("Value %s is not defined in %s. It is recommended to set a value.".formatted(name, id));
             defaultSetter.run();
 
@@ -74,16 +68,15 @@ public interface Validator {
         return warnDefaultIfNull(value, name, null, defaultSetter);
     }
 
-    static Validator warnDefaultIfNull(@Nullable Object value, String name, @Nullable String defaultExplanation,
-                                       Runnable defaultSetter) {
+    static Validator warnDefaultIfNull(@Nullable Object value, String name,
+                                       @Nullable String defaultExplanation, Runnable defaultSetter) {
         return id -> {
             if (value != null)
                 return ValidationResult.SUCCESS;
 
             var explanation = defaultExplanation != null ? defaultExplanation : "Using a default value.";
 
-            ConsoleJS.getCurrent((Context) null)
-                    .warn("Value %s is not defined in %s. %s".formatted(name, id, explanation));
+            ConsoleJS.getCurrent(null).warn("Value %s is not defined in %s. %s".formatted(name, id, explanation));
             defaultSetter.run();
 
             return ValidationResult.WARNING;
@@ -95,9 +88,7 @@ public interface Validator {
             if (value != null)
                 return ValidationResult.SUCCESS;
 
-            var message = "Cannot build %s: %s is not set.".formatted(id, name);
-
-            ConsoleJS.getCurrent((Context) null).error(message);
+            ConsoleJS.getCurrent(null).error("Cannot build %s: %s is not set.".formatted(id, name));
             return ValidationResult.ERROR;
         };
     }
@@ -110,7 +101,7 @@ public interface Validator {
 
             var message = "Cannot build %s, %s is not in range [%d, %d].".formatted(id, name, min, max);
 
-            ConsoleJS.getCurrent((Context) null).error(message);
+            ConsoleJS.getCurrent(null).error(message);
             return ValidationResult.ERROR;
         };
     }

@@ -1,24 +1,25 @@
 package com.gregtechceu.gtceu.common.recipe.condition;
 
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
-import com.gregtechceu.gtceu.common.data.GTRecipeConditions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeConditions;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
-public class RainingCondition extends RecipeCondition {
+public class RainingCondition extends RecipeCondition<RainingCondition> {
 
-    public static final Codec<RainingCondition> CODEC = RecordCodecBuilder
-            .create(instance -> RecipeCondition.isReverse(instance)
+    public static final MapCodec<RainingCondition> CODEC = RecordCodecBuilder
+            .mapCodec(instance -> RecipeCondition.isReverse(instance)
                     .and(Codec.FLOAT.fieldOf("level").forGetter(val -> val.level))
                     .apply(instance, RainingCondition::new));
 
@@ -35,7 +36,7 @@ public class RainingCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeConditionType<?> getType() {
+    public RecipeConditionType<RainingCondition> getType() {
         return GTRecipeConditions.RAINING;
     }
 
@@ -55,7 +56,7 @@ public class RainingCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeCondition createTemplate() {
+    public RainingCondition createTemplate() {
         return new RainingCondition();
     }
 }

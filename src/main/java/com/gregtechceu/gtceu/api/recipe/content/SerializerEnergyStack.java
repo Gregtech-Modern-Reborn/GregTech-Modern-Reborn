@@ -2,7 +2,7 @@ package com.gregtechceu.gtceu.api.recipe.content;
 
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 import com.mojang.serialization.Codec;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -14,12 +14,12 @@ public class SerializerEnergyStack implements IContentSerializer<EnergyStack> {
     private SerializerEnergyStack() {}
 
     @Override
-    public void toNetwork(FriendlyByteBuf buf, EnergyStack content) {
+    public void toNetwork(RegistryFriendlyByteBuf buf, EnergyStack content) {
         content.toNetwork(buf);
     }
 
     @Override
-    public EnergyStack fromNetwork(FriendlyByteBuf buf) {
+    public EnergyStack fromNetwork(RegistryFriendlyByteBuf buf) {
         return EnergyStack.fromNetwork(buf);
     }
 

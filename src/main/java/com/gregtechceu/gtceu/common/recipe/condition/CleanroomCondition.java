@@ -6,15 +6,15 @@ import com.gregtechceu.gtceu.api.machine.feature.ICleanroomProvider;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
-import com.gregtechceu.gtceu.common.data.GTRecipeConditions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeConditions;
 
 import net.minecraft.network.chat.Component;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,10 +23,10 @@ import org.jetbrains.annotations.NotNull;
 
 @AllArgsConstructor
 @NoArgsConstructor
-public class CleanroomCondition extends RecipeCondition {
+public class CleanroomCondition extends RecipeCondition<CleanroomCondition> {
 
-    public static final Codec<CleanroomCondition> CODEC = RecordCodecBuilder
-            .create(instance -> RecipeCondition.isReverse(instance)
+    public static final MapCodec<CleanroomCondition> CODEC = RecordCodecBuilder
+            .mapCodec(instance -> RecipeCondition.isReverse(instance)
                     .and(CleanroomType.CODEC.fieldOf("cleanroom").forGetter(val -> val.cleanroom))
                     .apply(instance, CleanroomCondition::new));
     public final static CleanroomCondition INSTANCE = new CleanroomCondition();
@@ -40,14 +40,14 @@ public class CleanroomCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeConditionType<?> getType() {
+    public RecipeConditionType<CleanroomCondition> getType() {
         return GTRecipeConditions.CLEANROOM;
     }
 
     @Override
     public Component getTooltips() {
         return cleanroom == null ? null :
-                Component.translatable("gtceu.recipe.cleanroom", Component.translatable(cleanroom.getTranslationKey()));
+                Component.translatable("gtceu.recipe.cleanroom", Component.translatable(cleanroom.translationKey()));
     }
 
     @Override

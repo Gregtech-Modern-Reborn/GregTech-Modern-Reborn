@@ -1,8 +1,6 @@
 package com.gregtechceu.gtceu.api.recipe.lookup.ingredient.item;
 
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.AbstractMapIngredient;
-import com.gregtechceu.gtceu.core.mixins.IngredientAccessor;
-import com.gregtechceu.gtceu.core.mixins.TagValueAccessor;
 
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -25,9 +23,9 @@ public class ItemTagMapIngredient extends AbstractMapIngredient {
     @NotNull
     public static List<AbstractMapIngredient> from(Ingredient ingredient) {
         List<AbstractMapIngredient> ingredients = new ObjectArrayList<>();
-        for (Ingredient.Value value : ((IngredientAccessor) ingredient).getValues()) {
-            if (value instanceof TagValueAccessor tagValue) {
-                ingredients.add(new ItemTagMapIngredient(tagValue.getTag()));
+        for (Ingredient.Value value : ingredient.getValues()) {
+            if (value instanceof Ingredient.TagValue(TagKey<Item> tag)) {
+                ingredients.add(new ItemTagMapIngredient(tag));
             }
         }
         return ingredients;

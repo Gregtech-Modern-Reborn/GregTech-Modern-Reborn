@@ -1,42 +1,44 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
-import com.gregtechceu.gtceu.common.data.*;
-import com.gregtechceu.gtceu.common.data.machines.GTMRMachines;
-import com.gregtechceu.gtceu.common.data.machines.GTMachineUtils;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.recipe.component.CraftingComponent;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.CraftingComponent;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.machine.GTMachineUtils;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 
 import com.tterrag.registrate.util.entry.ItemProviderEntry;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.function.Consumer;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
 import static com.gregtechceu.gtceu.data.recipe.GTCraftingComponents.*;
 
 public class MetaTileEntityLoader {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         VanillaRecipeHelper.addShapedRecipe(provider, true, "casing_ulv", GTBlocks.MACHINE_CASING_ULV.asStack(), "PPP",
                 "PwP", "PPP", 'P', new MaterialEntry(TagPrefix.plate, GTMaterials.WroughtIron));
         VanillaRecipeHelper.addShapedRecipe(provider, true, "casing_lv", GTBlocks.MACHINE_CASING_LV.asStack(), "PPP",
@@ -208,7 +210,7 @@ public class MetaTileEntityLoader {
                 GTBlocks.YELLOW_STRIPES_BLOCK_A.asStack(), "Y  ", " M ", "  B", 'M',
                 GTBlocks.CASING_STEEL_SOLID.asStack(), 'Y', Tags.Items.DYES_YELLOW, 'B', Tags.Items.DYES_BLACK);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "warning_sign_small_yellow_stripes",
-                GTBlocks.YELLOW_STRIPES_BLOCK_B.asStack(), "  Y", " M ", "B  ", 'M',
+                GTBlocks.YELLOW_STRIPES_BLOCK_B.asStack(), "B  ", " M ", "  Y", 'M',
                 GTBlocks.CASING_STEEL_SOLID.asStack(), 'Y', Tags.Items.DYES_YELLOW, 'B', Tags.Items.DYES_BLACK);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "warning_sign_radioactive_hazard",
                 GTBlocks.RADIOACTIVE_HAZARD_SIGN_BLOCK.asStack(), " YB", " M ", "   ", 'M',
@@ -733,9 +735,10 @@ public class MetaTileEntityLoader {
                 new MaterialEntry(TagPrefix.pipeNormalFluid, GTMaterials.StainlessSteel));
 
         // TODO Crafting station
-        // VanillaRecipeHelper.addShapedRecipe(provider, true, "workbench_bronze", GTMachines.WORKBENCH.getStackForm(),
-        // "CSC", "PWP", "PsP", 'C', OreDictNames.chestWood, 'W', new ItemStack(Blocks.CRAFTING_TABLE), 'S',
-        // OreDictUnifier.get("slabWood"), 'P', new UnificationEntry(TagPrefix.plank, GTMaterials.Wood));
+        // VanillaRecipeHelper.addShapedRecipe(provider, true, "workbench", GTMachines.WORKBENCH.getStackForm(),
+        // "CSC", "PWP", "PsP",
+        // 'C', Tags.Items.CHESTS_WOODEN, 'W', Blocks.CRAFTING_TABLE,
+        // 'S', ItemTags.WOODEN_SLABS, 'P', ItemTags.PLANKS);
 
         VanillaRecipeHelper.addShapedRecipe(provider, true, "primitive_pump", GTMultiMachines.PRIMITIVE_PUMP.asStack(),
                 "RGS", "OWd", "CLC", 'R', new MaterialEntry(TagPrefix.ring, GTMaterials.Iron), 'G',
@@ -924,21 +927,7 @@ public class MetaTileEntityLoader {
                         .save(provider);
             }
         }
-        for (var machine : GTMRMachines.MULTI_PARALLEL_HATCH) {
-            if (machine == null) continue;;
-            int tier = machine.getTier();
-            GTRecipeTypes.ASSEMBLER_RECIPES
-                    .recipeBuilder("multi_parallel_hatch_mk" + tier)
-                    .inputItems(HULL.get(tier))
-                    .inputItems(MOTOR.get(tier), 4)
-                    .inputItems(CIRCUIT.get(tier), 4)
-                    .inputItems(ROBOT_ARM.get(tier), 4)
-                    .inputFluids(fluidMap[1].getFluid(144 * (1 << tier)))
-                    .circuitMeta(32)
-                    .outputItems(machine)
-                    .EUt(VA[tier])
-                    .save(provider);
-        }
+
         for (var machine : GTMachines.FLUID_EXPORT_HATCH) {
             if (machine == null) continue;
             int tier = machine.getTier();
@@ -1010,6 +999,7 @@ public class MetaTileEntityLoader {
                                 "dual_import_bus_" + VN[tier].toLowerCase(Locale.ROOT) + "_" + fluidMap[j].getName())
                         .inputItems(GTMachines.ITEM_IMPORT_BUS[tier])
                         .inputItems(GTMachines.FLUID_IMPORT_HATCH[tier])
+                        .inputItems(PIPE_NONUPLE.get(tier))
                         .inputItems(FRAME.get(tier), 3)
                         .circuitMeta(1)
                         .inputFluids(fluidMap[j].getFluid(fluidAmount >> j))
@@ -1031,6 +1021,7 @@ public class MetaTileEntityLoader {
                                 "dual_export_bus_" + VN[tier].toLowerCase(Locale.ROOT) + "_" + fluidMap[j].getName())
                         .inputItems(GTMachines.ITEM_IMPORT_BUS[tier])
                         .inputItems(GTMachines.FLUID_IMPORT_HATCH[tier])
+                        .inputItems(PIPE_NONUPLE.get(tier))
                         .inputItems(FRAME.get(tier), 3)
                         .circuitMeta(2)
                         .inputFluids(fluidMap[j].getFluid(fluidAmount >> j))
@@ -1228,7 +1219,7 @@ public class MetaTileEntityLoader {
     // - CraftingComponent.Component
     // - MaterialEntry
     // - TagKey<?>
-    public static void registerMachineRecipe(Consumer<FinishedRecipe> provider, boolean setMaterialInfoData,
+    public static void registerMachineRecipe(RecipeOutput provider, boolean setMaterialInfoData,
                                              MachineDefinition[] machines, Object... recipe) {
         for (MachineDefinition machine : machines) {
 
@@ -1245,7 +1236,7 @@ public class MetaTileEntityLoader {
         }
     }
 
-    public static void registerMachineRecipe(Consumer<FinishedRecipe> provider, MachineDefinition[] machines,
+    public static void registerMachineRecipe(RecipeOutput provider, MachineDefinition[] machines,
                                              Object... recipe) {
         registerMachineRecipe(provider, true, machines, recipe);
     }
@@ -1259,7 +1250,7 @@ public class MetaTileEntityLoader {
                 recipe[i] = new ItemStack(item);
             } else if (recipe[i] instanceof Block block) {
                 recipe[i] = new ItemStack(block);
-            } else if (recipe[i] instanceof ItemProviderEntry<?> itemEntry) {
+            } else if (recipe[i] instanceof ItemProviderEntry<?, ?> itemEntry) {
                 recipe[i] = itemEntry.asStack();
             }
         }

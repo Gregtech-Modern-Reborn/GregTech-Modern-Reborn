@@ -2,9 +2,9 @@ package com.gregtechceu.gtceu.api.misc.virtualregistry;
 
 import com.gregtechceu.gtceu.GTCEu;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,16 +25,16 @@ public class VirtualEnderRegistry extends SavedData {
 
     public VirtualEnderRegistry() {}
 
-    public VirtualEnderRegistry(CompoundTag name) {
-        readFromNBT(name);
+    public VirtualEnderRegistry(CompoundTag name, HolderLookup.@NotNull Provider registries) {
+        readFromNBT(registries, name);
     }
 
     public static VirtualEnderRegistry getInstance() {
         if (data == null) {
-            var server = ServerLifecycleHooks.getCurrentServer();
+            var server = GTCEu.getMinecraftServer();
             if (server != null) {
-                data = server.overworld().getDataStorage()
-                        .computeIfAbsent(VirtualEnderRegistry::new, VirtualEnderRegistry::new, DATA_ID);
+                data = server.overworld().getDataStorage().computeIfAbsent(
+                        new SavedData.Factory<>(VirtualEnderRegistry::new, VirtualEnderRegistry::new), DATA_ID);
             }
         }
 
@@ -96,29 +96,28 @@ public class VirtualEnderRegistry extends SavedData {
     }
 
     private VirtualRegistryMap getRegistry(UUID owner) {
-        if (data == null) getInstance();
-        return data.VIRTUAL_REGISTRIES.computeIfAbsent(owner, key -> new VirtualRegistryMap());
+        return getInstance().VIRTUAL_REGISTRIES.computeIfAbsent(owner, key -> new VirtualRegistryMap());
     }
 
-    public final void readFromNBT(CompoundTag nbt) {
+    public final void readFromNBT(HolderLookup.@NotNull Provider registries, CompoundTag nbt) {
         if (nbt.contains(PUBLIC_KEY)) {
-            VIRTUAL_REGISTRIES.put(null, new VirtualRegistryMap(nbt.getCompound(PUBLIC_KEY)));
+            VIRTUAL_REGISTRIES.put(null, new VirtualRegistryMap(registries, nbt.getCompound(PUBLIC_KEY)));
         }
         if (nbt.contains(PRIVATE_KEY)) {
             CompoundTag privateEntries = nbt.getCompound(PRIVATE_KEY);
             for (String owner : privateEntries.getAllKeys()) {
                 var privateMap = privateEntries.getCompound(owner);
-                VIRTUAL_REGISTRIES.put(UUID.fromString(owner), new VirtualRegistryMap(privateMap));
+                VIRTUAL_REGISTRIES.put(UUID.fromString(owner), new VirtualRegistryMap(registries, privateMap));
             }
         }
     }
 
     @NotNull
     @Override
-    public final CompoundTag save(@NotNull CompoundTag tag) {
+    public final CompoundTag save(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         var privateTag = new CompoundTag();
         for (var owner : VIRTUAL_REGISTRIES.keySet()) {
-            var mapTag = VIRTUAL_REGISTRIES.get(owner).serializeNBT();
+            var mapTag = VIRTUAL_REGISTRIES.get(owner).serializeNBT(registries);
             if (owner != null) {
                 privateTag.put(owner.toString(), mapTag);
             } else {

@@ -2,48 +2,52 @@ package com.gregtechceu.gtceu.data.recipe.misc;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.ItemMaterialData;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.ItemMaterialInfo;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialStack;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.ItemMaterialData;
+import com.gregtechceu.gtceu.api.material.material.stack.ItemMaterialInfo;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialStack;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
 import com.gregtechceu.gtceu.data.recipe.WoodTypeEntry;
+import com.gregtechceu.gtceu.integration.kjs.GTCEuStartupEvents;
+import com.gregtechceu.gtceu.integration.kjs.events.RegisterWoodsKubeEvent;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTItems.BIO_CHAFF;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.item.GTItems.BIO_CHAFF;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public class WoodMachineRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         registerGTWoodRecipes(provider);
         registerWoodRecipes(provider);
         registerPyrolyseOvenRecipes(provider);
     }
 
     private static List<WoodTypeEntry> DEFAULT_ENTRIES;
+    private static List<WoodTypeEntry> CUSTOM_ENTRIES;
 
     private static List<WoodTypeEntry> getDefaultEntries() {
         if (DEFAULT_ENTRIES == null) {
@@ -306,7 +310,21 @@ public class WoodMachineRecipes {
                             .registerMaterialInfo(false, true, true, true, true, true, true, true, true, true)
                             .build());
         }
-        return DEFAULT_ENTRIES;
+        if (CUSTOM_ENTRIES == null) {
+            if (GTCEu.Mods.isKubeJSLoaded()) {
+                CUSTOM_ENTRIES = new ArrayList<WoodTypeEntry>();
+                var evt = new RegisterWoodsKubeEvent();
+                GTCEuStartupEvents.REGISTER_WOODS.post(evt);
+                CUSTOM_ENTRIES = new ArrayList<WoodTypeEntry>(evt.woods);
+            } else {
+                CUSTOM_ENTRIES = List.of();
+            }
+        }
+
+        List<WoodTypeEntry> entries = new ArrayList<WoodTypeEntry>();
+        entries.addAll(DEFAULT_ENTRIES);
+        entries.addAll(CUSTOM_ENTRIES);
+        return entries;
     }
 
     public static void registerMaterialInfo() {
@@ -318,7 +336,7 @@ public class WoodMachineRecipes {
     /**
      * Standardized processing for wood types
      */
-    private static void registerWoodRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerWoodRecipes(RecipeOutput provider) {
         if (ConfigHolder.INSTANCE.recipes.nerfWoodCrafting) {
             VanillaRecipeHelper.addShapedRecipe(provider, "stick_saw", new ItemStack(Items.STICK, 4), "s", "P", "P",
                     'P', ItemTags.PLANKS);
@@ -338,12 +356,12 @@ public class WoodMachineRecipes {
      */
     public static void registerWoodMaterialInfo(@NotNull WoodTypeEntry entry) {
         for (var log_ : entry.getLogs()) {
-            if (log_ != null && entry.addLogOreDict) {
+            if (log_ != null && entry.addLogTag) {
                 ItemMaterialData.registerMaterialEntry(log_, log, entry.material);
             }
         }
 
-        if (entry.addPlanksOreDict) {
+        if (entry.addPlanksTag) {
             ItemMaterialData.registerMaterialEntry(entry.planks, planks, entry.material);
         }
         if (entry.addPlanksMaterialInfo) {
@@ -352,7 +370,7 @@ public class WoodMachineRecipes {
         }
 
         if (entry.door != null) {
-            if (entry.addDoorsOreDict) {
+            if (entry.addDoorsTag) {
                 ItemMaterialData.registerMaterialEntry(entry.door, door, entry.material);
             }
             if (entry.addDoorsMaterialInfo) {
@@ -364,7 +382,7 @@ public class WoodMachineRecipes {
         }
 
         if (entry.slab != null) {
-            if (entry.addSlabsOreDict) {
+            if (entry.addSlabsTag) {
                 ItemMaterialData.registerMaterialEntry(entry.slab, slab, entry.material);
             }
             if (entry.addSlabsMaterialInfo) {
@@ -374,7 +392,7 @@ public class WoodMachineRecipes {
         }
 
         if (entry.fence != null) {
-            if (entry.addFencesOreDict) {
+            if (entry.addFencesTag) {
                 ItemMaterialData.registerMaterialEntry(entry.fence, fence, entry.material);
             }
             if (entry.addFencesMaterialInfo) {
@@ -384,7 +402,7 @@ public class WoodMachineRecipes {
         }
 
         if (entry.fenceGate != null) {
-            if (entry.addFenceGatesOreDict) {
+            if (entry.addFenceGatesTag) {
                 ItemMaterialData.registerMaterialEntry(entry.fenceGate, fenceGate, entry.material);
             }
             if (entry.addFenceGatesMaterialInfo) {
@@ -394,7 +412,7 @@ public class WoodMachineRecipes {
         }
 
         if (entry.stairs != null) {
-            if (entry.addStairsOreDict) {
+            if (entry.addStairsTag) {
                 ItemMaterialData.registerMaterialEntry(entry.stairs, stairs, entry.material);
             }
             if (entry.addStairsMaterialInfo) {
@@ -429,7 +447,7 @@ public class WoodMachineRecipes {
      *
      * @param entry the entry to register for
      */
-    public static void registerWoodTypeRecipe(Consumer<FinishedRecipe> provider, @NotNull WoodTypeEntry entry) {
+    public static void registerWoodTypeRecipe(RecipeOutput provider, @NotNull WoodTypeEntry entry) {
         final String name = entry.woodName;
         TagKey<Item> logTag = entry.logTag;
         boolean hasPlanksRecipe = entry.planksRecipeName != null;
@@ -924,7 +942,7 @@ public class WoodMachineRecipes {
     /**
      * Standard recipes for GT woods
      */
-    private static void registerGTWoodRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerGTWoodRecipes(RecipeOutput provider) {
         VanillaRecipeHelper.addShapedRecipe(provider, "treated_wood_stick",
                 ChemicalHelper.get(rod, TreatedWood, ConfigHolder.INSTANCE.recipes.nerfWoodCrafting ? 2 : 4),
                 "L", "L",
@@ -947,7 +965,7 @@ public class WoodMachineRecipes {
 
     public static void hardWoodRecipes(Consumer<ResourceLocation> registry) {
         if (ConfigHolder.INSTANCE.recipes.nerfWoodCrafting) {
-            registry.accept(new ResourceLocation("minecraft:stick"));
+            registry.accept(ResourceLocation.withDefaultNamespace("stick"));
         }
         for (WoodTypeEntry entry : getDefaultEntries()) {
             hardWoodTypeRecipes(registry, entry);
@@ -957,13 +975,13 @@ public class WoodMachineRecipes {
     private static void hardWoodTypeRecipes(Consumer<ResourceLocation> registry, @NotNull WoodTypeEntry entry) {
         if (ConfigHolder.INSTANCE.recipes.nerfWoodCrafting) {
             if (entry.planksRecipeName != null) {
-                registry.accept(new ResourceLocation(entry.modid, entry.planksRecipeName));
+                registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.planksRecipeName));
             }
         }
 
         if (ConfigHolder.INSTANCE.recipes.harderCharcoalRecipe) {
             if (entry.removeCharcoalRecipe) {
-                registry.accept(new ResourceLocation("charcoal"));
+                registry.accept(ResourceLocation.withDefaultNamespace("charcoal"));
             }
         }
 
@@ -971,74 +989,74 @@ public class WoodMachineRecipes {
             if (entry.door != null) {
                 // hard plank -> door crafting
                 if (entry.doorRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.doorRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.doorRecipeName));
                 }
             }
             if (entry.slab != null) {
                 if (ConfigHolder.INSTANCE.recipes.hardWoodRecipes && entry.slabRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.slabRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.slabRecipeName));
                 }
                 if (entry.boat != null) {
                     // hard plank -> boat crafting
                     if (entry.boatRecipeName != null) {
-                        registry.accept(new ResourceLocation(entry.modid, entry.boatRecipeName));
+                        registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.boatRecipeName));
                     }
                     if (entry.chestBoatRecipeName != null) {
-                        registry.accept(new ResourceLocation(entry.modid, entry.chestBoatRecipeName));
+                        registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.chestBoatRecipeName));
                     }
                 }
             }
             if (entry.fence != null) {
                 // hard plank -> fence crafting
                 if (entry.fenceRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.fenceRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.fenceRecipeName));
                 }
             }
             if (entry.fenceGate != null) {
                 // hard plank -> fence gate crafting
                 if (entry.fenceGateRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.fenceGateRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.fenceGateRecipeName));
                 }
             }
             if (entry.trapdoor != null) {
                 // hard plank -> trapdoor crafting
                 if (entry.trapdoorRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.trapdoorRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.trapdoorRecipeName));
                 }
             }
             if (entry.chestBoat != null) {
                 if (entry.chestBoatRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.chestBoatRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.chestBoatRecipeName));
                 }
             }
             if (entry.sign != null) {
                 // hard plank -> sign crafting
                 if (entry.signRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.signRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.signRecipeName));
                 }
             }
             if (entry.hangingSign != null) {
                 // hard plank -> hanging sign crafting
                 if (entry.hangingSignRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.hangingSignRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.hangingSignRecipeName));
                 }
             }
             if (entry.button != null) {
                 // hard plank -> button crafting
                 if (entry.buttonRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.buttonRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.buttonRecipeName));
                 }
             }
             if (entry.pressurePlate != null) {
                 // hard plank -> pressure plate crafting
                 if (entry.pressurePlateRecipeName != null) {
-                    registry.accept(new ResourceLocation(entry.modid, entry.pressurePlateRecipeName));
+                    registry.accept(ResourceLocation.fromNamespaceAndPath(entry.modid, entry.pressurePlateRecipeName));
                 }
             }
         }
     }
 
-    private static void registerPyrolyseOvenRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerPyrolyseOvenRecipes(RecipeOutput provider) {
         // Logs ================================================
 
         // Charcoal Byproducts
@@ -1118,7 +1136,7 @@ public class WoodMachineRecipes {
         PYROLYSE_RECIPES.recipeBuilder("log_to_heavy_oil").circuitMeta(3)
                 .inputItems(ItemTags.LOGS_THAT_BURN, 16)
                 .outputItems(dust, Ash, 4)
-                .outputFluids(OilHeavy.getFluid(200))
+                .outputFluids(HeavyOil.getFluid(200))
                 .duration(320).EUt(192)
                 .save(provider);
 
@@ -1215,21 +1233,21 @@ public class WoodMachineRecipes {
         // COAL TAR ============================================
         PYROLYSE_RECIPES.recipeBuilder("charcoal_to_coal_tar").circuitMeta(8)
                 .inputItems(Items.CHARCOAL, 32)
-                .chancedOutput(dust, Ash, 5000, 500)
+                .chancedOutput(dust, Ash, 5000, 0)
                 .outputFluids(CoalTar.getFluid(1000))
                 .duration(640).EUt(64)
                 .save(provider);
 
         PYROLYSE_RECIPES.recipeBuilder("coal_to_coal_tar").circuitMeta(8)
                 .inputItems(Items.COAL, 12)
-                .chancedOutput(dust, DarkAsh, 5000, 500)
+                .chancedOutput(dust, DarkAsh, 5000, 0)
                 .outputFluids(CoalTar.getFluid(3000))
                 .duration(320).EUt(96)
                 .save(provider);
 
         PYROLYSE_RECIPES.recipeBuilder("coke_to_coal_tar").circuitMeta(8)
                 .inputItems(gem, Coke, 8)
-                .chancedOutput(dust, Ash, 7500, 500)
+                .chancedOutput(dust, Ash, 7500, 0)
                 .outputFluids(CoalTar.getFluid(4000))
                 .duration(320).EUt(96)
                 .save(provider);

@@ -1,10 +1,10 @@
 package com.gregtechceu.gtceu.api.recipe.category;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ItemStackTexture;
@@ -41,7 +41,7 @@ public class GTRecipeCategory {
         this.recipeType = recipeType;
         this.name = recipeType.registryName.getPath();
         this.registryKey = recipeType.registryName;
-        this.languageKey = recipeType.registryName.toLanguageKey();
+        this.languageKey = recipeType.getTranslationKey();
     }
 
     public GTRecipeCategory(@NotNull String categoryName, @NotNull GTRecipeType recipeType) {
@@ -53,7 +53,7 @@ public class GTRecipeCategory {
 
     public static GTRecipeCategory registerDefault(@NotNull GTRecipeType recipeType) {
         GTRecipeCategory category = new GTRecipeCategory(recipeType);
-        GTRegistries.RECIPE_CATEGORIES.register(category.registryKey, category);
+        GTRegistries.register(GTRegistries.RECIPE_CATEGORIES, category.registryKey, category);
         return category;
     }
 

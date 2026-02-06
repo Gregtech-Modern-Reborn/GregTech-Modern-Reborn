@@ -1,32 +1,37 @@
 package com.gregtechceu.gtceu.common.fluid.potion;
 
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
-import com.gregtechceu.gtceu.common.data.GTFluids;
-import com.gregtechceu.gtceu.core.mixins.forge.StrictNBTIngredientAccessor;
+import com.gregtechceu.gtceu.data.fluid.GTFluids;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 import com.gregtechceu.gtceu.utils.GTMath;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.util.Tuple;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffectUtil;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
+import net.neoforged.neoforge.common.util.AttributeUtil;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.crafting.DataComponentFluidIngredient;
+import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
@@ -35,10 +40,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 public class PotionFluidHelper {
+
+    private static final Component NO_EFFECT = Component.translatable("effect.none").withStyle(ChatFormatting.GRAY);
 
     public static final int BOTTLE_AMOUNT = FluidType.BUCKET_VOLUME / 4;
     public static final int MB_PER_RECIPE = BOTTLE_AMOUNT * 3;
@@ -50,17 +56,20 @@ public class PotionFluidHelper {
         return Pair.of(fluid, new ItemStack(Items.GLASS_BOTTLE));
     }
 
-    public static FluidIngredient potionIngredient(Potion potion, int amount) {
+    public static FluidIngredient potionIngredient(Holder<Potion> potion, int amount) {
         FluidStack stack = PotionFluidHelper
-                .getFluidFromPotionItem(PotionUtils.setPotion(new ItemStack(Items.POTION), potion), amount);
+                .getFluidFromPotionItem(PotionContents.createItemStack(Items.POTION, potion), amount);
         stack.setAmount(amount);
         return FluidIngredient.of(stack);
     }
 
-    public static FluidIngredient getPotionFluidIngredientFrom(Ingredient potion, int amount) {
-        if (potion instanceof StrictNBTIngredientAccessor strict) {
-            return FluidIngredient.fromValue(new FluidIngredient.FluidValue(GTFluids.POTION.get()),
-                    amount, strict.getStack().getTag());
+    public static SizedFluidIngredient getPotionFluidIngredientFrom(Ingredient potion, int amount) {
+        if (potion.getCustomIngredient() instanceof DataComponentIngredient component && component.isStrict()) {
+            return new SizedFluidIngredient(DataComponentFluidIngredient.of(false,
+                    DataComponents.POTION_CONTENTS,
+                    component.getItems().findFirst().orElse(ItemStack.EMPTY)
+                            .getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY),
+                    GTFluids.POTION.get()), amount);
         }
 
         List<FluidStack> fluids = new ArrayList<>();
@@ -70,112 +79,78 @@ public class PotionFluidHelper {
                 fluids.add(fluidStack);
             }
         }
-        return FluidIngredient.of(fluids);
+        return new SizedFluidIngredient(FluidIngredient.of(fluids.toArray(FluidStack[]::new)), amount);
     }
 
     public static FluidStack getFluidFromPotionItem(ItemStack stack, int amount) {
-        Potion potion = PotionUtils.getPotion(stack);
-        if (potion == Potions.EMPTY) {
+        PotionContents potion = stack.get(DataComponents.POTION_CONTENTS);
+        if (potion == null || potion == PotionContents.EMPTY) {
             return FluidStack.EMPTY;
         }
-        List<MobEffectInstance> list = PotionUtils.getCustomEffects(stack);
-        if (potion == Potions.WATER && list.isEmpty())
+        List<MobEffectInstance> list = potion.customEffects();
+        if (potion.is(Potions.WATER) && list.isEmpty())
             return new FluidStack(Fluids.WATER, amount);
-        return PotionFluid.withEffects(amount, potion, list);
+        return PotionFluid.of(amount, potion);
     }
 
-    public static FluidStack getFluidFromPotion(Potion potion, int amount) {
+    public static FluidStack getFluidFromPotion(Holder<Potion> potion, int amount) {
         if (potion == Potions.WATER)
             return new FluidStack(Fluids.WATER, amount);
         return PotionFluid.of(amount, potion);
     }
 
     public static ItemStack fillBottle(ItemStack stack, FluidStack availableFluid) {
-        CompoundTag tag = availableFluid.getOrCreateTag();
+        var contents = availableFluid.get(DataComponents.POTION_CONTENTS);
         if (stack.is(Items.GLASS_BOTTLE)) {
             int count = stack.getCount();
-            CompoundTag stackTag = stack.getTag();
+            var componentsPatch = stack.getComponentsPatch();
             stack = new ItemStack(Items.POTION);
             stack.setCount(count);
-            stack.setTag(stackTag);
+            stack.applyComponents(componentsPatch);
         }
-        PotionUtils.setPotion(stack, PotionUtils.getPotion(tag));
-        PotionUtils.setCustomEffects(stack, PotionUtils.getCustomEffects(tag));
+        stack.set(DataComponents.POTION_CONTENTS, contents);
         return stack;
     }
 
     // Modified version of PotionUtils#addPotionTooltip
     @OnlyIn(Dist.CLIENT)
-    public static void addPotionTooltip(FluidStack fs, Consumer<Component> tooltip) {
-        List<MobEffectInstance> list = PotionUtils.getAllEffects(fs.getOrCreateTag());
-        List<Tuple<String, AttributeModifier>> modifiers = Lists.newArrayList();
-        if (list.isEmpty()) {
-            tooltip.accept(Component.translatable("effect.none").withStyle(ChatFormatting.GRAY));
-        } else {
-            for (MobEffectInstance effectInstance : list) {
-                MutableComponent name = Component.translatable(effectInstance.getDescriptionId());
-                MobEffect effect = effectInstance.getEffect();
-                Map<Attribute, AttributeModifier> map = effect.getAttributeModifiers();
-                if (!map.isEmpty()) {
-                    for (Map.Entry<Attribute, AttributeModifier> entry : map.entrySet()) {
-                        AttributeModifier modifier = entry.getValue();
-                        AttributeModifier mutated = new AttributeModifier(modifier.getName(),
-                                effect.getAttributeModifierValue(effectInstance.getAmplifier(), modifier),
-                                modifier.getOperation());
-                        modifiers.add(new Tuple<>(
-                                entry.getKey().getDescriptionId(),
-                                mutated));
-                    }
-                }
+    public static void addPotionTooltip(FluidStack fs, Consumer<Component> tooltipAdder, Item.TooltipContext context) {
+        var contents = fs.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+        Iterable<MobEffectInstance> effects = contents.getAllEffects();
 
-                if (effectInstance.getAmplifier() > 0) {
-                    name = Component.translatable("potion.withAmplifier", name,
-                            Component.translatable("potion.potency." + effectInstance.getAmplifier()));;
-                }
-
-                if (!effectInstance.endsWithin(20)) {
-                    name = Component.translatable("potion.withDuration", name,
-                            MobEffectUtil.formatDuration(effectInstance, 1.0f));
-
-                }
-
-                tooltip.accept(name.withStyle(effect.getCategory()
-                        .getTooltipFormatting()));
+        List<Pair<Holder<Attribute>, AttributeModifier>> list = Lists.newArrayList();
+        boolean noEffects = true;
+        for (MobEffectInstance mobeffectinstance : effects) {
+            noEffects = false;
+            MutableComponent mutablecomponent = Component.translatable(mobeffectinstance.getDescriptionId());
+            Holder<MobEffect> holder = mobeffectinstance.getEffect();
+            holder.value().createModifiers(mobeffectinstance.getAmplifier(),
+                    (p_331556_, p_330860_) -> list.add(new Pair<>(p_331556_, p_330860_)));
+            if (mobeffectinstance.getAmplifier() > 0) {
+                mutablecomponent = Component.translatable(
+                        "potion.withAmplifier", mutablecomponent,
+                        Component.translatable("potion.potency." + mobeffectinstance.getAmplifier()));
             }
+
+            if (!mobeffectinstance.endsWithin(20)) {
+                mutablecomponent = Component.translatable(
+                        "potion.withDuration", mutablecomponent,
+                        MobEffectUtil.formatDuration(mobeffectinstance, 1.0f, context.tickRate()));
+            }
+
+            tooltipAdder.accept(mutablecomponent.withStyle(holder.value().getCategory().getTooltipFormatting()));
         }
 
-        if (!modifiers.isEmpty()) {
-            tooltip.accept(Component.empty());
-            tooltip.accept(Component.translatable("potion.whenDrank").withStyle(ChatFormatting.DARK_PURPLE));
+        if (noEffects) {
+            tooltipAdder.accept(NO_EFFECT);
+        }
 
-            for (Tuple<String, AttributeModifier> tuple : modifiers) {
-                AttributeModifier modifier2 = tuple.getB();
-                double d0 = modifier2.getAmount();
-                double d1;
-                if (modifier2.getOperation() != AttributeModifier.Operation.MULTIPLY_BASE &&
-                        modifier2.getOperation() != AttributeModifier.Operation.MULTIPLY_TOTAL) {
-                    d1 = modifier2.getAmount();
-                } else {
-                    d1 = modifier2.getAmount() * 100.0D;
-                }
+        if (!list.isEmpty()) {
+            tooltipAdder.accept(CommonComponents.EMPTY);
+            tooltipAdder.accept(Component.translatable("potion.whenDrank").withStyle(ChatFormatting.DARK_PURPLE));
 
-                if (d0 > 0.0D) {
-                    tooltip.accept(Component.translatable(
-                            "attribute.modifier.plus." + modifier2.getOperation()
-                                    .toValue(),
-                            ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1),
-                            Component.translatable(tuple.getA()))
-                            .withStyle(ChatFormatting.BLUE));
-                } else if (d0 < 0.0D) {
-                    d1 = d1 * -1.0D;
-                    tooltip.accept(Component.translatable(
-                            "attribute.modifier.take." + modifier2.getOperation()
-                                    .toValue(),
-                            ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1),
-                            Component.translatable(tuple.getA()))
-                            .withStyle(ChatFormatting.RED));
-                }
-            }
+            // Neo: Override handling of potion attribute tooltips to support IAttributeExtension
+            AttributeUtil.addPotionTooltip(list, tooltipAdder);
         }
     }
 

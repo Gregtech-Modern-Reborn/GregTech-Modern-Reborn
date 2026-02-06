@@ -20,9 +20,9 @@ import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.ui.GTRecipeTypeUI;
 import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
-import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
+import com.gregtechceu.gtceu.common.item.behavior.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.lang.LangHandler;
+import com.gregtechceu.gtceu.data.datagen.lang.LangHandler;
 import com.gregtechceu.gtceu.utils.GTTransferUtils;
 
 import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
@@ -46,11 +46,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
 import com.google.common.collect.Tables;
-import com.mojang.blaze3d.MethodsReturnNonnullByDefault;
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import lombok.Getter;
 import lombok.Setter;
@@ -59,13 +58,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.*;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 /**
  * All simple single machines are implemented here.
  */
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class SimpleTieredMachine extends WorkableTieredMachine
                                  implements IAutoOutputBoth, IFancyUIMachine, IHasCircuitSlot {
 
@@ -244,7 +239,7 @@ public class SimpleTieredMachine extends WorkableTieredMachine
     }
 
     @Override
-    public void onNeighborChanged(Block block, BlockPos fromPos, boolean isMoving) {
+    public void onNeighborChanged(net.minecraft.world.level.block.Block block, BlockPos fromPos, boolean isMoving) {
         super.onNeighborChanged(block, fromPos, isMoving);
         updateAutoOutputSubscription();
     }
@@ -333,6 +328,7 @@ public class SimpleTieredMachine extends WorkableTieredMachine
     private IFancyConfigurator createAutoOutputFluidConfigurator() {
         return createAutoOutputConfigurator(
                 GuiTextures.IO_CONFIG_FLUID_MODES_BUTTON,
+                "gtceu.gui.fluid_auto_output",
                 this::isAutoOutputFluids,
                 (cd, nextState) -> this.setAutoOutputFluids(nextState));
     }
@@ -340,14 +336,16 @@ public class SimpleTieredMachine extends WorkableTieredMachine
     private IFancyConfigurator createAutoOutputItemConfigurator() {
         return createAutoOutputConfigurator(
                 GuiTextures.IO_CONFIG_ITEM_MODES_BUTTON,
+                "gtceu.gui.item_auto_output",
                 this::isAutoOutputItems,
                 (cd, nextState) -> this.setAutoOutputItems(nextState));
     }
 
     private IFancyConfigurator createAutoOutputConfigurator(ResourceTexture modesButtonTexture,
+                                                            String tooltipBaseLangKey,
                                                             BooleanSupplier stateSupplier,
                                                             BiConsumer<ClickData, Boolean> onToggle) {
-        return new IFancyConfiguratorButton.Toggle(
+        var toggle = new IFancyConfiguratorButton.Toggle(
                 new GuiTextureGroup(
                         GuiTextures.TOGGLE_BUTTON_BACK.getSubTexture(0, 0, 1, 0.5),
                         modesButtonTexture.getSubTexture(0, 1 / 3f, 1, 1 / 3f)),
@@ -356,6 +354,13 @@ public class SimpleTieredMachine extends WorkableTieredMachine
                         modesButtonTexture.getSubTexture(0, 2 / 3f, 1, 1 / 3f)),
                 stateSupplier,
                 onToggle);
+
+        toggle.setTooltipsSupplier(enabled -> {
+            var key = tooltipBaseLangKey + '.' + (enabled ? "enabled" : "disabled");
+            return List.of(Component.translatable(key));
+        });
+
+        return toggle;
     }
 
     @SuppressWarnings("UnstableApiUsage")
@@ -443,8 +448,8 @@ public class SimpleTieredMachine extends WorkableTieredMachine
     // ******* Rendering ********//
     //////////////////////////////////////
     @Override
-    public @Nullable ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
-                                              Direction side) {
+    public ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
+                                    ItemStack held, Direction side) {
         if (toolTypes.contains(GTToolType.WRENCH)) {
             if (!player.isShiftKeyDown()) {
                 if (!hasFrontFacing() || side != getFrontFacing()) {
@@ -457,6 +462,6 @@ public class SimpleTieredMachine extends WorkableTieredMachine
                 return GuiTextures.TOOL_ALLOW_INPUT;
             }
         }
-        return super.sideTips(player, pos, state, toolTypes, side);
+        return super.sideTips(player, pos, state, toolTypes, held, side);
     }
 }

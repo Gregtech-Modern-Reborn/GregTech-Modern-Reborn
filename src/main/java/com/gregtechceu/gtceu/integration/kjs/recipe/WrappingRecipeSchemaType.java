@@ -14,6 +14,6 @@ public class WrappingRecipeSchemaType extends RecipeSchemaType {
     public WrappingRecipeSchemaType(RecipeNamespace namespace, ResourceLocation id, RecipeSchema schema,
                                     RecipeSerializer<?> serializer) {
         super(namespace, id, schema);
-        this.serializer = Optional.of(serializer);
+        this.serializer = Optional.ofNullable(serializer);
     }
 }

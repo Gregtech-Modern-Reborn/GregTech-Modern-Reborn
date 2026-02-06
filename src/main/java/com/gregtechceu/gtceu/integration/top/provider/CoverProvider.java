@@ -218,8 +218,8 @@ public class CoverProvider extends CapabilityInfoProvider<ICoverable> {
     // */
     // private static void itemFilterText(@NotNull IProbeInfo probeInfo, @Nullable ItemFilter filter) {
     // String label = TextStyleClass.INFO + "{*gtceu.top.filter.label*} ";
-    // if (filter instanceof OreDictionaryItemFilter) {
-    // String expression = ((OreDictionaryItemFilter) filter).getOreDictFilterExpression();
+    // if (filter instanceof TagItemFilter tagFilter) {
+    // String expression = tagFilter.getTagFilterExpression();
     // if (!expression.isEmpty()) probeInfo.text(label + expression);
     // } else if (filter instanceof SmartItemFilter) {
     // probeInfo.text(label + IProbeInfo.STARTLOC + ((SmartItemFilter) filter).getFilteringMode().getName() +

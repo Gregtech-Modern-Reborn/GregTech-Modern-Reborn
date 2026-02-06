@@ -11,20 +11,15 @@ import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
-import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
 import com.gregtechceu.gtceu.api.recipe.ActionResult;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
-import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
-import com.gregtechceu.gtceu.api.recipe.content.Content;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
-import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.api.sound.AutoReleasedSound;
 import com.gregtechceu.gtceu.common.cover.MachineControllerCover;
+import com.gregtechceu.gtceu.core.MixinHelpers;
 import com.gregtechceu.gtceu.utils.GTMath;
-import com.gregtechceu.gtceu.utils.RecipeUtils;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.syncdata.IEnhancedManaged;
@@ -40,8 +35,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import lombok.Getter;
@@ -51,9 +46,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.*;
-
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWorkable, IFancyTooltip {
 
@@ -72,30 +64,12 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         }
     }
 
-    public static final EnumProperty<Status> STATUS_PROPERTY = GTMachineModelProperties.RECIPE_LOGIC_STATUS;
+    public static final EnumProperty<RecipeLogic.Status> STATUS_PROPERTY = GTMachineModelProperties.RECIPE_LOGIC_STATUS;
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(RecipeLogic.class);
-    public final int maxLoopCount = 2048;
-    public IRecipeLogicMachine machine;
-    @Setter
+
+    public final IRecipeLogicMachine machine;
     public List<GTRecipe> lastFailedMatches;
-    @Getter
-    @Setter
-    @Persisted
-    // @UpdateListener(methodName = "onStatusSynced")
-    @DescSynced
-    private boolean isMultiParallelLogic;// This Flag control the "MultiParallel Mode" ON/OFF, when the MultiParallel
-    // Mode on,the machine can merge the different recipes to one recipe and run
-    // it(Must these recipes are in same recipe type;
-    @Persisted
-    @Getter
-    @Setter
-    @DescSynced
-    // @UpdateListener(methodName = "onStatusSynced")
-    private List<Boolean> ActiveModesList = new ArrayList<>();
-    @Getter
-    @Setter
-    @Persisted
-    private int MultiParallelCount = 1;
+
     @Getter
     @Persisted
     @DescSynced
@@ -116,11 +90,9 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
      */
     @Nullable
     @Getter
-    @Setter
     @Persisted
     @DescSynced
     protected GTRecipe lastRecipe;
-
     @Getter
     @Persisted
     @DescSynced
@@ -131,17 +103,17 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
      * from {@link RecipeManager}.
      */
     @Nullable
-    @Setter
     @Getter
     @Persisted
     protected GTRecipe lastOriginRecipe;
-
     @Persisted
     @Getter
     @Setter
+    @DescSynced
     protected int progress;
     @Getter
     @Persisted
+    @DescSynced
     protected int duration;
     @Getter(onMethod_ = @VisibleForTesting)
     protected boolean recipeDirty;
@@ -161,25 +133,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
 
     public RecipeLogic(IRecipeLogicMachine machine) {
         super(machine.self());
-        this.isMultiParallelLogic = false;
-
-        if (machine instanceof MultiblockControllerMachine) {
-            this.isMultiParallelLogic = ((MultiblockControllerMachine) machine).getMultiParallelHatch().isPresent();
-        }
-
-        // In Default Situation,Use normal parallel;
         this.machine = machine;
-        try {
-            if (machine.getRecipeTypes() == null) return;
-        } catch (Exception e) {
-            return;
-        }
-        if (this.getActiveModesList().isEmpty()) {
-            for (int i = 0; i < machine.getRecipeTypes().length; i++) {
-                this.ActiveModesList.add(false);
-            }
-            this.ActiveModesList.set(this.machine.getActiveRecipeType(), true);
-        }
     }
 
     @SuppressWarnings("unused")
@@ -200,7 +154,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         recipeDirty = false;
         lastRecipe = null;
         lastOriginRecipe = null;
-
         consecutiveRecipes = 0;
         progress = 0;
         duration = 0;
@@ -208,17 +161,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         lastFailedMatches = null;
         if (status != Status.SUSPEND) {
             setStatus(Status.IDLE);
-        }
-        MultiParallelCount = 1;
-        isMultiParallelLogic = false;
-        ActiveModesList = new ArrayList<Boolean>();
-
-        for (int i = 0; i < machine.getRecipeTypes().length; i++) {
-            if (i == 0) {
-                ActiveModesList.add(true);
-                continue;
-            }
-            ActiveModesList.add(false);
         }
         updateTickSubscription();
     }
@@ -253,7 +195,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
 
     public void serverTick() {
         if (!isSuspend()) {
-
             if (!isIdle() && lastRecipe != null) {
                 if (progress < duration) {
                     if (runDelay > 0) {
@@ -265,11 +206,15 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 if (progress >= duration) {
                     onRecipeFinish();
                 }
-            } else if (lastRecipe != null && !isMultiParallelLogic) {
+            } else if (lastRecipe != null) {
                 findAndHandleRecipe();
             } else if (!machine.keepSubscribing() || getMachine().getOffsetTimer() % 5 == 0) {
                 findAndHandleRecipe();
-
+                if (lastFailedMatches != null) {
+                    for (GTRecipe match : lastFailedMatches) {
+                        if (checkMatchedRecipeAvailable(match)) break;
+                    }
+                }
             }
         }
         boolean unsubscribe = false;
@@ -315,18 +260,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         return false;
     }
 
-    public boolean checkMatchedRecipeAvailableForMultiParallel(GTRecipe match) {
-        var modified = machine.fullModifyRecipe(match);
-        if (modified != null) {
-            var recipeMatch = checkRecipe(modified);
-            if (recipeMatch.isSuccess()) {
-                return true;
-            }
-
-        }
-        return false;
-    }
-
     public void handleRecipeWorking() {
         assert lastRecipe != null;
         var conditionResult = RecipeHelper.checkConditions(lastRecipe, this);
@@ -342,9 +275,9 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 totalContinuousRunningTime++;
             } else {
                 setWaiting(handleTick.reason());
+
                 // Machine isn't getting enough power, suspend after 5 attempts.
                 if (handleTick.io() == IO.IN && handleTick.capability() == EURecipeCapability.CAP) {
-
                     runAttempt++;
                     runAttempt = (int) GTMath.clamp(runAttempt, 0, 5);
                     if (runAttempt == 5) {
@@ -372,7 +305,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         } else {
             setWaiting(conditionResult.reason());
         }
-        if (isWaiting()) {
+        if (isWaiting() || isSuspend()) {
             regressRecipe();
         }
     }
@@ -384,68 +317,23 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     }
 
     public @NotNull Iterator<GTRecipe> searchRecipe() {
-        if (isMultiParallelLogic) {
-            return machine.getRecipeType().searchRecipe(machine, r -> matchRecipe(r).isSuccess(), isMultiParallelLogic);
-        }
         return machine.getRecipeType().searchRecipe(machine, r -> matchRecipe(r).isSuccess());
     }
 
     public void findAndHandleRecipe() {
         lastFailedMatches = null;
-
-        if (!isMultiParallelLogic) {
-            // NormalMode
-            if (!recipeDirty && lastRecipe != null && checkRecipe(lastRecipe).isSuccess()) {
-                GTRecipe recipe = lastRecipe;
-                lastRecipe = null;
-                lastOriginRecipe = null;
-                setupRecipe(recipe);
-            } else {
-                lastRecipe = null;
-                lastOriginRecipe = null;
-                handleSearchingRecipes(searchRecipe());
-            }
-            recipeDirty = false;
-        } else {
-
-            GTRecipe recipeAll = null;
-            if (machine.getRecipeTypes() == null) return;
-            for (int i = 0; i < machine.getRecipeTypes().length; ++i) {
-                if (!ActiveModesList.get(i)) continue;
-                List<GTRecipe> Recipe_List = new ArrayList<>();
-                int sumOfParallelsCount = 0;
-                int LoopCount = 0;
-                int FailesCount = 0;
-                while (true) {
-                    machine.setActiveRecipeType(i);
-                    sumOfParallelsCount++;
-                    if (sumOfParallelsCount > MultiParallelCount) break;
-                    handleSearchingRecipes(searchRecipe());
-                    if (lastRecipe == null) break;
-                    // First Find A Recipe
-
-                    var handledIO = handleRecipeIO(lastRecipe, IO.IN);
-                    if (handledIO.isSuccess()) {
-                        Recipe_List.add(lastRecipe);
-                        lastRecipe = null;
-                        lastOriginRecipe = null;
-                        lastFailedMatches = null;
-                    } else {
-                        FailesCount++;
-                    }
-                    if (FailesCount > 2) break;
-                    LoopCount++;
-                    if (LoopCount > maxLoopCount) break;;
-                }
-                GTRecipe recipe = mergeAllRecipes(Recipe_List);
-                if (recipe == null) continue;
-                recipeAll = mergeTwoRecipes(recipeAll, recipe);
-                // if (recipe == null) return;
-                // setupRecipe(recipe);
-            }
-            if (recipeAll == null) return;
-            setupRecipe(recipeAll);
+        // try to execute last recipe if possible
+        if (!recipeDirty && lastRecipe != null && checkRecipe(lastRecipe).isSuccess()) {
+            GTRecipe recipe = lastRecipe;
+            lastRecipe = null;
+            lastOriginRecipe = null;
+            setupRecipe(recipe);
+        } else { // try to find and handle a new recipe
+            lastRecipe = null;
+            lastOriginRecipe = null;
+            handleSearchingRecipes(searchRecipe());
         }
+        recipeDirty = false;
     }
 
     protected void handleSearchingRecipes(@NotNull Iterator<GTRecipe> matches) {
@@ -463,108 +351,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             }
             lastFailedMatches.add(match);
         }
-    }
-
-    // In this function,our target to merge all recipes to one recipe
-    // The new recipe time is maximum of all recipes,the conditions is
-    private GTRecipe mergeAllRecipes(List<GTRecipe> recipes) {
-        GTRecipe after_merge_recipe = null;
-        for (GTRecipe recipe : recipes) {
-            after_merge_recipe = mergeTwoRecipes(after_merge_recipe, recipe.copy());
-        }
-        return after_merge_recipe;
-    }
-
-    public <K> Map<K, List<Content>> makeValuesMutable(Map<K, List<Content>> map) {
-        Map<K, List<Content>> mutableMap = new HashMap<>(); // 用 JDK HashMap，确保可变
-        for (Map.Entry<K, List<Content>> entry : map.entrySet()) {
-            List<Content> list = entry.getValue();
-            if (list == null) continue;
-            List<Content> mutableList = (list instanceof ArrayList) ? list : new ArrayList<>(list);
-            mutableMap.put(entry.getKey(), mutableList);
-        }
-        return mutableMap;
-    }
-
-    public <K> Map<K, ChanceLogic> makeMapMutable(Map<K, ChanceLogic> map) {
-        if (map instanceof HashMap) {
-            return map; // 已经是可变的
-        }
-        return new HashMap<>(map);
-    }
-
-    public <T> List<T> makeListMutable(List<T> list) {
-        if (list == null) return new ArrayList<>();
-        if (list instanceof ArrayList) return list;
-        return new ArrayList<>(list);
-    }
-
-    private GTRecipe mergeTwoRecipes(GTRecipe afterMergeRecipe, GTRecipe recipe) {
-        if (afterMergeRecipe == null && recipe == null) {
-            throw new RuntimeException("Fatal Error, Two Recipes both are Null!");
-        }
-        if (afterMergeRecipe == null) {
-            return recipe;
-        }
-        if (recipe == null) {
-            return afterMergeRecipe;
-        }
-
-        afterMergeRecipe.duration = max(afterMergeRecipe.duration, recipe.duration);
-        afterMergeRecipe.getInputEUt();// Calculate the input EU and the output EU
-        afterMergeRecipe.getOutputEUt();
-        boolean isOutputEU = false;
-        if (afterMergeRecipe.getOutputEUt().getTotalEU() > 0) {
-            isOutputEU = true;
-        }
-        afterMergeRecipe.parallels = min(afterMergeRecipe.parallels, recipe.parallels);
-        afterMergeRecipe.batchParallels = min(afterMergeRecipe.batchParallels, recipe.batchParallels);
-        afterMergeRecipe.inputs = makeValuesMutable(afterMergeRecipe.inputs);
-        afterMergeRecipe.outputs = makeValuesMutable(afterMergeRecipe.outputs);
-        afterMergeRecipe.tickInputs = makeValuesMutable(afterMergeRecipe.tickInputs);
-        afterMergeRecipe.tickOutputs = makeValuesMutable(afterMergeRecipe.tickOutputs);
-        afterMergeRecipe.tickOutputChanceLogics = makeMapMutable(afterMergeRecipe.tickOutputChanceLogics);
-        afterMergeRecipe.tickInputChanceLogics = makeMapMutable(afterMergeRecipe.tickInputChanceLogics);
-        afterMergeRecipe.conditions = makeListMutable(afterMergeRecipe.conditions);
-        afterMergeRecipe.inputChanceLogics = makeMapMutable(afterMergeRecipe.inputChanceLogics);
-        afterMergeRecipe.outputChanceLogics = makeMapMutable(afterMergeRecipe.outputChanceLogics);
-        RecipeUtils.mergeMapOfLists(afterMergeRecipe.inputs, recipe.inputs);
-        RecipeUtils.mergeMapOfLists(afterMergeRecipe.outputs, recipe.outputs);
-        afterMergeRecipe.ocLevel = min(afterMergeRecipe.ocLevel, recipe.ocLevel);
-        if (recipe.conditions != null && afterMergeRecipe.conditions != null) {
-            afterMergeRecipe.conditions.addAll(recipe.conditions);
-        }
-        if (recipe.inputChanceLogics != null && afterMergeRecipe.inputChanceLogics != null) {
-            afterMergeRecipe.inputChanceLogics = RecipeUtils.mergeChanceLogicMap(afterMergeRecipe.inputChanceLogics,
-                    recipe.inputChanceLogics);
-        } else if (afterMergeRecipe.inputChanceLogics == null && recipe.inputChanceLogics != null) {
-            afterMergeRecipe.inputChanceLogics = recipe.inputChanceLogics;
-        }
-        if (recipe.outputChanceLogics != null && afterMergeRecipe.outputChanceLogics != null) {
-            afterMergeRecipe.outputChanceLogics = RecipeUtils.mergeChanceLogicMap(afterMergeRecipe.outputChanceLogics,
-                    recipe.outputChanceLogics);
-        } else if (recipe.outputChanceLogics == null && afterMergeRecipe.outputChanceLogics != null) {
-            afterMergeRecipe.outputChanceLogics = recipe.outputChanceLogics;
-        }
-        if (recipe.tickInputs != null && afterMergeRecipe.tickInputs != null) {
-            if (isOutputEU) {
-                RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickInputs, recipe.tickInputs);
-            }
-        }
-        if (recipe.tickOutputs != null && afterMergeRecipe.tickOutputs != null) {
-            if (isOutputEU) {
-                RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickOutputs, recipe.tickOutputs);
-            }
-        }
-        if (recipe.tickInputChanceLogics != null && afterMergeRecipe.tickInputChanceLogics != null) {
-            afterMergeRecipe.tickInputChanceLogics = RecipeUtils
-                    .mergeChanceLogicMap(afterMergeRecipe.tickInputChanceLogics, recipe.tickInputChanceLogics);
-        }
-        if (recipe.tickOutputChanceLogics != null && afterMergeRecipe.tickOutputChanceLogics != null) {
-            afterMergeRecipe.tickOutputChanceLogics = RecipeUtils
-                    .mergeChanceLogicMap(afterMergeRecipe.tickOutputChanceLogics, recipe.tickOutputChanceLogics);
-        }
-        return afterMergeRecipe;
     }
 
     public ActionResult handleTickRecipe(GTRecipe recipe) {
@@ -589,13 +375,8 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             isActive = false;
             return;
         }
-        ActionResult handledIO;
-        if (!isMultiParallelLogic) {
-            handledIO = handleRecipeIO(recipe, IO.IN);
-        } else {
-            handledIO = ActionResult.SUCCESS;
-        }
-        if (isMultiParallelLogic || handledIO.isSuccess()) {
+        var handledIO = handleRecipeIO(recipe, IO.IN);
+        if (handledIO.isSuccess()) {
             if (lastRecipe != null && !recipe.equals(lastRecipe)) {
                 chanceCaches.clear();
             }
@@ -613,7 +394,8 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             if (this.status == Status.WORKING) {
                 this.totalContinuousRunningTime = 0;
             }
-            if (status == Status.SUSPEND && suspendAfterFinish) {
+            if ((status == Status.WAITING || status == Status.SUSPEND) && suspendAfterFinish) {
+                status = Status.SUSPEND;
                 suspendAfterFinish = false;
             }
             machine.notifyStatusChanged(this.status, status);
@@ -662,16 +444,12 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
 
     @Override
     public void setWorkingEnabled(boolean isWorkingAllowed) {
-        if (!isWorkingAllowed && getStatus() == Status.IDLE) {
-            setStatus(Status.SUSPEND);
-        } else {
-            setSuspendAfterFinish(!isWorkingAllowed);
-            if (isWorkingAllowed) {
-                if (lastRecipe != null && duration > 0) {
-                    setStatus(Status.WORKING);
-                } else {
-                    setStatus(Status.IDLE);
-                }
+        setSuspendAfterFinish(!isWorkingAllowed);
+        if (isWorkingAllowed) {
+            if (lastRecipe != null && duration > 0) {
+                setStatus(Status.WORKING);
+            } else {
+                setStatus(Status.IDLE);
             }
         }
     }
@@ -685,14 +463,40 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         return isWorking() || isWaiting() || (isSuspend() && isActive);
     }
 
+    public boolean hasCustomProgressLine() {
+        return false;
+    }
+
+    /**
+     * Show the customized progress line instead of the regular duration progress time in the machine display.
+     * <p>
+     * Must override and return {@code true} in {@link #hasCustomProgressLine()}.
+     *
+     * @return the customized progress line
+     */
+    public @Nullable Component getCustomProgressLine() {
+        return null;
+    }
+
     public void onRecipeFinish() {
         machine.afterWorking();
         if (lastRecipe != null) {
             runAttempt = 0;
             runDelay = 0;
             consecutiveRecipes++;
-            modifyChanceRecipes(lastRecipe);
             handleRecipeIO(lastRecipe, IO.OUT);
+            // Don't ready the next recipe after finish if suspend is set
+            // so that the modifiers won't be applied until re-starting.
+            if (suspendAfterFinish) {
+                setStatus(Status.SUSPEND);
+                consecutiveRecipes = 0;
+                progress = 0;
+                duration = 0;
+                isActive = false;
+                // Force a recipe recheck.
+                lastRecipe = null;
+                return;
+            }
             if (machine.alwaysTryModifyRecipe()) {
                 if (lastOriginRecipe != null) {
                     var modified = machine.fullModifyRecipe(lastOriginRecipe.copy());
@@ -707,83 +511,17 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             }
             // try it again
             var recipeCheck = checkRecipe(lastRecipe);
-            if (!recipeDirty && !suspendAfterFinish && recipeCheck.isSuccess()) {
+            if (!recipeDirty && recipeCheck.isSuccess()) {
                 setupRecipe(lastRecipe);
             } else {
-                if (suspendAfterFinish) {
-                    setStatus(Status.SUSPEND);
-                } else {
-                    setStatus(Status.IDLE);
-                    if (recipeCheck.io() != IO.IN || recipeCheck.capability() == EURecipeCapability.CAP) {
-                        waitingReason = recipeCheck.reason();
-                    }
+                setStatus(Status.IDLE);
+                if (recipeCheck.io() != IO.IN || recipeCheck.capability() == EURecipeCapability.CAP) {
+                    waitingReason = recipeCheck.reason();
                 }
                 consecutiveRecipes = 0;
                 progress = 0;
                 duration = 0;
                 isActive = false;
-            }
-        }
-        if (isMultiParallelLogic) {
-            lastRecipe = null;
-            lastOriginRecipe = null;
-            lastFailedMatches = null;
-        }
-    }
-
-    private void modifyChanceRecipes(@Nullable GTRecipe lastRecipe) {
-        for (var entry : lastRecipe.outputs.entrySet()) {
-            var contents = entry.getValue();
-            for (var content : contents) {
-                if (content.getContent() instanceof SizedIngredient sizedIngredient) {
-                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
-                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
-                    else {
-                        if (((int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
-                            content.chance = content.maxChance;
-                            sizedIngredient.setAmount(
-                                    (int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
-                        }
-                    }
-                }
-                if (content.getContent() instanceof FluidIngredient fluidIngredient) {
-                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
-                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
-                    else {
-                        if (((int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
-                            content.chance = content.maxChance;
-                            fluidIngredient.setAmount(
-                                    (int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
-                        }
-                    }
-                }
-            }
-        }
-        for (var entry : lastRecipe.inputs.entrySet()) {
-            var contents = entry.getValue();
-            for (var content : contents) {
-                if (content.getContent() instanceof SizedIngredient sizedIngredient) {
-                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
-                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
-                    else {
-                        if (((int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
-                            content.chance = content.maxChance;
-                            sizedIngredient.setAmount(
-                                    (int) (sizedIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
-                        }
-                    }
-                }
-                if (content.getContent() instanceof FluidIngredient fluidIngredient) {
-                    int total_chance = content.chance + lastRecipe.ocLevel * content.tierChanceBoost;
-                    if (total_chance >= content.maxChance) content.chance = content.maxChance;
-                    else {
-                        if (((int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance))) > 0) {
-                            content.chance = content.maxChance;
-                            fluidIngredient.setAmount(
-                                    (int) (fluidIngredient.getAmount() * (total_chance * 1.0 / content.maxChance)));
-                        }
-                    }
-                }
             }
         }
     }
@@ -866,7 +604,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
 
     protected Map<RecipeCapability<?>, Object2IntMap<?>> makeChanceCaches() {
         Map<RecipeCapability<?>, Object2IntMap<?>> map = new IdentityHashMap<>();
-        for (RecipeCapability<?> cap : GTRegistries.RECIPE_CAPABILITIES.values()) {
+        for (RecipeCapability<?> cap : GTRegistries.RECIPE_CAPABILITIES) {
             map.put(cap, cap.makeChanceCache());
         }
         return map;
@@ -880,7 +618,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             ListTag cacheTag = new ListTag();
             for (var entry : cache.object2IntEntrySet()) {
                 CompoundTag compoundTag = new CompoundTag();
-                var obj = cap.contentToNbt(entry.getKey());
+                var obj = cap.toNbt(entry.getKey(), MixinHelpers.getCurrentBERegistries());
                 compoundTag.put("entry", obj);
                 compoundTag.putInt("cached_chance", entry.getIntValue());
                 cacheTag.add(compoundTag);
@@ -895,7 +633,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         super.loadCustomPersistedData(tag);
         CompoundTag chanceCache = tag.getCompound("chance_cache");
         for (String key : chanceCache.getAllKeys()) {
-            RecipeCapability<?> cap = GTRegistries.RECIPE_CAPABILITIES.get(key);
+            RecipeCapability<?> cap = GTRegistries.RECIPE_CAPABILITIES.get(GTCEu.id(key));
             if (cap == null) continue; // Necessary since we removed a RecipeCapability when nuking Create
             // noinspection rawtypes
             Object2IntMap map = this.chanceCaches.computeIfAbsent(cap, RecipeCapability::makeChanceCache);
@@ -903,7 +641,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             ListTag chanceTag = chanceCache.getList(key, Tag.TAG_COMPOUND);
             for (int i = 0; i < chanceTag.size(); ++i) {
                 CompoundTag chanceKey = chanceTag.getCompound(i);
-                var entry = cap.serializer.fromNbt(chanceKey.get("entry"));
+                var entry = cap.fromNbt(chanceKey.get("entry"), GTRegistries.builtinRegistry());
                 int value = chanceKey.getInt("cached_chance");
                 // noinspection unchecked
                 map.put(entry, value);
@@ -913,7 +651,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             ListTag cacheTag = new ListTag();
             for (var entry : cache.object2IntEntrySet()) {
                 CompoundTag compoundTag = new CompoundTag();
-                var obj = cap.contentToNbt(entry.getKey());
+                var obj = cap.toNbt(entry.getKey(), GTRegistries.builtinRegistry());
                 compoundTag.put("entry", obj);
                 compoundTag.putInt("cached_chance", entry.getIntValue());
                 cacheTag.add(compoundTag);

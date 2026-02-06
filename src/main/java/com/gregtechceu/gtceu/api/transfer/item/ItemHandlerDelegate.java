@@ -1,15 +1,10 @@
 package com.gregtechceu.gtceu.api.transfer.item;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public abstract class ItemHandlerDelegate implements IItemHandlerModifiable {
 
     public IItemHandlerModifiable delegate;

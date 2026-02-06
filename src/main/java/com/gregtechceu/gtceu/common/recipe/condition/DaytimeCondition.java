@@ -1,15 +1,15 @@
 package com.gregtechceu.gtceu.common.recipe.condition;
 
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
-import com.gregtechceu.gtceu.common.data.GTRecipeConditions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeConditions;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,10 +17,10 @@ import org.jetbrains.annotations.NotNull;
 
 @Getter
 @NoArgsConstructor
-public class DaytimeCondition extends RecipeCondition {
+public class DaytimeCondition extends RecipeCondition<DaytimeCondition> {
 
-    public static final Codec<DaytimeCondition> CODEC = RecordCodecBuilder
-            .create(instance -> RecipeCondition.isReverse(instance)
+    public static final MapCodec<DaytimeCondition> CODEC = RecordCodecBuilder
+            .mapCodec(instance -> RecipeCondition.isReverse(instance)
                     .apply(instance, DaytimeCondition::new));
 
     public DaytimeCondition(boolean isReverse) {
@@ -28,7 +28,7 @@ public class DaytimeCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeConditionType<?> getType() {
+    public RecipeConditionType<DaytimeCondition> getType() {
         return GTRecipeConditions.DAYTIME;
     }
 
@@ -48,7 +48,7 @@ public class DaytimeCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeCondition createTemplate() {
+    public DaytimeCondition createTemplate() {
         return new DaytimeCondition();
     }
 }

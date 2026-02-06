@@ -5,13 +5,13 @@ import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeHandler;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableFluidTank;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.utils.GTMath;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -30,28 +30,42 @@ public class SteamEnergyRecipeHandler implements IRecipeHandler<EnergyStack> {
 
     @Override
     public List<EnergyStack> handleRecipeInner(IO io, GTRecipe recipe, List<EnergyStack> left, boolean simulate) {
-        for (var it = left.listIterator(); it.hasNext();) {
-            EnergyStack stack = it.next();
-            if (stack.isEmpty()) {
-                it.remove();
-                continue;
-            }
+        // <<<<<<< HEAD
+        long eut = left.stream().reduce(EnergyStack.EMPTY, EnergyStack::sum).getTotalEU();
+        int totalSteam = GTMath.saturatedCast((long) Math.ceil(eut * conversionRate));
+        if (totalSteam > 0) {
+            SizedFluidIngredient steam = io == IO.IN ?
+                    SizedFluidIngredient.of(GTMaterials.Steam.getFluidTag(), totalSteam) :
+                    SizedFluidIngredient.of(GTMaterials.Steam.getFluid(totalSteam));
+            List<SizedFluidIngredient> list = new ArrayList<>();
+            list.add(steam);
+            var leftSteam = steamTank.handleRecipeInner(io, recipe, list, simulate);
+            if (leftSteam == null || leftSteam.isEmpty()) return null;
+            eut = (long) (leftSteam.getFirst().amount() / conversionRate);
+            // =======
+            // for (var it = left.listIterator(); it.hasNext();) {
+            // EnergyStack stack = it.next();
+            // if (stack.isEmpty()) {
+            // it.remove();
+            // continue;
+            // }
 
-            long totalEU = stack.getTotalEU();
-            int totalSteam = GTMath.saturatedCast((long) Math.ceil(totalEU * conversionRate));
-            if (totalSteam > 0) {
-                var steam = io == IO.IN ? FluidIngredient.of(GTMaterials.Steam.getFluidTag(), totalSteam) :
-                        FluidIngredient.of(GTMaterials.Steam.getFluid(totalSteam));
-                var list = new ArrayList<FluidIngredient>();
-                list.add(steam);
-                var leftSteam = steamTank.handleRecipeInner(io, recipe, list, simulate);
-                if (leftSteam == null || leftSteam.isEmpty()) {
-                    it.remove();
-                } else {
-                    totalEU = (long) (leftSteam.get(0).getAmount() / conversionRate);
-                    it.set(new EnergyStack(totalEU));
-                }
-            }
+            // long totalEU = stack.getTotalEU();
+            // int totalSteam = GTMath.saturatedCast((long) Math.ceil(totalEU * conversionRate));
+            // if (totalSteam > 0) {
+            // var steam = io == IO.IN ? FluidIngredient.of(GTMaterials.Steam.getFluidTag(), totalSteam) :
+            // FluidIngredient.of(GTMaterials.Steam.getFluid(totalSteam));
+            // var list = new ArrayList<FluidIngredient>();
+            // list.add(steam);
+            // var leftSteam = steamTank.handleRecipeInner(io, recipe, list, simulate);
+            // if (leftSteam == null || leftSteam.isEmpty()) {
+            // it.remove();
+            // } else {
+            // totalEU = (long) (leftSteam.get(0).getAmount() / conversionRate);
+            // it.set(new EnergyStack(totalEU));
+            // }
+            // }
+            // >>>>>>> v7.1.0-1.20.1
         }
         return left.isEmpty() ? null : left;
     }

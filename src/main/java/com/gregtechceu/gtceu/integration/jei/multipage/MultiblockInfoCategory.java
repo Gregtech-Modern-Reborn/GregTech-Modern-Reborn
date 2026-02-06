@@ -3,7 +3,7 @@ package com.gregtechceu.gtceu.integration.jei.multipage;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
 
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.jei.ModularUIRecipeCategory;
@@ -12,9 +12,8 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.navigation.ScreenPosition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
+import lombok.Getter;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotDrawable;
 import mezz.jei.api.gui.inputs.RecipeSlotUnderMouse;
@@ -36,22 +35,25 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-@OnlyIn(Dist.CLIENT)
 public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockInfoWrapper> {
 
-    public final static RecipeType<MultiblockInfoWrapper> RECIPE_TYPE = new RecipeType<>(GTCEu.id("multiblock_info"),
+    public final static RecipeType<MultiblockInfoWrapper> RECIPE_TYPE = new RecipeType<>(
+            GTCEu.id("multiblock_info"),
             MultiblockInfoWrapper.class);
+    @Getter
     private final IDrawable background;
+    @Getter
     private final IDrawable icon;
 
     public MultiblockInfoCategory(IJeiHelpers helpers) {
+        super((def) -> new MultiblockInfoWrapper(def.definition));
         IGuiHelper guiHelper = helpers.getGuiHelper();
         this.background = guiHelper.createBlankDrawable(160, 160);
         this.icon = helpers.getGuiHelper().createDrawableItemStack(GTMultiMachines.ELECTRIC_BLAST_FURNACE.asStack());
     }
 
     public static void registerRecipes(IRecipeRegistration registry) {
-        registry.addRecipes(RECIPE_TYPE, GTRegistries.MACHINES.values().stream()
+        registry.addRecipes(RECIPE_TYPE, GTRegistries.MACHINES.stream()
                 .filter(MultiblockMachineDefinition.class::isInstance)
                 .map(MultiblockMachineDefinition.class::cast)
                 .filter(MultiblockMachineDefinition::isRenderXEIPreview)
@@ -59,9 +61,6 @@ public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockIn
                 .toList());
     }
 
-    // Fix JEI Slots display Bugs
-    // Code Form GTCEuModern the newest branch
-    // The author is vfyjxy
     @Override
     public void createRecipeExtras(@NotNull IRecipeExtrasBuilder builder, @NotNull MultiblockInfoWrapper recipe,
                                    @NotNull IFocusGroup focuses) {
@@ -83,7 +82,6 @@ public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockIn
                         .filter(slot -> {
                             Optional<String> slotName = slot.getSlotName();
                             if (slotName.isEmpty()) return false;
-                            if (slot.getRect().getY() != 132) return false;
                             String name = slotName.get();
                             int index = Integer.parseInt(name.substring(5));
                             Widget widget = widgets.get(index);
@@ -118,17 +116,5 @@ public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockIn
     @Override
     public Component getTitle() {
         return Component.translatable("gtceu.jei.multiblock_info");
-    }
-
-    @NotNull
-    @Override
-    public IDrawable getBackground() {
-        return background;
-    }
-
-    @NotNull
-    @Override
-    public IDrawable getIcon() {
-        return icon;
     }
 }

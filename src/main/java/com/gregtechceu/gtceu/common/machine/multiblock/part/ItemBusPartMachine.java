@@ -15,9 +15,9 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDistinctPart;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredIOPartMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
-import com.gregtechceu.gtceu.common.data.GTMachines;
-import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
+import com.gregtechceu.gtceu.common.item.behavior.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
 import com.gregtechceu.gtceu.utils.GTTransferUtils;
 
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
@@ -28,17 +28,15 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -48,10 +46,6 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class ItemBusPartMachine extends TieredIOPartMachine
                                 implements IDistinctPart, IMachineLife, IHasCircuitSlot, IPaintable {
 
@@ -73,14 +67,11 @@ public class ItemBusPartMachine extends TieredIOPartMachine
     protected boolean circuitSlotEnabled;
     @Getter
     @Persisted
-    protected NotifiableItemStackHandler circuitInventory;
+    protected final NotifiableItemStackHandler circuitInventory;
     @Getter
     @Persisted
     @DescSynced
     private boolean isDistinct = false;
-    @Persisted
-    @DescSynced
-    private int CircuitAmount = 1;
 
     public ItemBusPartMachine(IMachineBlockEntity holder, int tier, IO io, Object... args) {
         super(holder, tier, io);
@@ -107,7 +98,7 @@ public class ItemBusPartMachine extends TieredIOPartMachine
     }
 
     protected NotifiableItemStackHandler createCircuitItemHandler(Object... args) {
-        if (args.length > 0 && args[0] instanceof IO io && io == IO.IN) {
+        if (args.length > 0 && args[0] instanceof IO io && io.support(IO.IN)) {
             return new NotifiableItemStackHandler(this, 1, IO.IN, IO.NONE)
                     .setFilter(IntCircuitBehaviour::isIntegratedCircuit);
         } else {
@@ -206,7 +197,7 @@ public class ItemBusPartMachine extends TieredIOPartMachine
     //////////////////////////////////////
 
     @Override
-    public void onNeighborChanged(Block block, BlockPos fromPos, boolean isMoving) {
+    public void onNeighborChanged(net.minecraft.world.level.block.Block block, BlockPos fromPos, boolean isMoving) {
         super.onNeighborChanged(block, fromPos, isMoving);
         updateInventorySubscription();
     }
@@ -254,31 +245,28 @@ public class ItemBusPartMachine extends TieredIOPartMachine
     }
 
     @Override
-    protected InteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                                   BlockHitResult hitResult) {
-        InteractionResult superResult = super.onScrewdriverClick(playerIn, hand, gridSide, hitResult);
-        if (superResult != InteractionResult.PASS) return superResult;
-        if (io == IO.BOTH) return InteractionResult.PASS;
-        if (playerIn.isShiftKeyDown()) {
-            if (swapIO()) {
-                return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
-            }
+    protected ItemInteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                       Direction gridSide, BlockHitResult hitResult) {
+        ItemInteractionResult superResult = super.onScrewdriverClick(playerIn, hand, held, gridSide, hitResult);
+        if (superResult != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) return superResult;
+        if (io == IO.BOTH) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (playerIn.isShiftKeyDown() && swapIO()) {
+            return ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide);
         }
-        return InteractionResult.PASS;
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     public boolean swapIO() {
         BlockPos blockPos = getHolder().pos();
         MachineDefinition newDefinition = null;
-        if (io == IO.IN) {
+        if (io.support(IO.IN)) {
             newDefinition = GTMachines.ITEM_EXPORT_BUS[this.getTier()];
-        } else if (io == IO.OUT) {
+        } else if (io.support(IO.OUT)) {
             newDefinition = GTMachines.ITEM_IMPORT_BUS[this.getTier()];
         }
-
         if (newDefinition == null) return false;
-        BlockState newBlockState = newDefinition.getBlock().defaultBlockState();
 
+        BlockState newBlockState = newDefinition.getBlock().defaultBlockState();
         getLevel().setBlockAndUpdate(blockPos, newBlockState);
 
         if (getLevel().getBlockEntity(blockPos) instanceof IMachineBlockEntity newHolder) {
@@ -300,13 +288,13 @@ public class ItemBusPartMachine extends TieredIOPartMachine
     //////////////////////////////////////
 
     public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
-        if (this.io == IO.IN) {
+        if (this.io.support(IO.OUT)) {
+            IDistinctPart.super.superAttachConfigurators(configuratorPanel);
+        } else if (this.io.support(IO.IN)) {
             IDistinctPart.super.attachConfigurators(configuratorPanel);
             if (hasCircuitSlot && isCircuitSlotEnabled()) {
                 configuratorPanel.attachConfigurators(new CircuitFancyConfigurator(circuitInventory.storage));
             }
-        } else {
-            super.attachConfigurators(configuratorPanel);
         }
     }
 
@@ -326,27 +314,13 @@ public class ItemBusPartMachine extends TieredIOPartMachine
                 container.addWidget(
                         new SlotWidget(getInventory().storage, index++, 4 + x * 18, 4 + y * 18, true, io.support(IO.IN))
                                 .setBackgroundTexture(GuiTextures.SLOT)
-                                .setIngredientIO(this.io == IO.IN ? IngredientIO.INPUT : IngredientIO.OUTPUT));
+                                .setIngredientIO(this.io.support(IO.IN) ? IngredientIO.INPUT : IngredientIO.OUTPUT));
             }
         }
 
         container.setBackground(GuiTextures.BACKGROUND_INVERSE);
         group.addWidget(container);
-        /*
-         * group.addWidget(new IntInputWidget(new Position(160,-40),this::getCircuitAmount, this::setCircuitAmount)
-         * .setMin(1)
-         * .setMax(Integer.MAX_VALUE));
-         */
 
         return group;
-    }
-
-    private void setCircuitAmount(int amount) {
-        this.CircuitAmount = amount;
-        updateInventorySubscription();
-    }
-
-    private int getCircuitAmount() {
-        return this.CircuitAmount;
     }
 }

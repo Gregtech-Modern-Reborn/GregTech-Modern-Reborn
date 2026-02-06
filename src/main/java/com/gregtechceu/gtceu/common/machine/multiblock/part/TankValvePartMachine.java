@@ -11,18 +11,13 @@ import com.gregtechceu.gtceu.utils.GTTransferUtils;
 
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class TankValvePartMachine extends MultiblockPartMachine {
 
     private FluidTankProxyTrait tankProxy;
@@ -84,14 +79,14 @@ public class TankValvePartMachine extends MultiblockPartMachine {
     }
 
     @Override
-    public void onNeighborChanged(Block block, BlockPos fromPos, boolean isMoving) {
+    public void onNeighborChanged(net.minecraft.world.level.block.Block block, BlockPos fromPos, boolean isMoving) {
         super.onNeighborChanged(block, fromPos, isMoving);
         autoIOSubscription.updateSubscription();
     }
 
     @Nullable
     private IFluidHandler getTargetTank() {
-        return GTTransferUtils.getAdjacentFluidHandler(getLevel(), getPos(), getFrontFacing()).resolve().orElse(null);
+        return GTTransferUtils.getAdjacentFluidHandler(getLevel(), getPos(), getFrontFacing()).orElse(null);
     }
 
     private void autoIO() {

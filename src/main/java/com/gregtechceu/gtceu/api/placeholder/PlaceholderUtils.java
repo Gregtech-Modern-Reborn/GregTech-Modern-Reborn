@@ -40,8 +40,11 @@ public class PlaceholderUtils {
     }
 
     public static long toLong(MultiLineComponent component) throws InvalidNumberException {
+        if (component.isEmpty()) return 0L;
+        if (component.size() > 1) throw new InvalidNumberException(component.toString());
+
         try {
-            return component.toLong();
+            return Long.parseLong(component.getFirst().getString());
         } catch (NumberFormatException e) {
             throw new InvalidNumberException(component.toString());
         }

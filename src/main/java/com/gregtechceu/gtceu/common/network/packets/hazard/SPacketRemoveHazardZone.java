@@ -1,19 +1,26 @@
 package com.gregtechceu.gtceu.common.network.packets.hazard;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.client.EnvironmentalHazardClientHandler;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 
-@NoArgsConstructor
 @AllArgsConstructor
-public class SPacketRemoveHazardZone implements GTNetwork.INetPacket {
+public class SPacketRemoveHazardZone implements CustomPacketPayload {
+
+    public static final ResourceLocation ID = GTCEu.id("remove_hazard_zone");
+    public static final Type<SPacketRemoveHazardZone> TYPE = new Type<>(ID);
+    public static final StreamCodec<FriendlyByteBuf, SPacketRemoveHazardZone> CODEC = StreamCodec
+            .ofMember(SPacketRemoveHazardZone::encode, SPacketRemoveHazardZone::new);
 
     public ChunkPos pos;
 
@@ -21,15 +28,18 @@ public class SPacketRemoveHazardZone implements GTNetwork.INetPacket {
         pos = buf.readChunkPos();
     }
 
-    @Override
     public void encode(FriendlyByteBuf buf) {
         buf.writeChunkPos(pos);
     }
 
-    @Override
-    public void execute(NetworkEvent.Context context) {
-        if (context.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
             EnvironmentalHazardClientHandler.INSTANCE.removeHazardZone(pos);
         }
+    }
+
+    @Override
+    public @NotNull Type<SPacketRemoveHazardZone> type() {
+        return TYPE;
     }
 }

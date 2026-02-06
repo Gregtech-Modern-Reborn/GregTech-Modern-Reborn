@@ -1,10 +1,9 @@
 package com.gregtechceu.gtceu.integration.rei.orevein;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockore.BedrockOreDefinition;
-import com.gregtechceu.gtceu.client.ClientProxy;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.integration.xei.widgets.GTOreVeinWidget;
 
 import com.lowdragmc.lowdraglib.gui.texture.ItemStackTexture;
@@ -12,6 +11,7 @@ import com.lowdragmc.lowdraglib.rei.IGui2Renderer;
 import com.lowdragmc.lowdraglib.rei.ModularUIDisplayCategory;
 import com.lowdragmc.lowdraglib.utils.Size;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 import lombok.Getter;
@@ -59,9 +59,11 @@ public class GTBedrockOreDisplayCategory extends ModularUIDisplayCategory<GTBedr
     }
 
     public static void registerDisplays(DisplayRegistry registry) {
-        for (BedrockOreDefinition fluid : ClientProxy.CLIENT_BEDROCK_ORE_VEINS.values()) {
-            registry.add(new GTBedrockOreDisplay(fluid));
-        }
+        var fluids = Minecraft.getInstance().level.registryAccess()
+                .registryOrThrow(GTRegistries.BEDROCK_ORE_REGISTRY);
+        fluids.holders()
+                .filter(ore -> ore.value().canGenerate())
+                .forEach(bedrockOre -> registry.add(new GTBedrockOreDisplay(bedrockOre)));
     }
 
     public static void registerWorkstations(CategoryRegistry registry) {

@@ -1,7 +1,7 @@
 package com.gregtechceu.gtceu.api.transfer.fluid;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +13,10 @@ public class ModifiableFluidHandlerWrapper implements IFluidHandlerModifiable {
 
     @Override
     public void setFluidInTank(int tank, FluidStack fluidStack) {
+        if (handler instanceof IFluidHandlerModifiable modifiable) {
+            modifiable.setFluidInTank(tank, fluidStack);
+            return;
+        }
         var fluid = handler.getFluidInTank(tank);
         var canDrain = handler.drain(fluid, FluidAction.SIMULATE);
         if (!canDrain.isEmpty()) {

@@ -1,16 +1,16 @@
 package com.gregtechceu.gtceu.integration.xei.widgets;
 
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.OreProperty;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.info.MaterialFlags;
+import com.gregtechceu.gtceu.api.material.material.properties.OreProperty;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
-import com.gregtechceu.gtceu.common.data.GTMachines;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.integration.xei.entry.fluid.FluidEntryList;
 import com.gregtechceu.gtceu.integration.xei.entry.fluid.FluidStackList;
 import com.gregtechceu.gtceu.integration.xei.entry.fluid.FluidTagList;
@@ -20,6 +20,7 @@ import com.gregtechceu.gtceu.integration.xei.entry.item.ItemTagList;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -95,10 +96,10 @@ public class GTOreByProduct {
 
         ItemTagList oreStacks = new ItemTagList();
         for (TagPrefix prefix : ORES) {
-            // get all ores with the relevant oredicts instead of just the first unified ore
-            oreStacks.add(ChemicalHelper.getTag(prefix, material), 1, null);
+            // get all ores with the relevant tags instead of just the first unified ore
+            oreStacks.add(ChemicalHelper.getTag(prefix, material), 1, DataComponentPatch.EMPTY);
         }
-        oreStacks.add(ChemicalHelper.getTag(TagPrefix.rawOre, material), 1, null);
+        oreStacks.add(ChemicalHelper.getTag(TagPrefix.rawOre, material), 1, DataComponentPatch.EMPTY);
         itemInputs.add(oreStacks);
 
         // set up machines as inputs
@@ -142,7 +143,7 @@ public class GTOreByProduct {
 
         // add prefixes that should count as inputs to input lists (they will not be displayed in actual page)
         for (TagPrefix prefix : IN_PROCESSING_STEPS) {
-            itemInputs.add(ItemTagList.of(ChemicalHelper.getTag(prefix, material), 1, null));
+            itemInputs.add(ItemTagList.of(ChemicalHelper.getTag(prefix, material), 1, DataComponentPatch.EMPTY));
         }
 
         // total number of inputs added
@@ -193,8 +194,8 @@ public class GTOreByProduct {
         addToOutputs(byproducts[0], TagPrefix.dust, 1);
         addChance(3333, 0);
         FluidTagList tagList = new FluidTagList();
-        tagList.add(GTMaterials.Water.getFluidTag(), 1000, null);
-        tagList.add(GTMaterials.DistilledWater.getFluidTag(), 100, null);
+        tagList.add(GTMaterials.Water.getFluidTag(), 1000, DataComponentPatch.EMPTY);
+        tagList.add(GTMaterials.DistilledWater.getFluidTag(), 100, DataComponentPatch.EMPTY);
         fluidInputs.add(tagList);
 
         // TC crushed/crushed purified -> centrifuged
@@ -232,7 +233,8 @@ public class GTOreByProduct {
             addToOutputs(material, TagPrefix.crushedPurified, 1);
             addToOutputs(byproducts[3], TagPrefix.dust, byproductMultiplier);
             addChance(7000, 0);
-            fluidInputs.add(FluidTagList.of(washedIn.first().getFluidTag(), washedIn.secondInt(), null));
+            fluidInputs.add(FluidTagList.of(washedIn.first().getFluidTag(), washedIn.secondInt(),
+                    DataComponentPatch.EMPTY));
         } else {
             addEmptyOutputs(2);
             fluidInputs.add(new FluidStackList());
@@ -241,14 +243,14 @@ public class GTOreByProduct {
         // electromagnetic separator
         if (hasSeparator) {
             // noinspection DataFlowIssue
-            TagPrefix prefix = (separatedInto.get(separatedInto.size() - 1).getBlastTemperature() == 0 &&
-                    separatedInto.get(separatedInto.size() - 1).hasProperty(PropertyKey.INGOT)) ? TagPrefix.nugget :
+            TagPrefix prefix = (separatedInto.getLast().getBlastTemperature() == 0 &&
+                    separatedInto.getLast().hasProperty(PropertyKey.INGOT)) ? TagPrefix.nugget :
                             TagPrefix.dust;
-            ItemStack separatedStack2 = ChemicalHelper.get(prefix, separatedInto.get(separatedInto.size() - 1),
+            ItemStack separatedStack2 = ChemicalHelper.get(prefix, separatedInto.getLast(),
                     prefix == TagPrefix.nugget ? 2 : 1);
 
             addToOutputs(material, TagPrefix.dust, 1);
-            addToOutputs(separatedInto.get(0), TagPrefix.dust, 1);
+            addToOutputs(separatedInto.getFirst(), TagPrefix.dust, 1);
             addChance(1000, 0);
             addToOutputs(separatedStack2);
             addChance(prefix == TagPrefix.dust ? 500 : 2000, 0);

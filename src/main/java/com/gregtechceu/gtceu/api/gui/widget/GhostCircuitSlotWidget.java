@@ -1,21 +1,18 @@
 package com.gregtechceu.gtceu.api.gui.widget;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
+import com.gregtechceu.gtceu.common.item.behavior.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 
 import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ItemStackTexture;
-import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
-import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
-import com.lowdragmc.lowdraglib.gui.widget.Widget;
-import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
+import com.lowdragmc.lowdraglib.gui.widget.*;
 
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
@@ -106,10 +103,10 @@ public class GhostCircuitSlotWidget extends SlotWidget {
     }
 
     @Override
-    public boolean mouseWheelMove(double mouseX, double mouseY, double wheelDelta) {
+    public boolean mouseWheelMove(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (isConfiguratorOpen()) return true;
         if (isMouseOverElement(mouseX, mouseY) && gui != null) {
-            int newValue = getNextValue(wheelDelta >= 0);
+            int newValue = getNextValue(scrollY >= 0);
             setCircuitValue(newValue);
             return true;
         }
@@ -137,7 +134,7 @@ public class GhostCircuitSlotWidget extends SlotWidget {
     }
 
     @Override
-    public void handleClientAction(int id, FriendlyByteBuf buffer) {
+    public void handleClientAction(int id, RegistryFriendlyByteBuf buffer) {
         switch (id) {
             case SET_TO_ZERO -> this.circuitInventory.setStackInSlot(0, IntCircuitBehaviour.stack(0));
             case SET_TO_EMPTY -> this.circuitInventory.setStackInSlot(0, ItemStack.EMPTY);

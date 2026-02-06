@@ -1,31 +1,34 @@
 package com.gregtechceu.gtceu.api.addon;
 
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.forgespi.language.ModFileScanData;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.IModInfo;
+import net.neoforged.neoforgespi.language.ModFileScanData;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.objectweb.asm.Type;
+import org.jetbrains.annotations.UnmodifiableView;
 
+import java.lang.annotation.ElementType;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-public class AddonFinder {
+public final class AddonFinder {
 
-    private static final Logger LOGGER = LogManager.getLogger();
-    protected static List<IGTAddon> cache = null;
-    protected static Map<String, IGTAddon> modIdMap = new HashMap<>();
+    private static final Logger LOGGER = LogManager.getLogger("GTCEu Addon Finder");
+    private static final List<IGTAddon> cache = new ArrayList<>();
+    private static Map<String, IGTAddon> modIdMap = null;
 
-    public static List<IGTAddon> getAddons() {
-        if (cache == null) {
-            cache = getInstances(GTAddon.class, IGTAddon.class);
-            for (IGTAddon addon : cache) {
-                modIdMap.put(addon.addonModId(), addon);
-            }
-        }
+    @UnmodifiableView
+    public static List<IGTAddon> getAddonList() {
+        ensureInitialized();
+        return Collections.unmodifiableList(cache);
+    }
 
-        return cache;
+    @UnmodifiableView
+    public static Map<String, IGTAddon> getAddons() {
+        ensureInitialized();
+        return Collections.unmodifiableMap(modIdMap);
     }
 
     @Nullable
@@ -33,30 +36,43 @@ public class AddonFinder {
         return modIdMap.get(modId);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private static <T> List<T> getInstances(Class<?> annotationClass, Class<T> instanceClass) {
-        Type annotationType = Type.getType(annotationClass);
-        List<ModFileScanData> allScanData = ModList.get().getAllScanData();
-        Set<String> pluginClassNames = new LinkedHashSet<>();
-        for (ModFileScanData scanData : allScanData) {
-            Iterable<ModFileScanData.AnnotationData> annotations = scanData.getAnnotations();
-            for (ModFileScanData.AnnotationData a : annotations) {
-                if (Objects.equals(a.annotationType(), annotationType)) {
-                    String memberName = a.memberName();
-                    pluginClassNames.add(memberName);
-                }
-            }
+    private static void ensureInitialized() {
+        if (modIdMap == null) {
+            modIdMap = getInstances();
+            cache.addAll(modIdMap.values());
         }
-        List<T> instances = new ArrayList<>();
-        for (String className : pluginClassNames) {
+    }
+
+    private static Map<String, IGTAddon> getInstances() {
+        List<IModInfo> allMods = ModList.get().getMods();
+        Map<String, String> addonClassNames = new LinkedHashMap<>();
+        for (IModInfo modInfo : allMods) {
+            ModFileScanData scanData = modInfo.getOwningFile().getFile().getScanResult();
+            scanData.getAnnotatedBy(GTAddon.class, ElementType.TYPE)
+                    .filter(data -> Objects.equals(data.annotationData().get("value"), modInfo.getModId()))
+                    .map(ModFileScanData.AnnotationData::memberName)
+                    .forEach(className -> addonClassNames.put(modInfo.getModId(), className));
+        }
+        Map<String, IGTAddon> instances = new LinkedHashMap<>();
+        for (var entry : addonClassNames.entrySet()) {
+            String modId = entry.getKey();
+            String className = entry.getValue();
             try {
                 Class<?> asmClass = Class.forName(className);
-                Class<? extends T> asmInstanceClass = asmClass.asSubclass(instanceClass);
-                Constructor<? extends T> constructor = asmInstanceClass.getDeclaredConstructor();
-                T instance = constructor.newInstance();
-                instances.add(instance);
-            } catch (ReflectiveOperationException | LinkageError e) {
-                LOGGER.error("Failed to load: {}", className, e);
+                Class<? extends IGTAddon> asmInstanceClass = asmClass.asSubclass(IGTAddon.class);
+                try {
+                    Constructor<? extends IGTAddon> constructor = asmInstanceClass.getDeclaredConstructor();
+                    IGTAddon instance = constructor.newInstance();
+                    instances.put(modId, instance);
+                } catch (ReflectiveOperationException e) {
+                    LOGGER.error(
+                            "GT addon class {} for addon {} must have a public constructor with no arguments, found {}",
+                            className, modId, Arrays.toString(asmInstanceClass.getConstructors()));
+                }
+            } catch (ClassCastException e) {
+                LOGGER.error("Failed to load: {} from {}, does not extend IGTAddon!", className, modId, e);
+            } catch (ClassNotFoundException | LinkageError e) {
+                LOGGER.error("Failed to load: {} from {}", className, modId, e);
             }
         }
         return instances;

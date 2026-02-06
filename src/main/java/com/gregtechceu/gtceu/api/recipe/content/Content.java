@@ -3,7 +3,6 @@ package com.gregtechceu.gtceu.api.recipe.content;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderFluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
@@ -18,8 +17,9 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.serialization.Codec;
@@ -32,7 +32,7 @@ public class Content {
 
     @Getter
     public final Object content;
-    public int chance;
+    public final int chance;
     public final int maxChance;
     public final int tierChanceBoost;
 
@@ -44,23 +44,39 @@ public class Content {
     }
 
     public static <T> Codec<Content> codec(RecipeCapability<T> capability) {
+        // spotless:off
         return RecordCodecBuilder.create(instance -> instance.group(
                 capability.serializer.codec().fieldOf("content").forGetter(val -> capability.of(val.content)),
-                ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("chance", ChanceLogic.getMaxChancedValue())
-                        .forGetter(val -> val.chance),
-                ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("maxChance", ChanceLogic.getMaxChancedValue())
-                        .forGetter(val -> val.maxChance),
-                Codec.INT.optionalFieldOf("tierChanceBoost", 0)
-                        .forGetter(val -> val.tierChanceBoost))
+                ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("chance", ChanceLogic.getMaxChancedValue()).forGetter(val -> val.chance),
+                ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("maxChance", ChanceLogic.getMaxChancedValue()).forGetter(val -> val.maxChance),
+                Codec.INT.optionalFieldOf("tierChanceBoost", 0).forGetter(val -> val.tierChanceBoost))
                 .apply(instance, Content::new));
+        // spotless:on
     }
 
+    /**
+     * Directly copies a Content.
+     */
     public Content copy(RecipeCapability<?> capability) {
         return new Content(capability.copyContent(content), chance, maxChance, tierChanceBoost);
     }
 
+    /**
+     * Applies a {@link ContentModifier} to a Content. Does not apply the Modifier if the Content has a Chance.
+     */
     public Content copy(RecipeCapability<?> capability, @NotNull ContentModifier modifier) {
         if (modifier == ContentModifier.IDENTITY || chance < maxChance) {
+            return copy(capability);
+        } else {
+            return new Content(capability.copyContent(content, modifier), chance, maxChance, tierChanceBoost);
+        }
+    }
+
+    /**
+     * Applies a {@link ContentModifier} to a Content. Even if the content has a Chance.
+     */
+    public Content copyChanced(RecipeCapability<?> capability, @NotNull ContentModifier modifier) {
+        if (modifier == ContentModifier.IDENTITY) {
             return copy(capability);
         } else {
             return new Content(capability.copyContent(content, modifier), chance, maxChance, tierChanceBoost);
@@ -128,19 +144,19 @@ public class Content {
 
     @OnlyIn(Dist.CLIENT)
     public void drawFluidAmount(GuiGraphics graphics, float x, float y, int width, int height) {
-        if (content instanceof FluidIngredient ingredient) {
+        if (content instanceof SizedFluidIngredient ingredient) {
             graphics.pose().pushPose();
             graphics.pose().translate(0, 0, 400);
             graphics.pose().scale(0.5f, 0.5f, 1);
             Font fontRenderer = Minecraft.getInstance().font;
             int color;
             String s;
-            if (content instanceof IntProviderFluidIngredient) {
+            if (ingredient.ingredient() instanceof IntProviderFluidIngredient) {
                 // with only 5 characters worth of space, that's not enough for a fluid range
                 color = ChatFormatting.GOLD.getColor();
                 s = "X-Y";
             } else {
-                int amount = ingredient.getAmount();
+                int amount = ingredient.amount();
                 color = 0xFFFFFF;
                 s = FormattingUtil.formatBuckets(amount);
                 if (fontRenderer.width(s) > 32)

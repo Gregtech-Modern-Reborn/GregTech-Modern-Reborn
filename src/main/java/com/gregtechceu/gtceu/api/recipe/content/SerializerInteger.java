@@ -1,9 +1,7 @@
 package com.gregtechceu.gtceu.api.recipe.content;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -14,23 +12,13 @@ public class SerializerInteger implements IContentSerializer<Integer> {
     private SerializerInteger() {}
 
     @Override
-    public void toNetwork(FriendlyByteBuf buf, Integer content) {
+    public void toNetwork(RegistryFriendlyByteBuf buf, Integer content) {
         buf.writeInt(content);
     }
 
     @Override
-    public Integer fromNetwork(FriendlyByteBuf buf) {
+    public Integer fromNetwork(RegistryFriendlyByteBuf buf) {
         return buf.readInt();
-    }
-
-    @Override
-    public Integer fromJson(JsonElement json) {
-        return json.getAsInt();
-    }
-
-    @Override
-    public JsonElement toJson(Integer content) {
-        return new JsonPrimitive(content);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.gregtechceu.gtceu.api.item.tool;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.tools.GTToolBehaviors;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,10 +10,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static com.gregtechceu.gtceu.api.item.tool.ToolHelper.*;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, modid = GTCEu.MOD_ID)
+@EventBusSubscriber(modid = GTCEu.MOD_ID)
 public class TreeFellingHelper {
 
     private final ServerPlayer player;
@@ -83,21 +83,21 @@ public class TreeFellingHelper {
     }
 
     @SubscribeEvent
-    public static void onWorldTick(TickEvent.LevelTickEvent event) {
-        if (event.phase == TickEvent.Phase.START && event.side == LogicalSide.SERVER && !helpers.isEmpty()) {
+    public static void onWorldTick(LevelTickEvent.Pre event) {
+        if (!event.getLevel().isClientSide && !helpers.isEmpty()) {
             var iterator = helpers.iterator();
             while (iterator.hasNext()) {
                 var helper = iterator.next();
-                if (event.level == helper.player.level()) {
+                if (event.getLevel() == helper.player.level()) {
+                    ItemStack held = helper.player.getMainHandItem();
                     if (helper.player.isRemoved() || helper.orderedBlocks.isEmpty() || helper.tool.isEmpty() ||
-                            !(hasBehaviorsTag(helper.player.getMainHandItem()) &&
-                                    getBehaviorsTag(helper.player.getMainHandItem()).getBoolean(TREE_FELLING_KEY))) {
+                            !getBehaviorsComponent(held).hasBehavior(GTToolBehaviors.TREE_FELLING)) {
                         iterator.remove();
                         continue;
                     }
-                    if (helper.tick % ConfigHolder.INSTANCE.tools.treeFellingDelay == 0)
-                        ToolHelper.breakBlockRoutine(helper.player, helper.tool, helper.orderedBlocks.removeLast(),
-                                true);
+                    if (helper.tick % ConfigHolder.INSTANCE.tools.treeFellingDelay == 0) {
+                        ToolHelper.destroyBlock(helper.player, helper.tool, helper.orderedBlocks.removeLast(), true);
+                    }
                     helper.tick++;
                 }
             }

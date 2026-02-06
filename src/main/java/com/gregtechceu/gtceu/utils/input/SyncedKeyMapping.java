@@ -1,19 +1,19 @@
 package com.gregtechceu.gtceu.utils.input;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 import com.gregtechceu.gtceu.common.network.packets.CPacketKeyDown;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.settings.IKeyConflictContext;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.settings.IKeyConflictContext;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import it.unimi.dsi.fastutil.ints.Int2BooleanMap;
@@ -21,6 +21,7 @@ import it.unimi.dsi.fastutil.ints.Int2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.Set;
@@ -82,7 +83,7 @@ public final class SyncedKeyMapping {
      * @param mcKeyMapping Doubly-wrapped supplier around a keymapping from
      *                     {@link net.minecraft.client.Options Minecraft.getInstance().options}.
      */
-    public static SyncedKeyMapping createFromMC(Supplier<Supplier<KeyMapping>> mcKeyMapping) {
+    public static @NotNull SyncedKeyMapping createFromMC(@NotNull Supplier<Supplier<KeyMapping>> mcKeyMapping) {
         return new SyncedKeyMapping(mcKeyMapping);
     }
 
@@ -91,19 +92,21 @@ public final class SyncedKeyMapping {
      *
      * @param keyCode The key code.
      */
-    public static SyncedKeyMapping create(int keyCode) {
+    public static @NotNull SyncedKeyMapping create(int keyCode) {
         return new SyncedKeyMapping(keyCode);
     }
 
     /**
      * Create a new SyncedKeyMapping with server held and pressed syncing to server.<br>
-     * Will automatically create a keymapping entry in the MC options page under the gregtechceu category.
+     * Will automatically create a keymapping entry in the MC options page under the GregTechCEu category.
      *
      * @param nameKey Translation key for the keymapping name.
      * @param ctx     Conflict context for the keymapping options category.
      * @param keyCode The key code, from {@link InputConstants}.
      */
-    public static SyncedKeyMapping createConfigurable(String nameKey, IKeyConflictContext ctx, int keyCode) {
+    public static @NotNull SyncedKeyMapping createConfigurable(@NotNull String nameKey,
+                                                               @NotNull IKeyConflictContext ctx,
+                                                               int keyCode) {
         return createConfigurable(nameKey, ctx, keyCode, GTCEu.NAME);
     }
 
@@ -116,14 +119,28 @@ public final class SyncedKeyMapping {
      * @param keyCode  The key code, from {@link InputConstants}.
      * @param category The category in the MC options page.
      */
-    public static SyncedKeyMapping createConfigurable(String nameKey, IKeyConflictContext ctx, int keyCode,
-                                                      String category) {
+    public static @NotNull SyncedKeyMapping createConfigurable(@NotNull String nameKey,
+                                                               @NotNull IKeyConflictContext ctx,
+                                                               int keyCode, @NotNull String category) {
         return new SyncedKeyMapping(nameKey, ctx, keyCode, category);
     }
 
     @OnlyIn(Dist.CLIENT)
-    private Object createKeyMapping(String nameKey, IKeyConflictContext ctx, int keyCode, String category) {
+    private @NotNull Object createKeyMapping(@NotNull String nameKey, @NotNull IKeyConflictContext ctx, int keyCode,
+                                             String category) {
         return new KeyMapping(nameKey, ctx, InputConstants.Type.KEYSYM, keyCode, category);
+    }
+
+    /**
+     * Check if the current client-side player is holding down this key.
+     *
+     * @return If the key is held. Always returns false on the server.
+     */
+    public boolean isKeyDown() {
+        if (GTCEu.isClientSide()) {
+            return isKeyDownClient();
+        }
+        return false;
     }
 
     /**
@@ -133,16 +150,25 @@ public final class SyncedKeyMapping {
      *
      * @return If the key is held.
      */
-    public boolean isKeyDown(Player player) {
-        if (player.level().isClientSide) {
-            if (keyMapping != null) {
-                return keyMapping.isDown();
-            }
-            long id = Minecraft.getInstance().getWindow().getWindow();
-            return InputConstants.isKeyDown(id, keyCode);
+    public boolean isKeyDown(@NotNull Player player) {
+        if (player.level().isClientSide()) {
+            return isKeyDownClient();
         }
         Boolean isKeyDown = serverMapping.get((ServerPlayer) player);
         return isKeyDown != null ? isKeyDown : false;
+    }
+
+    /**
+     * Is only safe to call on the client side
+     *
+     * @return if the key is down
+     */
+    private boolean isKeyDownClient() {
+        if (keyMapping != null) {
+            return keyMapping.isDown();
+        }
+        long id = Minecraft.getInstance().getWindow().getWindow();
+        return InputConstants.isKeyDown(id, keyCode);
     }
 
     /**
@@ -152,14 +178,16 @@ public final class SyncedKeyMapping {
      * @param player   The player who owns this listener.
      * @param listener The handler for the key clicked event.
      */
-    public SyncedKeyMapping registerPlayerListener(ServerPlayer player, IKeyPressedListener listener) {
+    public @NotNull SyncedKeyMapping registerPlayerListener(@NotNull ServerPlayer player,
+                                                            @NotNull IKeyPressedListener listener) {
         Set<IKeyPressedListener> listenerSet = playerListeners
                 .computeIfAbsent(player, $ -> Collections.newSetFromMap(new WeakHashMap<>()));
         listenerSet.add(listener);
         return this;
     }
 
-    public static void onRegisterKeyBinds(RegisterKeyMappingsEvent event) {
+    @ApiStatus.Internal
+    public static void onRegisterKeyBinds(@NotNull RegisterKeyMappingsEvent event) {
         for (SyncedKeyMapping value : KEYMAPPINGS.values()) {
             if (value.keyMappingGetter != null) {
                 value.keyMapping = value.keyMappingGetter.get().get();
@@ -177,7 +205,7 @@ public final class SyncedKeyMapping {
      * @param player   The player who owns this listener.
      * @param listener The handler for the key clicked event.
      */
-    public void removePlayerListener(ServerPlayer player, IKeyPressedListener listener) {
+    public void removePlayerListener(@NotNull ServerPlayer player, @NotNull IKeyPressedListener listener) {
         Set<IKeyPressedListener> listenerSet = playerListeners.get(player);
         if (listenerSet != null) {
             listenerSet.remove(listener);
@@ -190,7 +218,7 @@ public final class SyncedKeyMapping {
      *
      * @param listener The handler for the key clicked event.
      */
-    public SyncedKeyMapping registerGlobalListener(IKeyPressedListener listener) {
+    public @NotNull SyncedKeyMapping registerGlobalListener(@NotNull IKeyPressedListener listener) {
         globalListeners.add(listener);
         return this;
     }
@@ -200,33 +228,32 @@ public final class SyncedKeyMapping {
      *
      * @param listener The handler for the key clicked event.
      */
-    public void removeGlobalListener(IKeyPressedListener listener) {
+    public void removeGlobalListener(@NotNull IKeyPressedListener listener) {
         globalListeners.remove(listener);
     }
 
+    @ApiStatus.Internal
     @SubscribeEvent
     @OnlyIn(Dist.CLIENT)
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            updatingKeyDown.clear();
-            for (var entry : KEYMAPPINGS.int2ObjectEntrySet()) {
-                SyncedKeyMapping keyMapping = entry.getValue();
-                boolean previousKeyDown = keyMapping.isKeyDown;
+    public static void onClientTick(ClientTickEvent.Pre event) {
+        updatingKeyDown.clear();
+        for (var entry : KEYMAPPINGS.int2ObjectEntrySet()) {
+            SyncedKeyMapping keyMapping = entry.getValue();
+            boolean previousKeyDown = keyMapping.isKeyDown;
 
-                if (keyMapping.keyMapping != null) {
-                    keyMapping.isKeyDown = keyMapping.keyMapping.isDown();
-                } else {
-                    long id = Minecraft.getInstance().getWindow().getWindow();
-                    keyMapping.isKeyDown = InputConstants.isKeyDown(id, keyMapping.keyCode);
-                }
+            if (keyMapping.keyMapping != null) {
+                keyMapping.isKeyDown = keyMapping.keyMapping.isDown();
+            } else {
+                long id = Minecraft.getInstance().getWindow().getWindow();
+                keyMapping.isKeyDown = InputConstants.isKeyDown(id, keyMapping.keyCode);
+            }
 
-                if (previousKeyDown != keyMapping.isKeyDown) {
-                    updatingKeyDown.put(entry.getIntKey(), keyMapping.isKeyDown);
-                }
+            if (previousKeyDown != keyMapping.isKeyDown) {
+                updatingKeyDown.put(entry.getIntKey(), keyMapping.isKeyDown);
             }
-            if (!updatingKeyDown.isEmpty()) {
-                GTNetwork.sendToServer(new CPacketKeyDown(updatingKeyDown));
-            }
+        }
+        if (!updatingKeyDown.isEmpty()) {
+            PacketDistributor.sendToServer(new CPacketKeyDown(updatingKeyDown));
         }
     }
 

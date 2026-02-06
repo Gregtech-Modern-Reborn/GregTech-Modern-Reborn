@@ -2,15 +2,13 @@ package com.gregtechceu.gtceu.client.model.machine.overlays;
 
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic.Status;
 import com.gregtechceu.gtceu.api.registry.registrate.provider.GTBlockstateProvider;
-import com.gregtechceu.gtceu.common.data.models.GTMachineModels;
-import com.gregtechceu.gtceu.common.data.models.GTModels;
+import com.gregtechceu.gtceu.data.model.GTMachineModels;
+import com.gregtechceu.gtceu.data.model.GTModels;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -93,7 +91,6 @@ public class WorkableOverlays {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static class StatusTextures {
 
         public static final StatusTextures EMPTY = new StatusTextures();

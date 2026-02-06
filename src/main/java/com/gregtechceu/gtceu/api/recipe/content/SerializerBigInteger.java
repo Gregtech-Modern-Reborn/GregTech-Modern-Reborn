@@ -1,9 +1,7 @@
 package com.gregtechceu.gtceu.api.recipe.content;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Lifecycle;
@@ -25,23 +23,13 @@ public class SerializerBigInteger implements IContentSerializer<BigInteger> {
     private SerializerBigInteger() {}
 
     @Override
-    public void toNetwork(FriendlyByteBuf buf, BigInteger content) {
+    public void toNetwork(RegistryFriendlyByteBuf buf, BigInteger content) {
         buf.writeUtf(content.toString());
     }
 
     @Override
-    public BigInteger fromNetwork(FriendlyByteBuf buf) {
+    public BigInteger fromNetwork(RegistryFriendlyByteBuf buf) {
         return new BigInteger(buf.readUtf());
-    }
-
-    @Override
-    public BigInteger fromJson(JsonElement json) {
-        return json.getAsBigInteger();
-    }
-
-    @Override
-    public JsonElement toJson(BigInteger content) {
-        return new JsonPrimitive(content);
     }
 
     @Override

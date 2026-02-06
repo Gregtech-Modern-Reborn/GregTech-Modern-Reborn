@@ -1,13 +1,11 @@
 package com.gregtechceu.gtceu.integration.xei.entry.fluid;
 
 import net.minecraft.core.HolderSet;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +16,9 @@ public final class FluidHolderSetList implements FluidEntryList {
     @Getter
     private final List<FluidHolderSetEntry> entries = new ArrayList<>();
 
-    public static FluidHolderSetList of(@NotNull HolderSet<Fluid> set, int amount, @Nullable CompoundTag nbt) {
+    public static FluidHolderSetList of(@NotNull HolderSet<Fluid> set, int amount) {
         var list = new FluidHolderSetList();
-        list.add(set, amount, nbt);
+        list.add(set, amount);
         return list;
     }
 
@@ -28,8 +26,8 @@ public final class FluidHolderSetList implements FluidEntryList {
         entries.add(entry);
     }
 
-    public void add(@NotNull HolderSet<Fluid> set, int amount, @Nullable CompoundTag nbt) {
-        add(new FluidHolderSetEntry(set, amount, nbt));
+    public void add(@NotNull HolderSet<Fluid> set, int amount) {
+        add(new FluidHolderSetEntry(set, amount));
     }
 
     @Override
@@ -44,10 +42,10 @@ public final class FluidHolderSetList implements FluidEntryList {
                 .toList();
     }
 
-    public record FluidHolderSetEntry(@NotNull HolderSet<Fluid> set, int amount, @Nullable CompoundTag nbt) {
+    public record FluidHolderSetEntry(@NotNull HolderSet<Fluid> set, int amount) {
 
         public Stream<FluidStack> stacks() {
-            return set.stream().map(holder -> new FluidStack(holder.get(), amount, nbt));
+            return set.stream().map(holder -> new FluidStack(holder, amount));
         }
     }
 }

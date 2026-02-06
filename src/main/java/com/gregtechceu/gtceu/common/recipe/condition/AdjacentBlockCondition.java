@@ -1,10 +1,10 @@
 package com.gregtechceu.gtceu.common.recipe.condition;
 
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
-import com.gregtechceu.gtceu.common.data.GTRecipeConditions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeConditions;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.core.BlockPos;
@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,11 +32,11 @@ import static com.gregtechceu.gtceu.api.recipe.condition.ConditionSerializeUtils
 import static com.gregtechceu.gtceu.api.recipe.condition.ConditionSerializeUtils.encodeHolderSets;
 
 @NoArgsConstructor
-public class AdjacentBlockCondition extends RecipeCondition {
+public class AdjacentBlockCondition extends RecipeCondition<AdjacentBlockCondition> {
 
     // spotless:off
-    public static final Codec<AdjacentBlockCondition> CODEC =
-            RecordCodecBuilder.create(instance -> RecipeCondition.isReverse(instance).and(
+    public static final MapCodec<AdjacentBlockCondition> CODEC =
+            RecordCodecBuilder.mapCodec(instance -> RecipeCondition.isReverse(instance).and(
                     Codec.STRING.fieldOf("blockString").forGetter(AdjacentBlockCondition::getBlockString)
             ).apply(instance, AdjacentBlockCondition::new));
     // spotless:on
@@ -94,7 +95,7 @@ public class AdjacentBlockCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeConditionType<?> getType() {
+    public RecipeConditionType<AdjacentBlockCondition> getType() {
         return GTRecipeConditions.ADJACENT_BLOCK;
     }
 
@@ -132,11 +133,11 @@ public class AdjacentBlockCondition extends RecipeCondition {
         if (getBlocks().isEmpty() || (recipe.data.contains("blockA") && recipe.data.contains("blockB"))) {
             List<HolderSet<Block>> blocks = new ArrayList<>();
 
-            Block blockA = BuiltInRegistries.BLOCK.get(new ResourceLocation(recipe.data.getString("blockA")));
+            Block blockA = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(recipe.data.getString("blockA")));
             if (!blockA.defaultBlockState().isAir()) {
                 blocks.add(HolderSet.direct(blockA.builtInRegistryHolder()));
             }
-            Block blockB = BuiltInRegistries.BLOCK.get(new ResourceLocation(recipe.data.getString("blockB")));
+            Block blockB = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(recipe.data.getString("blockB")));
             if (!blockB.defaultBlockState().isAir()) {
                 blocks.add(HolderSet.direct(blockB.builtInRegistryHolder()));
             }

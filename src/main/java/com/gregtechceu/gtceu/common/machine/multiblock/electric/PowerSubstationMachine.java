@@ -33,6 +33,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -256,12 +257,14 @@ public class PowerSubstationMachine extends WorkableMultiblockMachine
 
                 if (inputPerSec > outputPerSec) {
                     BigInteger timeToFillSeconds = energyCapacity.subtract(energyStored)
-                            .divide(BigInteger.valueOf(inputPerSec - outputPerSec));
+                            .divide(BigInteger.valueOf(Mth.floor(
+                                    (inputPerSec - outputPerSec) / 20.0f * getLevel().tickRateManager().tickrate())));
                     textList.add(Component.translatable("gtceu.multiblock.power_substation.time_to_fill",
                             getTimeToFillDrainText(timeToFillSeconds).setStyle(STYLE_GREEN)));
                 } else if (inputPerSec < outputPerSec) {
                     BigInteger timeToDrainSeconds = energyStored
-                            .divide(BigInteger.valueOf(outputPerSec - inputPerSec));
+                            .divide(BigInteger.valueOf(Mth.floor(
+                                    (outputPerSec - inputPerSec) / 20.0f * getLevel().tickRateManager().tickrate())));
                     textList.add(Component.translatable("gtceu.multiblock.power_substation.time_to_drain",
                             getTimeToFillDrainText(timeToDrainSeconds).setStyle(STYLE_RED)));
                 }

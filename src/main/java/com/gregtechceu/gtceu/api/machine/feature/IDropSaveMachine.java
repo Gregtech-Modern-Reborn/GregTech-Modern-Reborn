@@ -1,6 +1,7 @@
 package com.gregtechceu.gtceu.api.machine.feature;
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * A machine that can save its contents when dropped.
@@ -22,18 +23,11 @@ public interface IDropSaveMachine extends IMachineFeature {
     }
 
     /**
-     * Saves the contents of the block entity to a compound tag.
+     * Saves the contents of the block entity to an item stack.
      *
-     * @param tag The tag to save to.
+     * @param stack The stack to save to.
      */
-    default void saveToItem(CompoundTag tag) {
-        self().holder.saveManagedPersistentData(tag, true);
-    }
-
-    /**
-     * Loads the contents of the block entity from a compound tag.
-     */
-    default void loadFromItem(CompoundTag tag) {
-        self().holder.loadManagedPersistentData(tag);
+    default void saveToItem(ItemStack stack, HolderLookup.Provider registries) {
+        self().holder.self().saveToItem(stack, registries);
     }
 }

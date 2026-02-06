@@ -1,15 +1,17 @@
 package com.gregtechceu.gtceu.api.recipe.lookup.ingredient.fluid;
 
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.AbstractMapIngredient;
 
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
+import net.neoforged.neoforge.fluids.crafting.TagFluidIngredient;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 public class FluidTagMapIngredient extends AbstractMapIngredient {
@@ -22,13 +24,11 @@ public class FluidTagMapIngredient extends AbstractMapIngredient {
 
     @NotNull
     public static List<AbstractMapIngredient> from(@NotNull FluidIngredient ingredient) {
-        List<AbstractMapIngredient> ingredients = new ObjectArrayList<>();
-        for (FluidIngredient.Value value : ingredient.values) {
-            if (value instanceof FluidIngredient.TagValue tagValue) {
-                ingredients.add(new FluidTagMapIngredient(tagValue.tag()));
-            }
+        if (ingredient instanceof TagFluidIngredient tagIngredient) {
+            return Collections.singletonList(new FluidTagMapIngredient(tagIngredient.tag()));
+        } else {
+            return Collections.emptyList();
         }
-        return ingredients;
     }
 
     @SuppressWarnings("deprecation")

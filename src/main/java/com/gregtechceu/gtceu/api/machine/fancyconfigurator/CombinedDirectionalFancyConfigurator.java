@@ -17,7 +17,6 @@ import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.utils.Size;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
 
 import org.jetbrains.annotations.Nullable;
@@ -28,10 +27,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class CombinedDirectionalFancyConfigurator implements IFancyUIProvider {
 
     private final List<Supplier<IDirectionalConfigHandler>> configs;
@@ -59,7 +54,14 @@ public class CombinedDirectionalFancyConfigurator implements IFancyUIProvider {
 
     @Override
     public Component getTitle() {
-        return Component.translatable("gtceu.gui.directional_setting.title"); // TODO add this
+        return Component.translatable("gtceu.gui.directional_setting.title");
+    }
+
+    @Override
+    public List<Component> getTabTooltips() {
+        List<Component> tooltip = new ArrayList<>();
+        tooltip.add(Component.translatable("gtceu.gui.directional_setting.tab_tooltip"));
+        return tooltip;
     }
 
     // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

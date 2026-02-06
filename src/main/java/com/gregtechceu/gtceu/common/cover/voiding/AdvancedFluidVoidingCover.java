@@ -17,19 +17,15 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import it.unimi.dsi.fastutil.objects.Object2LongMaps;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class AdvancedFluidVoidingCover extends FluidVoidingCover {
 
     @Persisted
@@ -46,8 +42,8 @@ public class AdvancedFluidVoidingCover extends FluidVoidingCover {
     @Getter
     private BucketMode transferBucketMode = BucketMode.MILLI_BUCKET;
 
-    private NumberInputWidget<Integer> stackSizeInput;
-    private EnumSelectorWidget<BucketMode> stackSizeBucketModeInput;
+    private @Nullable NumberInputWidget<Integer> stackSizeInput;
+    private @Nullable EnumSelectorWidget<BucketMode> stackSizeBucketModeInput;
 
     public AdvancedFluidVoidingCover(CoverDefinition definition, ICoverable coverHolder, Direction attachedSide) {
         super(definition, coverHolder, attachedSide);
@@ -81,7 +77,7 @@ public class AdvancedFluidVoidingCover extends FluidVoidingCover {
 
             long diff = presentAmount - targetAmount;
             for (int op : GTMath.split(diff)) {
-                var toDrain = new FluidStack(stack, op);
+                var toDrain = stack.copyWithAmount(op);
                 fluidHandler.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
             }
         }

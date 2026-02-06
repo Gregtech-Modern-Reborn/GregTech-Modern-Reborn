@@ -28,7 +28,7 @@ public class BasicUnbakedModel implements UnbakedModel {
     @Override
     public @Nullable BakedModel bake(@NotNull ModelBaker baker,
                                      @NotNull Function<Material, TextureAtlasSprite> spriteGetter,
-                                     @NotNull ModelState state, @NotNull ResourceLocation location) {
+                                     @NotNull ModelState state) {
         return null;
     }
 }

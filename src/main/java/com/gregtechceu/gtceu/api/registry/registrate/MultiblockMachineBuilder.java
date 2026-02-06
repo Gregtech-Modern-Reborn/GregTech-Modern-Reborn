@@ -1,28 +1,28 @@
 package com.gregtechceu.gtceu.api.registry.registrate;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.block.IMachineBlock;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
-import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.gui.editor.EditableMachineUI;
 import com.gregtechceu.gtceu.api.item.MetaMachineItem;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
+import com.gregtechceu.gtceu.api.machine.RotationState;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
-import com.gregtechceu.gtceu.api.pattern.BlockPattern;
-import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.multiblock.BlockPattern;
+import com.gregtechceu.gtceu.api.multiblock.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.modifier.RecipeModifier;
 import com.gregtechceu.gtceu.api.registry.registrate.provider.GTBlockstateProvider;
 import com.gregtechceu.gtceu.utils.memoization.GTMemoizer;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -45,7 +45,7 @@ import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 import com.tterrag.registrate.util.nullness.NonNullConsumer;
 import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
 import dev.latvian.mods.rhino.util.HideFromJS;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -56,10 +56,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.*;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 @Accessors(chain = true, fluent = true)
 public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDefinition> {
 
@@ -77,6 +73,7 @@ public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDe
     @Setter
     private Function<MultiblockControllerMachine, Comparator<IMultiPart>> partSorter = (c) -> (a, b) -> 0;
     @Setter
+    @Nullable
     private TriFunction<IMultiController, IMultiPart, Direction, BlockState> partAppearance;
     @Getter
     @Setter
@@ -163,12 +160,12 @@ public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDe
     }
 
     @Override
-    public MultiblockMachineBuilder blockBuilder(Consumer<BlockBuilder<? extends Block, ?>> blockBuilder) {
+    public MultiblockMachineBuilder blockBuilder(@Nullable Consumer<BlockBuilder<? extends Block, ?>> blockBuilder) {
         return (MultiblockMachineBuilder) super.blockBuilder(blockBuilder);
     }
 
     @Override
-    public MultiblockMachineBuilder itemBuilder(Consumer<ItemBuilder<? extends MetaMachineItem, ?>> itemBuilder) {
+    public MultiblockMachineBuilder itemBuilder(@Nullable Consumer<ItemBuilder<? extends MetaMachineItem, ?>> itemBuilder) {
         return (MultiblockMachineBuilder) super.itemBuilder(itemBuilder);
     }
 
@@ -187,7 +184,7 @@ public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDe
         return (MultiblockMachineBuilder) super.tier(tier);
     }
 
-    public MultiblockMachineBuilder recipeOutputLimits(Object2IntMap<RecipeCapability<?>> map) {
+    public MultiblockMachineBuilder recipeOutputLimits(Reference2IntMap<RecipeCapability<?>> map) {
         return (MultiblockMachineBuilder) super.recipeOutputLimits(map);
     }
 
@@ -283,7 +280,7 @@ public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDe
     }
 
     @Override
-    public MultiblockMachineBuilder appearance(Supplier<BlockState> state) {
+    public MultiblockMachineBuilder appearance(@Nullable Supplier<BlockState> state) {
         return (MultiblockMachineBuilder) super.appearance(state);
     }
 
@@ -342,7 +339,7 @@ public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDe
     }
 
     @Override
-    public MultiblockMachineBuilder tooltips(List<? extends @Nullable Component> components) {
+    public MultiblockMachineBuilder tooltips(List<? extends Component> components) {
         return (MultiblockMachineBuilder) super.tooltips(components);
     }
 
@@ -487,8 +484,11 @@ public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDe
     public MultiblockMachineDefinition register() {
         var definition = super.register();
         definition.setGenerator(generator);
+        // noinspection ConstantValue it can be null by mistake.
         if (pattern == null) {
-            throw new IllegalStateException("missing pattern while creating multiblock " + name);
+            GTCEu.LOGGER.error(
+                    "missing pattern while creating multiblock {}, something's likely gone very wrong! Check the full log.",
+                    name);
         }
         definition.setPatternFactory(GTMemoizer.memoize(() -> pattern.apply(definition)));
         definition.setShapes(() -> shapeInfos.stream().map(factory -> factory.apply(definition))
@@ -504,6 +504,6 @@ public class MultiblockMachineBuilder extends MachineBuilder<MultiblockMachineDe
         }
         definition.setPartAppearance(partAppearance);
         definition.setAdditionalDisplay(additionalDisplay);
-        return value = definition;
+        return definition;
     }
 }

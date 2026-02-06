@@ -23,7 +23,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
@@ -149,7 +149,7 @@ public class MachineCoverContainer implements ICoverable, IEnhancedManaged {
     }
 
     @Override
-    public CoverBehavior getCoverAtSide(Direction side) {
+    public @Nullable CoverBehavior getCoverAtSide(Direction side) {
         return switch (side) {
             case UP -> up;
             case SOUTH -> south;
@@ -207,7 +207,7 @@ public class MachineCoverContainer implements ICoverable, IEnhancedManaged {
 
     @SuppressWarnings("unused")
     private CoverBehavior deserializeCoverUid(CompoundTag uid) {
-        var definitionId = new ResourceLocation(uid.getString("id"));
+        var definitionId = ResourceLocation.parse(uid.getString("id"));
         var side = GTUtil.DIRECTIONS[uid.getInt("side")];
         var definition = GTRegistries.COVERS.get(definitionId);
         if (definition != null) {

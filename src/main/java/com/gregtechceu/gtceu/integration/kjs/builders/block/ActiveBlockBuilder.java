@@ -1,104 +1,111 @@
 package com.gregtechceu.gtceu.integration.kjs.builders.block;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.block.ActiveBlock;
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
+import com.gregtechceu.gtceu.integration.kjs.helpers.GTResourceLocation;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 
 import dev.latvian.mods.kubejs.block.BlockBuilder;
+import dev.latvian.mods.kubejs.block.BlockRenderType;
 import dev.latvian.mods.kubejs.client.VariantBlockStateGenerator;
-import dev.latvian.mods.kubejs.generator.AssetJsonGenerator;
+import dev.latvian.mods.kubejs.generator.KubeAssetGenerator;
+import dev.latvian.mods.kubejs.util.ID;
 
-@SuppressWarnings("unused")
+import java.util.function.UnaryOperator;
+
+import static dev.latvian.mods.kubejs.generator.KubeAssetGenerator.*;
+
 public class ActiveBlockBuilder extends BlockBuilder {
 
-    private enum Type {
+    // spotless:off
+    public static final UnaryOperator<String> ACTIVE = s -> s + "_active";
+    public static final UnaryOperator<String> BLOOM = s -> s + "_bloom";
+    public static final UnaryOperator<String> ACTIVE_BLOCK = (UnaryOperator<String>) ID.BLOCK.andThen(ACTIVE);
+    public static final ResourceLocation CUBE_2_LAYER_ALL_MODEL = GTCEu.id("block/cube_2_layer/all");
+    public static final ResourceLocation CUBE_BOTTOM_TOP_MODEL = ResourceLocation.withDefaultNamespace("block/cube_bottom_top");
+    public static final ResourceLocation FIRE_BOX_ACTIVE_MODEL = GTCEu.id("block/fire_box_active");
+    // spotless:on
+
+    public enum Type {
         SIMPLE,
         BLOOM,
         FIREBOX,
         CUSTOM
     }
 
-    private transient Type type = Type.CUSTOM;
+    public transient Type type = Type.CUSTOM;
+    public transient String activeTexture;
 
     public ActiveBlockBuilder(ResourceLocation id) {
-        super(id);
+        super(GTResourceLocation.implicitAsGtceu(id));
         property(GTBlockStateProperties.ACTIVE);
-        renderType("cutout_mipped");
+        renderType(BlockRenderType.CUTOUT_MIPPED);
+        activeTexture = ACTIVE.apply(baseTexture);
     }
 
     public ActiveBlockBuilder simple(String base) {
-        textures.addProperty("base", base);
-        textures.addProperty("active", base + "_active");
+        baseTexture = base;
+        activeTexture = ACTIVE.apply(base);
         type = Type.SIMPLE;
         return this;
     }
 
     public ActiveBlockBuilder firebox(String bottom, String side, String top) {
-        textures.addProperty("bottom", bottom);
-        textures.addProperty("side", side);
-        textures.addProperty("top", top);
+        textures.put("bottom", bottom);
+        textures.put("side", side);
+        textures.put("top", top);
         type = Type.FIREBOX;
         return this;
     }
 
     public ActiveBlockBuilder bloom(String base) {
-        textures.addProperty("base", base);
-        textures.addProperty("bloom", base + "_bloom");
+        baseTexture = base;
+        activeTexture = BLOOM.apply(base);
         type = Type.BLOOM;
         return this;
     }
 
     @Override
-    protected void generateBlockStateJson(VariantBlockStateGenerator bs) {
-        bs.simpleVariant("active=false", newID("block/", "").toString());
-        bs.simpleVariant("active=true", newID("block/", "_active").toString());
+    protected void generateBlockState(VariantBlockStateGenerator bs) {
+        bs.simpleVariant("active=false", id.withPath(ID.BLOCK));
+        bs.simpleVariant("active=true", id.withPath(ACTIVE_BLOCK));
     }
 
     @Override
-    protected void generateBlockModelJsons(AssetJsonGenerator generator) {
-        var activeID = id.withSuffix("_active");
-        if (type == Type.SIMPLE) {
-            final String base = textures.get("base").getAsString();
-            final String active = textures.get("active").getAsString();
-            generator.blockModel(id, m -> {
-                m.parent("minecraft:block/cube_all");
-                m.texture("all", base);
-            });
-            generator.blockModel(activeID, m -> {
-                m.parent("minecraft:block/cube_all");
-                m.texture("all", active);
-            });
-        } else if (type == Type.FIREBOX) {
-            final String bottom = textures.get("bottom").getAsString();
-            final String side = textures.get("side").getAsString();
-            final String top = textures.get("top").getAsString();
-            generator.blockModel(id, m -> {
-                m.parent("minecraft:block/cube_bottom_top");
-                m.texture("bottom", bottom);
-                m.texture("side", side);
-                m.texture("top", top);
-            });
-            generator.blockModel(activeID, m -> {
-                m.parent("gtceu:block/fire_box_active");
-                m.texture("bottom", bottom);
-                m.texture("side", side);
-                m.texture("top", top);
-            });
-        } else if (type == Type.BLOOM) {
-            final String base = textures.get("base").getAsString();
-            final String bloom = textures.get("bloom").getAsString();
-            generator.blockModel(id, m -> {
-                m.parent("minecraft:block/cube_all");
-                m.texture("all", base);
-            });
-            generator.blockModel(activeID, m -> {
-                m.parent("gtceu:block/cube_2_layer/all");
-                m.texture("bot_all", base);
-                m.texture("top_all", bloom);
-            });
+    protected void generateBlockModels(KubeAssetGenerator generator) {
+        if (type == Type.CUSTOM || modelGenerator != null) {
+            superGenerateBlockModels(generator);
+            return;
         }
+        generator.blockModel(id, m -> {
+            if (type == Type.SIMPLE || type == Type.BLOOM) {
+                m.parent(CUBE_ALL_BLOCK_MODEL);
+                m.texture("all", baseTexture);
+            } else if (type == Type.FIREBOX) {
+                m.parent(CUBE_BOTTOM_TOP_MODEL);
+                m.textures(textures);
+            }
+        });
+        generator.blockModel(id.withPath(ACTIVE), m -> {
+            if (type == Type.SIMPLE) {
+                m.parent(CUBE_ALL_BLOCK_MODEL);
+                m.texture("all", activeTexture);
+            } else if (type == Type.BLOOM) {
+                m.parent(CUBE_2_LAYER_ALL_MODEL);
+                m.texture("bot_all", baseTexture);
+                m.texture("top_all", activeTexture);
+            } else if (type == Type.FIREBOX) {
+                m.parent(FIRE_BOX_ACTIVE_MODEL);
+                m.textures(textures);
+            }
+        });
+    }
+
+    protected void superGenerateBlockModels(KubeAssetGenerator generator) {
+        super.generateBlockModels(generator);
     }
 
     @Override

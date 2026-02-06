@@ -2,10 +2,9 @@ package com.gregtechceu.gtceu.api.cover.filter;
 
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -55,11 +54,6 @@ public interface FluidFilter extends Filter<FluidStack, FluidFilter> {
 
         @Override
         public WidgetGroup openConfigurator(int x, int y) {
-            throw new NotImplementedException("Not available for empty fluid filter");
-        }
-
-        @Override
-        public CompoundTag saveFilter() {
             throw new NotImplementedException("Not available for empty fluid filter");
         }
 

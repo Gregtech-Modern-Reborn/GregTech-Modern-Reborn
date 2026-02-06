@@ -3,7 +3,9 @@ package com.gregtechceu.gtceu.gametest.util;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.cover.CoverBehavior;
 import com.gregtechceu.gtceu.api.cover.CoverDefinition;
 import com.gregtechceu.gtceu.api.item.IComponentItem;
@@ -14,11 +16,15 @@ import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.placeholder.MultiLineComponent;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.recipe.category.GTRecipeCategory;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
-import com.gregtechceu.gtceu.common.item.CoverPlaceBehavior;
+import com.gregtechceu.gtceu.common.item.behavior.CoverPlaceBehavior;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.gametest.framework.GameTestAssertPosException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
@@ -27,21 +33,21 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
 
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ELECTRIC;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.ELECTRIC;
 
 public class TestUtils {
 
     /**
      * Compares two itemstacks' items and amounts
      * DOES NOT CHECK TAGS OR NBT ETC!
-     * 
+     *
      * @return {@code true} if items and amounts are equal
      */
     public static boolean isItemStackEqual(ItemStack stack1, ItemStack stack2) {
@@ -50,7 +56,7 @@ public class TestUtils {
 
     /**
      * Compares two itemstacks and a range.
-     * 
+     *
      * @return {@code true} if items are equal, and if stack2's amount is within range.
      */
     public static boolean isItemStackWithinRange(ItemStack stack1, ItemStack stack2, int min, int max) {
@@ -63,7 +69,7 @@ public class TestUtils {
      * multiplied.
      * This test can trigger false positives from bad luck and should be run more than once to reduce the odds of bad
      * luck.
-     * 
+     *
      * @return {@code true} if the size is an exact multiple of the total run count. TRUE INDICATES FAILURE.
      */
     public static boolean isStackSizeExactlyEvenMultiple(int size, int batches, int parallels, int runs) {
@@ -71,27 +77,72 @@ public class TestUtils {
     }
 
     /**
+     * Compares two itemstack[]s' items and amounts
+     * Necessary because itemStack does not implement .equals()
+     */
+    public static boolean areItemStacksEqual(ItemStack[] stack1, ItemStack[] stack2) {
+        if (stack1.length != stack2.length)
+            return false;
+
+        for (int i = 0; i < stack1.length; i++) {
+            if (!isItemStackEqual(stack1[i], stack2[i]))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Compares two itemstack[]s' items and amounts
+     * Necessary because itemStack does not implement .equals()
+     */
+    public static boolean areItemStacksEqual(List<ItemStack> stack1, List<ItemStack> stack2) {
+        if (stack1.size() != stack2.size())
+            return false;
+
+        for (int i = 0; i < stack1.size(); i++) {
+            if (!isItemStackEqual(stack1.get(i), stack2.get(i)))
+                return false;
+        }
+        return true;
+    }
+
+    /**
      * Compares two fluidstacks' fluids and amounts
      * DOES NOT CHECK TAGS OR NBT ETC!
-     * 
+     *
      * @return {@code true} if fluids and amounts are equal
      */
     public static boolean isFluidStackEqual(FluidStack stack1, FluidStack stack2) {
-        return stack1.isFluidEqual(stack2) && stack1.getAmount() == stack2.getAmount();
+        return FluidStack.isSameFluid(stack1, stack2) && stack1.getAmount() == stack2.getAmount();
     }
 
     /**
      * Compares two fluidstacks and a range.
-     * 
+     *
      * @return {@code true} if items are equal, and if stack2's amount is within range.
      */
     public static boolean isFluidStackWithinRange(FluidStack stack1, FluidStack stack2, int min, int max) {
-        return stack1.isFluidEqual(stack2) && isFluidWithinRange(stack2, min, max);
+        return FluidStack.isSameFluid(stack1, stack2) && isFluidWithinRange(stack2, min, max);
+    }
+
+    /**
+     * Compares two fluidstack[]s' fluids and amounts
+     * Necessary because fluidStack's implementation of .equals() does not check amounts
+     */
+    public static boolean areFluidStacksEqual(FluidStack[] stack1, FluidStack[] stack2) {
+        if (stack1.length != stack2.length)
+            return false;
+
+        for (int i = 0; i < stack1.length; i++) {
+            if (!isFluidStackEqual(stack1[i], stack2[i]))
+                return false;
+        }
+        return true;
     }
 
     /**
      * Compares an ItemStack with a range
-     * 
+     *
      * @return {@code true} if the ItemStack's count is within range
      */
     public static boolean isItemWithinRange(ItemStack stack, int min, int max) {
@@ -100,11 +151,20 @@ public class TestUtils {
 
     /**
      * Compares a FluidStack with a range
-     * 
+     *
      * @return {@code true} if the FluidStack's amount is within range
      */
     public static boolean isFluidWithinRange(FluidStack stack, int min, int max) {
         return stack.getAmount() <= max && stack.getAmount() >= min;
+    }
+
+    /**
+     * compares an integer with a range
+     *
+     * @return {@code true} if the integer count is within range
+     */
+    public static boolean isCountWithinRange(int stack, int min, int max) {
+        return stack <= max && stack >= min;
     }
 
     /**
@@ -118,32 +178,57 @@ public class TestUtils {
 
     /**
      * Creates a dummy recipe type that also includes a basic, HV, 1 tick, cobblestone -> stone recipe
+     * Requires a {@link GTRecipeType} to inherit I/O counts from
      */
-    public static GTRecipeType createRecipeTypeAndInsertRecipe(String name) {
-        GTRecipeType type = createRecipeType(name);
+    public static GTRecipeType createRecipeTypeAndInsertRecipe(String name, GTRecipeType original) {
+        GTRecipeType type = createRecipeType(name, original);
         type.getLookup().addRecipe(type
                 .recipeBuilder(GTCEu.id("test_recipe"))
                 .inputItems(new ItemStack(Items.COBBLESTONE))
                 .outputItems(new ItemStack(Blocks.STONE))
                 .EUt(GTValues.V[GTValues.HV])
-                .duration(1).buildRawRecipe());
+                .duration(1).build());
         return type;
     }
 
+    /**
+     * Creates a dummy recipe type. Safe for use in recipe lookup.
+     * DO NOT USE THIS FOR MACHINE RECIPES. Use {@link #createRecipeType(String, GTRecipeType)} for that.
+     */
+    @Deprecated
     public static GTRecipeType createRecipeType(String name) {
         return createRecipeType(name, 2, 2, 2, 2);
     }
 
+    /**
+     * Creates a recipe type for writing test cases.
+     * Requires a {@link GTRecipeType} to inherit I/O counts from.
+     */
+    public static GTRecipeType createRecipeType(String name, GTRecipeType original) {
+        return createRecipeType(name,
+                original.getMaxInputs(ItemRecipeCapability.CAP),
+                original.getMaxOutputs(ItemRecipeCapability.CAP),
+                original.getMaxInputs(FluidRecipeCapability.CAP),
+                original.getMaxOutputs(FluidRecipeCapability.CAP));
+    }
+
+    /**
+     * Creates a recipe type for writing test cases.
+     * Requires setting I/O counts manually.
+     * You probably want to be using {@link #createRecipeType(String, GTRecipeType)}
+     */
     public static GTRecipeType createRecipeType(String name, int maxInputs, int maxOutputs, int maxFluidInputs,
                                                 int maxFluidOutputs) {
-        GTRegistries.RECIPE_TYPES.unfreeze();
-        GTRegistries.RECIPE_CATEGORIES.unfreeze();
+        if (BuiltInRegistries.RECIPE_TYPE.containsKey(GTCEu.id(name)))
+            return (GTRecipeType) BuiltInRegistries.RECIPE_TYPE.get(GTCEu.id(name));
+        ((MappedRegistry<GTRecipeCategory>) GTRegistries.RECIPE_CATEGORIES).unfreeze();
+        ((MappedRegistry<RecipeType<?>>) BuiltInRegistries.RECIPE_TYPE).unfreeze();
         GTRecipeType type = new GTRecipeType(GTCEu.id(name), ELECTRIC, RecipeType.SMELTING)
                 .setEUIO(IO.IN)
                 .setMaxIOSize(maxInputs, maxOutputs, maxFluidInputs, maxFluidOutputs);
 
-        GTRegistries.RECIPE_CATEGORIES.freeze();
-        GTRegistries.RECIPE_TYPES.freeze();
+        ((MappedRegistry<GTRecipeCategory>) GTRegistries.RECIPE_CATEGORIES).freeze();
+        ((MappedRegistry<RecipeType<?>>) BuiltInRegistries.RECIPE_TYPE).freeze();
         return type;
     }
 
@@ -187,9 +272,10 @@ public class TestUtils {
     }
 
     public static void assertEqual(GameTestHelper helper, FluidStack stack1, FluidStack stack2) {
-        helper.assertTrue(isFluidStackEqual(stack1, stack2), "Fluid stacks not equal: \"%s %d\" != \"%s %d\"".formatted(
-                stack1.getDisplayName().getString(), stack1.getAmount(),
-                stack2.getDisplayName().getString(), stack2.getAmount()));
+        helper.assertTrue(FluidStack.matches(stack1, stack2),
+                "Fluid stacks not equal: \"%s %d\" != \"%s %d\"".formatted(
+                        stack1.getHoverName().getString(), stack1.getAmount(),
+                        stack2.getHoverName().getString(), stack2.getAmount()));
     }
 
     public static void assertLampOn(GameTestHelper helper, BlockPos pos) {
@@ -202,7 +288,7 @@ public class TestUtils {
 
     /**
      * Shortcut function to retrieve a metamachine from a blockentity's
-     * 
+     *
      * @param entity The MetaMachineBlockEntity
      * @return the machine held, if any
      */
@@ -212,7 +298,7 @@ public class TestUtils {
 
     /**
      * Helper function to succeed after the test is over
-     * 
+     *
      * @param helper GameTestHelper
      */
     public static void succeedAfterTest(GameTestHelper helper) {
@@ -221,7 +307,7 @@ public class TestUtils {
 
     /**
      * Helper function to succeed after the test is over
-     * 
+     *
      * @param helper  GameTestHelper
      * @param timeout Ticks to wait until succeeding
      */
@@ -231,5 +317,32 @@ public class TestUtils {
 
     public static void assertEqual(GameTestHelper helper, @Nullable BlockPos pos1, @Nullable BlockPos pos2) {
         helper.assertTrue(pos1 != null && pos1.equals(pos2), "Expected %s to equal to %s".formatted(pos1, pos2));
+    }
+
+    public static void assertRedstone(GameTestHelper helper, BlockPos pos, int min, int max) {
+        BlockPos absolutePos = helper.absolutePos(pos);
+        int strength = helper.getLevel().getBestNeighborSignal(absolutePos);
+        if (strength > max || strength < min) {
+            throw new GameTestAssertPosException(
+                    "Expected redstone signal between %d and %d, got %d".formatted(min, max, strength),
+                    absolutePos, pos, helper.getTick());
+        }
+    }
+
+    public static void assertRedstoneEither(GameTestHelper helper, BlockPos pos, int... values) {
+        BlockPos absolutePos = helper.absolutePos(pos);
+        int strength = helper.getLevel().getBestNeighborSignal(absolutePos);
+        boolean pass = false;
+        for (int i : values) {
+            if (i == strength) {
+                pass = true;
+                break;
+            }
+        }
+        if (!pass) {
+            throw new GameTestAssertPosException(
+                    "Expected redstone signal to be one of %s, got %d".formatted(values, strength),
+                    absolutePos, pos, helper.getTick());
+        }
     }
 }

@@ -2,10 +2,10 @@ package com.gregtechceu.gtceu.api.item.component;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.capability.GTCapability;
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
 import com.gregtechceu.gtceu.api.capability.IElectricItem;
 import com.gregtechceu.gtceu.api.capability.compat.FeCompat;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
 import com.gregtechceu.gtceu.api.item.capability.ElectricItem;
 import com.gregtechceu.gtceu.api.item.component.forge.IComponentCapability;
 import com.gregtechceu.gtceu.client.renderer.item.ToolChargeBarRenderer;
@@ -26,14 +26,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.wrapper.EmptyHandler;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.wrapper.EmptyItemHandler;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 
@@ -64,9 +61,12 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
     }
 
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(ItemStack itemStack, @NotNull Capability<T> capability) {
-        return GTCapability.CAPABILITY_ELECTRIC_ITEM.orEmpty(capability,
-                LazyOptional.of(() -> new ElectricItem(itemStack, maxCharge, tier, chargeable, dischargeable)));
+    public void attachCapabilities(RegisterCapabilitiesEvent event, Item item) {
+        event.registerItem(GTCapability.CAPABILITY_ELECTRIC_ITEM, (stack, unused) -> createItem(stack), item);
+    }
+
+    public IElectricItem createItem(ItemStack stack) {
+        return new ElectricItem(stack, maxCharge, tier, chargeable, dischargeable);
     }
 
     public static float getStoredPredicate(ItemStack itemStack) {
@@ -79,17 +79,17 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Item item, Level level, Player player, InteractionHand usedHand) {
-        var itemStack = player.getItemInHand(usedHand);
-        var electricItem = GTCapabilityHelper.getElectricItem(itemStack);
+    public InteractionResultHolder<ItemStack> use(ItemStack item, Level level, Player player,
+                                                  InteractionHand usedHand) {
+        var electricItem = GTCapabilityHelper.getElectricItem(item);
         if (electricItem != null && electricItem.canProvideChargeExternally() && player.isShiftKeyDown()) {
             if (!level.isClientSide) {
-                boolean isInDischargeMode = isInDischargeMode(itemStack);
+                boolean isInDischargeMode = isInDischargeMode(item);
                 String locale = "metaitem.electric.discharge_mode." + (isInDischargeMode ? "disabled" : "enabled");
                 player.displayClientMessage(Component.translatable(locale), true);
-                setInDischargeMode(itemStack, !isInDischargeMode);
+                setInDischargeMode(item, !isInDischargeMode);
             }
-            return InteractionResultHolder.success(itemStack);
+            return InteractionResultHolder.success(item);
         }
         return IInteractionItem.super.use(item, level, player, usedHand);
     }
@@ -105,7 +105,7 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
             if (GTCEu.Mods.isCuriosLoaded()) {
                 IItemHandler curios = CuriosApi.getCuriosInventory(player)
                         .<IItemHandler>map(ICuriosItemHandler::getEquippedCurios)
-                        .orElse(EmptyHandler.INSTANCE);
+                        .orElse(EmptyItemHandler.INSTANCE);
                 for (int i = 0; i < curios.getSlots(); i++) {
                     var itemInSlot = curios.getStackInSlot(i);
                     long chargedAmount = chargeItemStack(transferLimit, electricItem, itemInSlot);
@@ -131,7 +131,7 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
     private static long chargeItemStack(long maxDischargeAmount, IElectricItem source, ItemStack target) {
         var slotElectricItem = GTCapabilityHelper.getElectricItem(target);
         if (slotElectricItem != null && !slotElectricItem.canProvideChargeExternally()) {
-            return chargeElectricItem(maxDischargeAmount, source, slotElectricItem);
+            return chargeElectricItem(target, maxDischargeAmount, source, slotElectricItem);
         } else if (ConfigHolder.INSTANCE.compat.energy.nativeEUToFE) {
             var feEnergyItem = GTCapabilityHelper.getForgeEnergyItem(target);
             if (feEnergyItem != null && feEnergyItem.canReceive() &&
@@ -142,7 +142,8 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
         return 0;
     }
 
-    private static long chargeElectricItem(long maxDischargeAmount, IElectricItem source, IElectricItem target) {
+    private static long chargeElectricItem(ItemStack stack, long maxDischargeAmount, IElectricItem source,
+                                           IElectricItem target) {
         long maxDischarged = source.discharge(maxDischargeAmount, source.getTier(), false, false, true);
         long maxReceived = target.charge(maxDischarged, source.getTier(), false, true);
         if (maxReceived > 0L) {
@@ -164,19 +165,11 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
     }
 
     private static void setInDischargeMode(ItemStack itemStack, boolean isDischargeMode) {
-        var tagCompound = itemStack.getOrCreateTag();
-        if (isDischargeMode) {
-            tagCompound.putBoolean("DischargeMode", true);
-        } else {
-            tagCompound.remove("DischargeMode");
-            if (tagCompound.isEmpty()) {
-                itemStack.setTag(null);
-            }
-        }
+        GTCapabilityHelper.getElectricItem(itemStack).setDischargeMode(isDischargeMode);
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
                                 TooltipFlag isAdvanced) {
         IElectricItem electricItem = GTCapabilityHelper.getElectricItem(stack);
         if (electricItem == null) return;
@@ -192,7 +185,8 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
         double percentage = (double) currentCharge / (double) maxCharge;
 
         Instant start = Instant.now();
-        Instant current = Instant.now().plusSeconds((long) ((currentCharge * 1.0) / GTValues.V[tier] / 20));
+        Instant current = Instant.now().plusSeconds(Math.clamp((long) ((currentCharge * 1.0) / GTValues.V[tier] / 20),
+                0L, Instant.MAX.getEpochSecond() - start.getEpochSecond()));
         Instant max = Instant.now().plusSeconds((long) ((maxCharge * 1.0) / GTValues.V[tier] / 20));
         Duration durationCurrent = Duration.between(start, current);
         Duration durationMax = Duration.between(start, max);
@@ -235,8 +229,11 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
     }
 
     private static boolean isInDischargeMode(ItemStack itemStack) {
-        var tagCompound = itemStack.getTag();
-        return tagCompound != null && tagCompound.getBoolean("DischargeMode");
+        var electric = GTCapabilityHelper.getElectricItem(itemStack);
+        if (electric == null) {
+            return false;
+        }
+        return electric.isDischargeMode();
     }
 
     @Override
@@ -251,15 +248,15 @@ public class ElectricStats implements IInteractionItem, ISubItemHandler, IAddInf
     }
 
     public static ElectricStats createElectricItem(long maxCharge, int tier) {
-        return ElectricStats.create(maxCharge, tier, true, false);
+        return new ElectricStats(maxCharge, tier, true, false);
     }
 
     public static ElectricStats createRechargeableBattery(long maxCharge, int tier) {
-        return ElectricStats.create(maxCharge, tier, true, true);
+        return new ElectricStats(maxCharge, tier, true, true);
     }
 
     public static ElectricStats createBattery(long maxCharge, int tier, boolean rechargeable) {
-        return ElectricStats.create(maxCharge, tier, rechargeable, true);
+        return new ElectricStats(maxCharge, tier, rechargeable, true);
     }
 
     @Override

@@ -7,19 +7,13 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
 import com.gregtechceu.gtceu.api.machine.multiblock.DummyCleanroom;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-
 import lombok.Getter;
 
 import java.util.Collections;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import static com.gregtechceu.gtceu.api.GTValues.UHV;
 import static com.gregtechceu.gtceu.api.GTValues.UV;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class CleaningMaintenanceHatchPartMachine extends AutoMaintenanceHatchPartMachine {
 
     // must come after the static block

@@ -13,9 +13,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +42,7 @@ public class SimpleCoverRenderer implements ICoverRenderer {
                 emissiveSprite = atlas.getSprite(emissiveTexture);
             } else {
                 ResourceLocation emissiveTex = texture.withSuffix("_emissive");
-                if (atlas.getTextureLocations().contains(emissiveTex)) {
+                if (atlas.getTextures().containsKey(emissiveTex)) {
                     emissiveSprite = atlas.getSprite(emissiveTex);
                 }
             }

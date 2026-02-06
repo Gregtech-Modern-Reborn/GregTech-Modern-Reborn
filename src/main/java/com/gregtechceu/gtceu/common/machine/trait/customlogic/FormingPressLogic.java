@@ -5,12 +5,13 @@ import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeHandler;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.utils.GTStringUtils;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -37,13 +38,13 @@ public enum FormingPressLogic implements GTRecipeType.ICustomRecipeLogic {
 
         GTRecipe buildRecipe() {
             ItemStack output = item.copyWithCount(1);
-            output.setHoverName(mold.getHoverName());
+            output.set(DataComponents.CUSTOM_NAME, mold.getHoverName());
             return GTRecipeTypes.FORMING_PRESS_RECIPES.recipeBuilder(GTStringUtils.itemStackToString(output))
                     .notConsumable(mold)
                     .inputItems(item.copyWithCount(1))
                     .outputItems(output)
                     .duration(40).EUt(4)
-                    .buildRawRecipe();
+                    .build();
         }
     }
 
@@ -72,9 +73,9 @@ public enum FormingPressLogic implements GTRecipeType.ICustomRecipeLogic {
             data.item = ItemStack.EMPTY;
             for (var stack : stacks) {
                 boolean isMold = GTItems.SHAPE_MOLD_NAME.isIn(stack);
-                if (data.mold.isEmpty() && isMold && stack.hasCustomHoverName()) {
+                if (data.mold.isEmpty() && isMold && stack.has(DataComponents.CUSTOM_NAME)) {
                     data.mold = stack;
-                } else if (data.item.isEmpty() && !(isMold && stack.hasCustomHoverName())) {
+                } else if (data.item.isEmpty() && !(isMold && stack.has(DataComponents.CUSTOM_NAME))) {
                     data.item = stack;
                 }
 
@@ -85,7 +86,7 @@ public enum FormingPressLogic implements GTRecipeType.ICustomRecipeLogic {
         var stacks = collect(indistinct);
         if (stacks.isEmpty()) return null;
         for (var stack : stacks) {
-            if (data.mold.isEmpty() && GTItems.SHAPE_MOLD_NAME.isIn(stack) && stack.hasCustomHoverName()) {
+            if (data.mold.isEmpty() && GTItems.SHAPE_MOLD_NAME.isIn(stack) && stack.has(DataComponents.CUSTOM_NAME)) {
                 data.mold = stack;
             } else if (data.item.isEmpty()) {
                 data.item = stack;
@@ -117,18 +118,18 @@ public enum FormingPressLogic implements GTRecipeType.ICustomRecipeLogic {
     @Override
     public void buildRepresentativeRecipes() {
         ItemStack press = GTItems.SHAPE_MOLD_NAME.asStack();
-        press.setHoverName(Component.translatable("gtceu.forming_press.naming.press"));
+        press.set(DataComponents.CUSTOM_NAME, Component.translatable("gtceu.forming_press.naming.press"));
         ItemStack toName = new ItemStack(Items.NAME_TAG);
-        toName.setHoverName(Component.translatable("gtceu.forming_press.naming.to_name"));
+        toName.set(DataComponents.CUSTOM_NAME, Component.translatable("gtceu.forming_press.naming.to_name"));
         ItemStack named = new ItemStack(Items.NAME_TAG);
-        named.setHoverName(Component.translatable("gtceu.forming_press.naming.named"));
+        named.set(DataComponents.CUSTOM_NAME, Component.translatable("gtceu.forming_press.naming.named"));
         GTRecipe recipe = GTRecipeTypes.FORMING_PRESS_RECIPES.recipeBuilder("name_item")
                 .notConsumable(press)
                 .inputItems(toName)
                 .outputItems(named)
                 .duration(40)
                 .EUt(4)
-                .buildRawRecipe();
+                .build();
         // for EMI to detect it's a synthetic recipe (not ever in JSON)
         recipe.setId(recipe.getId().withPrefix("/"));
         GTRecipeTypes.FORMING_PRESS_RECIPES.addToMainCategory(recipe);

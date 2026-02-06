@@ -4,7 +4,7 @@ import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.util.ClickData;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 
 import lombok.Setter;
@@ -57,7 +57,7 @@ public interface IFancyConfiguratorButton extends IFancyConfigurator {
         }
 
         @Override
-        public void detectAndSendChange(BiConsumer<Integer, Consumer<FriendlyByteBuf>> sender) {
+        public void detectAndSendChange(BiConsumer<Integer, Consumer<RegistryFriendlyByteBuf>> sender) {
             var newIsPressed = booleanSupplier.getAsBoolean();
             if (newIsPressed != isPressed) {
                 isPressed = newIsPressed;
@@ -66,20 +66,20 @@ public interface IFancyConfiguratorButton extends IFancyConfigurator {
         }
 
         @Override
-        public void readUpdateInfo(int id, FriendlyByteBuf buf) {
+        public void readUpdateInfo(int id, RegistryFriendlyByteBuf buf) {
             if (id == 0) {
                 isPressed = buf.readBoolean();
             }
         }
 
         @Override
-        public void writeInitialData(FriendlyByteBuf buffer) {
+        public void writeInitialData(RegistryFriendlyByteBuf buffer) {
             this.isPressed = booleanSupplier.getAsBoolean();
             buffer.writeBoolean(this.isPressed);
         }
 
         @Override
-        public void readInitialData(FriendlyByteBuf buffer) {
+        public void readInitialData(RegistryFriendlyByteBuf buffer) {
             this.isPressed = buffer.readBoolean();
         }
 

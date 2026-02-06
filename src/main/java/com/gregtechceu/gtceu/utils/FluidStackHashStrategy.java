@@ -1,6 +1,6 @@
 package com.gregtechceu.gtceu.utils;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import it.unimi.dsi.fastutil.Hash;
 import org.jetbrains.annotations.Nullable;
@@ -28,19 +28,19 @@ public interface FluidStackHashStrategy extends Hash.Strategy<FluidStack> {
     static FluidStackHashStrategy comparingAll() {
         return builder().compareFluid(true)
                 .compareCount(true)
-                .compareTag(true)
+                .compareComponents(true)
                 .build();
     }
 
     /**
-     * Generates an FluidStackHash configured to compare every aspect of FluidStacks except the number
-     * of fluids in the stack.
+     * Generates an FluidStackHash configured to compare every aspect of FluidStacks except the amount
+     * of fluid in the stack.
      *
      * @return the FluidStackHashStrategy as described above.
      */
     static FluidStackHashStrategy comparingAllButAmount() {
         return builder().compareFluid(true)
-                .compareTag(true)
+                .compareComponents(true)
                 .build();
     }
 
@@ -49,7 +49,7 @@ public interface FluidStackHashStrategy extends Hash.Strategy<FluidStack> {
      */
     class FluidStackHashStrategyBuilder {
 
-        private boolean fluid, amount, damage, tag;
+        private boolean fluid, amount, components;
 
         /**
          * Defines whether the Fluid type should be considered for equality.
@@ -63,7 +63,7 @@ public interface FluidStackHashStrategy extends Hash.Strategy<FluidStack> {
         }
 
         /**
-         * Defines whether stack size should be considered for equality.
+         * Defines whether stack amount should be considered for equality.
          *
          * @param choice {@code true} to consider this property, {@code false} to ignore it.
          * @return {@code this}
@@ -74,13 +74,13 @@ public interface FluidStackHashStrategy extends Hash.Strategy<FluidStack> {
         }
 
         /**
-         * Defines whether NBT Tags should be considered for equality.
+         * Defines whether Data Components should be considered for equality.
          *
          * @param choice {@code true} to consider this property, {@code false} to ignore it.
          * @return {@code this}
          */
-        public FluidStackHashStrategy.FluidStackHashStrategyBuilder compareTag(boolean choice) {
-            tag = choice;
+        public FluidStackHashStrategy.FluidStackHashStrategyBuilder compareComponents(boolean choice) {
+            components = choice;
             return this;
         }
 
@@ -95,7 +95,7 @@ public interface FluidStackHashStrategy extends Hash.Strategy<FluidStack> {
                     return o == null || o.isEmpty() ? 0 : Objects.hash(
                             fluid ? o.getFluid() : null,
                             amount ? o.getAmount() : null,
-                            tag ? o.getTag() : null);
+                            components ? o.getComponents() : null);
                 }
 
                 @Override
@@ -105,7 +105,7 @@ public interface FluidStackHashStrategy extends Hash.Strategy<FluidStack> {
 
                     return (!fluid || a.getFluid() == b.getFluid()) &&
                             (!amount || a.getAmount() == b.getAmount()) &&
-                            (!tag || Objects.equals(a.getTag(), b.getTag()));
+                            (!components || Objects.equals(a.getComponents(), b.getComponents()));
                 }
             };
         }

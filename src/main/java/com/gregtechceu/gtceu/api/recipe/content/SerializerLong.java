@@ -1,9 +1,7 @@
 package com.gregtechceu.gtceu.api.recipe.content;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -14,23 +12,13 @@ public class SerializerLong implements IContentSerializer<Long> {
     private SerializerLong() {}
 
     @Override
-    public void toNetwork(FriendlyByteBuf buf, Long content) {
+    public void toNetwork(RegistryFriendlyByteBuf buf, Long content) {
         buf.writeVarLong(content);
     }
 
     @Override
-    public Long fromNetwork(FriendlyByteBuf buf) {
+    public Long fromNetwork(RegistryFriendlyByteBuf buf) {
         return buf.readVarLong();
-    }
-
-    @Override
-    public Long fromJson(JsonElement json) {
-        return json.getAsLong();
-    }
-
-    @Override
-    public JsonElement toJson(Long content) {
-        return new JsonPrimitive(content);
     }
 
     @Override

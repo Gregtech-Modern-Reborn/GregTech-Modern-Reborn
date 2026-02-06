@@ -1,17 +1,17 @@
 package com.gregtechceu.gtceu.api.cover.filter;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.data.lang.LangHandler;
+import com.gregtechceu.gtceu.data.datagen.lang.LangHandler;
 import com.gregtechceu.gtceu.utils.TagExprFilter;
 
 import com.lowdragmc.lowdraglib.gui.widget.ImageWidget;
 import com.lowdragmc.lowdraglib.gui.widget.TextFieldWidget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.MutableComponent;
 
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -26,32 +26,25 @@ public abstract class TagFilter<T, S extends Filter<T, S>> implements Filter<T, 
     private static final Pattern DOUBLE_SPACE = Pattern.compile(" {2,}");
 
     @Getter
-    protected String oreDictFilterExpression = "";
+    protected String tagFilterExpression = "";
 
     protected Consumer<S> itemWriter = filter -> {};
     protected Consumer<S> onUpdated = filter -> itemWriter.accept(filter);
 
+    @Nullable
     protected TagExprFilter.TagExprParser.MatchExpr matchExpr = null;
 
     protected TagFilter() {}
 
     @Override
     public boolean isBlank() {
-        return oreDictFilterExpression.isBlank();
+        return tagFilterExpression.isBlank();
     }
 
-    public CompoundTag saveFilter() {
-        if (isBlank()) {
-            return null;
-        }
-        var tag = new CompoundTag();
-        tag.putString("oreDict", oreDictFilterExpression);
-        return tag;
-    }
-
-    public void setOreDict(String oreDict) {
-        this.oreDictFilterExpression = oreDict;
-        matchExpr = TagExprFilter.parseExpression(oreDictFilterExpression);
+    public void setFilterExpr(String filterExpr) {
+        this.tagFilterExpression = filterExpr;
+        matchExpr = TagExprFilter.parseExpression(tagFilterExpression);
+        // noinspection unchecked
         onUpdated.accept((S) this);
     }
 
@@ -60,7 +53,7 @@ public abstract class TagFilter<T, S extends Filter<T, S>> implements Filter<T, 
         group.addWidget(new ImageWidget(0, 0, 20, 20, GuiTextures.INFO_ICON)
                 .setHoverTooltips(
                         LangHandler.getMultiLang("cover.tag_filter.info").toArray(new MutableComponent[0])));
-        group.addWidget(new TextFieldWidget(0, 29, 18 * 3 + 25, 12, () -> oreDictFilterExpression, this::setOreDict)
+        group.addWidget(new TextFieldWidget(0, 29, 18 * 3 + 25, 12, () -> tagFilterExpression, this::setFilterExpr)
                 .setMaxStringLength(64)
                 .setValidator(input -> {
                     // remove all operators that are double
@@ -125,5 +118,19 @@ public abstract class TagFilter<T, S extends Filter<T, S>> implements Filter<T, 
             this.itemWriter.accept(filter);
             onUpdated.accept(filter);
         };
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TagFilter<?, ?> tagFilter = (TagFilter<?, ?>) o;
+        return tagFilterExpression.equals(tagFilter.tagFilterExpression);
+    }
+
+    @Override
+    public int hashCode() {
+        return tagFilterExpression.hashCode();
     }
 }

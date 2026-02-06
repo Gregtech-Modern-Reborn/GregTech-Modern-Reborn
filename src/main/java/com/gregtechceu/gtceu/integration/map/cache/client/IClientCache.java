@@ -2,6 +2,7 @@ package com.gregtechceu.gtceu.integration.map.cache.client;
 
 import com.gregtechceu.gtceu.integration.map.ClientCacheManager;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -36,7 +37,7 @@ public interface IClientCache {
      * @param dim    The dimension id to be saved
      * @return The NBT to be written to disk, or <code>null</code> to save nothing
      */
-    CompoundTag saveDimFile(String prefix, ResourceKey<Level> dim);
+    CompoundTag saveDimFile(String prefix, ResourceKey<Level> dim, HolderLookup.Provider registries);
 
     /**
      * Save a non-dimension-specific file.
@@ -44,7 +45,7 @@ public interface IClientCache {
      * @param name The name of the file
      * @return The NBT to be written to disk, or <code>null</code> to save nothing
      */
-    CompoundTag saveSingleFile(String name);
+    CompoundTag saveSingleFile(String name, HolderLookup.Provider registries);
 
     /**
      * Read data from a dimension-specific file into the cache.
@@ -53,7 +54,7 @@ public interface IClientCache {
      * @param dim    The dimension the data belongs to
      * @param data   The NBT data contained in the file
      */
-    void readDimFile(String prefix, ResourceKey<Level> dim, CompoundTag data);
+    void readDimFile(String prefix, ResourceKey<Level> dim, CompoundTag data, HolderLookup.Provider registries);
 
     /**
      * Read data from a non-dimension-specific file into the cache.
@@ -61,7 +62,7 @@ public interface IClientCache {
      * @param name The name of the file
      * @param data The NBT data contained in the file
      */
-    void readSingleFile(String name, CompoundTag data);
+    void readSingleFile(String name, CompoundTag data, HolderLookup.Provider registries);
 
     /**
      * Equivalent to <code>addDimFiles("")</code>

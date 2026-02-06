@@ -8,13 +8,12 @@ import com.gregtechceu.gtceu.api.machine.feature.IDataInfoProvider;
 import com.gregtechceu.gtceu.api.pipenet.longdistance.ILDEndpoint;
 import com.gregtechceu.gtceu.api.pipenet.longdistance.LongDistanceNetwork;
 import com.gregtechceu.gtceu.api.pipenet.longdistance.LongDistancePipeType;
-import com.gregtechceu.gtceu.common.item.PortableScannerBehavior;
+import com.gregtechceu.gtceu.common.item.behavior.PortableScannerBehavior;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -31,10 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public abstract class LongDistanceEndpointMachine extends MetaMachine implements ILDEndpoint, IDataInfoProvider {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
@@ -92,7 +87,7 @@ public abstract class LongDistanceEndpointMachine extends MetaMachine implements
             setIoType(IO.NONE);
         } else if (networks.size() == 1) {
             // one neighbour network found, attach self to neighbour network
-            networks.get(0).onPlaceEndpoint(this);
+            networks.getFirst().onPlaceEndpoint(this);
         } else {
             // two neighbour networks found, configuration invalid
             setIoType(IO.NONE);
@@ -147,7 +142,7 @@ public abstract class LongDistanceEndpointMachine extends MetaMachine implements
                 network.onPlaceEndpoint(this);
             } else if (networks.size() == 1) {
                 // add to neighbour network
-                networks.get(0).onPlaceEndpoint(this);
+                networks.getFirst().onPlaceEndpoint(this);
             }
         } else {
             if (networks.size() > 1) {
@@ -186,7 +181,7 @@ public abstract class LongDistanceEndpointMachine extends MetaMachine implements
     }
 
     @Override
-    public ILDEndpoint getLink() {
+    public @Nullable ILDEndpoint getLink() {
         if (link == null) {
             LongDistanceNetwork network = LongDistanceNetwork.get(getLevel(), getPos());
             if (network != null && network.isValid()) {

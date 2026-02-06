@@ -9,14 +9,18 @@ import com.gregtechceu.gtceu.integration.ae2.machine.MEPatternBufferProxyPartMac
 import com.gregtechceu.gtceu.utils.GTMath;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.Nullable;
 import snownee.jade.addon.universal.ItemStorageProvider;
 import snownee.jade.api.Accessor;
-import snownee.jade.api.view.*;
+import snownee.jade.api.BlockAccessor;
+import snownee.jade.api.view.ClientViewGroup;
+import snownee.jade.api.view.IClientExtensionProvider;
+import snownee.jade.api.view.IServerExtensionProvider;
+import snownee.jade.api.view.ItemView;
+import snownee.jade.api.view.ViewGroup;
+import snownee.jade.impl.BlockAccessorImpl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +31,7 @@ import java.util.List;
  * Currently: Quantum Chests, Pattern Buffer Proxies
  * Defaults to Jade's normal ItemStack provider
  */
-public enum GTItemStorageProvider implements IServerExtensionProvider<MetaMachineBlockEntity, ItemStack>,
+public enum GTItemStorageProvider implements IServerExtensionProvider<ItemStack>,
         IClientExtensionProvider<ItemStack, ItemView> {
 
     INSTANCE;
@@ -39,12 +43,14 @@ public enum GTItemStorageProvider implements IServerExtensionProvider<MetaMachin
 
     @Override
     public List<ClientViewGroup<ItemView>> getClientGroups(Accessor<?> accessor, List<ViewGroup<ItemStack>> list) {
-        return ItemStorageProvider.INSTANCE.getClientGroups(accessor, list);
+        return ItemStorageProvider.Extension.INSTANCE.getClientGroups(accessor, list);
     }
 
     @Override
-    public @Nullable List<ViewGroup<ItemStack>> getGroups(ServerPlayer serverPlayer, ServerLevel serverLevel,
-                                                          MetaMachineBlockEntity mmbe, boolean b) {
+    public @Nullable List<ViewGroup<ItemStack>> getGroups(Accessor<?> accessor) {
+        if (!(accessor.getTarget() instanceof MetaMachineBlockEntity mmbe)) {
+            return List.of();
+        }
         MetaMachine machine = mmbe.getMetaMachine();
         if (machine instanceof QuantumChestMachine qcm) {
             ItemStack stored = qcm.getStored();
@@ -60,9 +66,12 @@ public enum GTItemStorageProvider implements IServerExtensionProvider<MetaMachin
         } else if (machine instanceof MEPatternBufferProxyPartMachine proxy) {
             var buffer = proxy.getBuffer();
             if (buffer == null) return Collections.emptyList();
-            return ItemStorageProvider.INSTANCE.getGroups(serverPlayer, serverLevel, buffer.holder, b);
+            Accessor<?> accessor1 = new BlockAccessorImpl.Builder().from((BlockAccessor) accessor)
+                    .blockEntity(buffer.holder.self())
+                    .build();
+            return ItemStorageProvider.Extension.INSTANCE.getGroups(accessor1);
         }
 
-        return ItemStorageProvider.INSTANCE.getGroups(serverPlayer, serverLevel, mmbe, b);
+        return ItemStorageProvider.Extension.INSTANCE.getGroups(accessor);
     }
 }

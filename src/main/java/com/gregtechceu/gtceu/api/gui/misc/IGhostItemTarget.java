@@ -8,8 +8,8 @@ import com.lowdragmc.lowdraglib.gui.ingredient.Target;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.google.common.collect.Lists;
 import dev.emi.emi.api.stack.EmiStack;
@@ -57,12 +57,10 @@ public interface IGhostItemTarget extends IGhostIngredientTarget {
             Item item = itemEmiStack.getKeyOfType(Item.class);
             ItemStack itemStack = item == null ? ItemStack.EMPTY : new ItemStack(item, (int) itemEmiStack.getAmount());
             if (!itemStack.isEmpty()) {
-                itemStack.setTag(itemEmiStack.getNbt());
+                itemStack.applyComponents(itemEmiStack.getComponentChanges());
             }
             ingredient = itemStack;
-        }
-
-        if (GTCEu.Mods.isJEILoaded() && ingredient instanceof ITypedIngredient<?> itemJeiStack) {
+        } else if (GTCEu.Mods.isJEILoaded() && ingredient instanceof ITypedIngredient<?> itemJeiStack) {
             return itemJeiStack.getItemStack().orElse(ItemStack.EMPTY);
         }
         return ingredient;

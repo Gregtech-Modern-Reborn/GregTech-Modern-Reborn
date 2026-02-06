@@ -9,8 +9,10 @@ import com.gregtechceu.gtceu.client.util.FacadeBlockAndTintGetter;
 import com.gregtechceu.gtceu.client.util.GTQuadTransformers;
 import com.gregtechceu.gtceu.client.util.StaticFaceBakery;
 import com.gregtechceu.gtceu.common.cover.FacadeCover;
-import com.gregtechceu.gtceu.common.item.FacadeItemBehaviour;
+import com.gregtechceu.gtceu.common.item.behavior.FacadeItemBehaviour;
 import com.gregtechceu.gtceu.utils.GTUtil;
+
+import com.lowdragmc.lowdraglib.client.bakedpipeline.FaceQuad;
 
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -31,9 +33,9 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -43,25 +45,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-/**
- * It can only be used for item.
- * call it in other renderer to render a facade cover.
- */
 public class FacadeCoverRenderer extends BaseBakedModel implements ICoverRenderer {
 
-    private static final AABB FACADE_PLANE = new AABB(0.001, 0.001, 0.001, 0.999, 0.999, 1 / 16f);
+    private static final AABB FACADE_PLANE = new AABB(0.01, 0.01, 0.01, 0.99, 0.99, 1 / 16f);
     private static final EnumSet<Direction> FACADE_EDGE_FACES = EnumSet.of(Direction.DOWN, Direction.UP,
             Direction.SOUTH, Direction.WEST, Direction.EAST);
     private static final Map<Direction, AABB> COVER_BACK_CUBES = Util.make(new EnumMap<>(Direction.class), map -> {
         for (Direction dir : GTUtil.DIRECTIONS) {
             var normal = dir.getNormal();
             var cube = new AABB(
-                    normal.getX() > 0 ? 1.001 : -0.001,
-                    normal.getY() > 0 ? 1.001 : -0.001,
-                    normal.getZ() > 0 ? 1.001 : -0.001,
-                    normal.getX() >= 0 ? 1.001 : -0.001,
-                    normal.getY() >= 0 ? 1.001 : -0.001,
-                    normal.getZ() >= 0 ? 1.001 : -0.001);
+                    normal.getX() > 0 ? 1.01 : -0.01,
+                    normal.getY() > 0 ? 1.01 : -0.01,
+                    normal.getZ() > 0 ? 1.01 : -0.01,
+                    normal.getX() >= 0 ? 1.01 : -0.01,
+                    normal.getY() >= 0 ? 1.01 : -0.01,
+                    normal.getZ() >= 0 ? 1.01 : -0.01);
             map.put(dir, cube);
         }
     });
@@ -200,7 +198,7 @@ public class FacadeCoverRenderer extends BaseBakedModel implements ICoverRendere
             AABB cube = COVER_BACK_CUBES.get(attachedSide);
 
             for (BakedQuad quad : facadeQuads) {
-                coverQuads.add(StaticFaceBakery.bakeFace(cube, attachedSide.getOpposite(),
+                coverQuads.add(FaceQuad.bakeFace(cube, attachedSide.getOpposite(),
                         quad.getSprite(), BlockModelRotation.X0_Y0,
                         quad.getTintIndex(), 0, false, quad.isShade()));
             }

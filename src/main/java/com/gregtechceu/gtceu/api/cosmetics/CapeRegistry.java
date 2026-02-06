@@ -2,18 +2,18 @@ package com.gregtechceu.gtceu.api.cosmetics;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.cosmetics.event.RegisterGTCapesEvent;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 import com.gregtechceu.gtceu.common.network.packets.SPacketNotifyCapeChange;
 import com.gregtechceu.gtceu.integration.kjs.GTCEuServerEvents;
-import com.gregtechceu.gtceu.integration.kjs.events.RegisterCapesEventJS;
+import com.gregtechceu.gtceu.integration.kjs.events.RegisterCapesKubeEvent;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.latvian.mods.kubejs.script.ScriptType;
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static com.gregtechceu.gtceu.common.commands.GTCommands.ERROR_NO_SUCH_CAPE;
+import static com.gregtechceu.gtceu.data.command.GTCommands.ERROR_NO_SUCH_CAPE;
 
 public class CapeRegistry extends SavedData {
 
@@ -47,16 +47,17 @@ public class CapeRegistry extends SavedData {
 
     private static void initCapes() {
         RegisterGTCapesEvent event = new RegisterGTCapesEvent();
-        MinecraftForge.EVENT_BUS.post(event);
+        NeoForge.EVENT_BUS.post(event);
         if (GTCEu.Mods.isKubeJSLoaded()) {
             KJSCallWrapper.fireKJSEvent(event);
         }
-
         save();
     }
 
     public static void registerToServer(ServerLevel level) {
-        level.getDataStorage().computeIfAbsent(CapeRegistry.INSTANCE::load, CapeRegistry.INSTANCE::init, "gtceu_capes");
+        level.getDataStorage()
+                .computeIfAbsent(new SavedData.Factory<>(CapeRegistry.INSTANCE::init, CapeRegistry.INSTANCE::load),
+                        "gtceu_capes");
     }
 
     private CapeRegistry init() {
@@ -70,7 +71,7 @@ public class CapeRegistry extends SavedData {
     }
 
     @Override
-    public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
+    public @NotNull CompoundTag save(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         ListTag unlockedCapesTag = new ListTag();
         for (Map.Entry<UUID, Set<ResourceLocation>> entry : UNLOCKED_CAPES.entrySet()) {
             CompoundTag entryTag = new CompoundTag();
@@ -104,7 +105,7 @@ public class CapeRegistry extends SavedData {
         return tag;
     }
 
-    private CapeRegistry load(CompoundTag tag) {
+    private CapeRegistry load(CompoundTag tag, HolderLookup.Provider registries) {
         init();
 
         ListTag unlockedCapesTag = tag.getList("unlocked_capes", Tag.TAG_COMPOUND);
@@ -119,7 +120,7 @@ public class CapeRegistry extends SavedData {
                 String capeId = capesTag.getString(j);
                 if (capeId.isEmpty())
                     continue;
-                capes.add(new ResourceLocation(capeId));
+                capes.add(ResourceLocation.parse(capeId));
             }
             UNLOCKED_CAPES.put(uuid, capes);
         }
@@ -131,7 +132,7 @@ public class CapeRegistry extends SavedData {
             if (capeId.isEmpty())
                 continue;
             UUID uuid = entryTag.getUUID("owner");
-            CURRENT_CAPES.put(uuid, new ResourceLocation(capeId));
+            CURRENT_CAPES.put(uuid, ResourceLocation.parse(capeId));
         }
 
         return this;
@@ -246,8 +247,8 @@ public class CapeRegistry extends SavedData {
     }
 
     @SneakyThrows(CommandSyntaxException.class)
-    public static void giveRawCape(UUID uuid, @NotNull ResourceLocation cape) {
-        if (!CapeRegistry.ALL_CAPES.containsKey(cape)) {
+    public static void giveRawCape(UUID uuid, @Nullable ResourceLocation cape) {
+        if (cape != null && !CapeRegistry.ALL_CAPES.containsKey(cape)) {
             throw ERROR_NO_SUCH_CAPE.create(cape.toString());
         }
         CURRENT_CAPES.put(uuid, cape);
@@ -269,35 +270,31 @@ public class CapeRegistry extends SavedData {
             return false;
         }
         CURRENT_CAPES.put(player, cape);
-        GTNetwork.sendToAll(new SPacketNotifyCapeChange(player, cape));
+        PacketDistributor.sendToAllPlayers(new SPacketNotifyCapeChange(player, cape));
         save();
         return true;
     }
 
     // For loading capes when the player logs in, so that it's synced to the clients.
-    public static void loadCurrentCapesOnLogin(Player player) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            UUID uuid = player.getUUID();
-            // sync to others
-            GTNetwork.sendToAll(new SPacketNotifyCapeChange(uuid, CURRENT_CAPES.get(uuid)));
-            // sync to the one who's logging in
-            for (ServerPlayer otherPlayer : serverPlayer.getServer().getPlayerList().getPlayers()) {
-                uuid = otherPlayer.getUUID();
-                GTNetwork.sendToPlayer(serverPlayer, new SPacketNotifyCapeChange(uuid, CURRENT_CAPES.get(uuid)));
-            }
+    public static void loadCurrentCapesOnLogin(ServerPlayer serverPlayer) {
+        UUID uuid = serverPlayer.getUUID();
+        // sync to others
+        PacketDistributor.sendToAllPlayers(new SPacketNotifyCapeChange(uuid, CURRENT_CAPES.get(uuid)));
+        // sync to the one who's logging in
+        for (ServerPlayer otherPlayer : serverPlayer.getServer().getPlayerList().getPlayers()) {
+            uuid = otherPlayer.getUUID();
+            PacketDistributor.sendToPlayer(serverPlayer, new SPacketNotifyCapeChange(uuid, CURRENT_CAPES.get(uuid)));
         }
     }
 
     // Runs on login and gives the player all free capes & capes they've already unlocked.
-    public static void detectNewCapes(Player player) {
-        if (player instanceof ServerPlayer) {
-            var playerCapes = UNLOCKED_CAPES.get(player.getUUID());
-            if (playerCapes == null || !new HashSet<>(playerCapes).containsAll(FREE_CAPES)) {
-                for (ResourceLocation cape : FREE_CAPES) {
-                    unlockCape(player.getUUID(), cape);
-                }
-                save();
+    public static void detectNewCapes(ServerPlayer serverPlayer) {
+        var playerCapes = UNLOCKED_CAPES.get(serverPlayer.getUUID());
+        if (playerCapes == null || !new HashSet<>(playerCapes).containsAll(FREE_CAPES)) {
+            for (ResourceLocation cape : FREE_CAPES) {
+                unlockCape(serverPlayer.getUUID(), cape);
             }
+            save();
         }
     }
 
@@ -322,7 +319,7 @@ public class CapeRegistry extends SavedData {
     private static class KJSCallWrapper {
 
         public static void fireKJSEvent(RegisterGTCapesEvent event) {
-            GTCEuServerEvents.REGISTER_CAPES.post(ScriptType.SERVER, new RegisterCapesEventJS(event));
+            GTCEuServerEvents.REGISTER_CAPES.post(ScriptType.SERVER, new RegisterCapesKubeEvent(event));
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.gregtechceu.gtceu.utils;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.Util;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -16,13 +15,8 @@ import java.lang.Math;
 import java.security.InvalidParameterException;
 import java.util.Objects;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class GTMatrixUtils {
 
-    @SuppressWarnings("UnstableApiUsage")
     private static final ImmutableMap<Direction, Vector3fc> directionAxises = Util.make(() -> {
         ImmutableMap.Builder<Direction, Vector3fc> map = ImmutableMap.builderWithExpectedSize(6);
         for (Direction dir : GTUtil.DIRECTIONS) {

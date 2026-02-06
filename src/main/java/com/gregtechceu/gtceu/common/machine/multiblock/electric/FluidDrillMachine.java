@@ -5,26 +5,25 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
-import com.gregtechceu.gtceu.common.data.GTMaterialBlocks;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.common.machine.trait.FluidDrillLogic;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.data.block.GTMaterialBlocks;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.material.Fluid;
 
 import lombok.Getter;
@@ -32,10 +31,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class FluidDrillMachine extends WorkableElectricMultiblockMachine implements ITieredMachine {
 
     @Getter
@@ -83,9 +78,10 @@ public class FluidDrillMachine extends WorkableElectricMultiblockMachine impleme
                         .withStyle(ChatFormatting.GRAY));
 
                 // Fluid amount
-                Component amountInfo = Component.literal(FormattingUtil.formatNumbers(
-                        getRecipeLogic().getFluidToProduce() * 20L / FluidDrillLogic.MAX_PROGRESS) +
-                        " mB/s").withStyle(ChatFormatting.BLUE);
+                float produced = getRecipeLogic().getFluidToProduce() * getLevel().tickRateManager().tickrate();
+                produced = Mth.floor(produced / FluidDrillLogic.MAX_PROGRESS);
+                Component amountInfo = Component.literal(FormattingUtil.formatNumbers(produced) + " mB/s")
+                        .withStyle(ChatFormatting.BLUE);
                 textList.add(Component.translatable("gtceu.multiblock.fluid_rig.fluid_amount", amountInfo)
                         .withStyle(ChatFormatting.GRAY));
             } else {
@@ -123,7 +119,7 @@ public class FluidDrillMachine extends WorkableElectricMultiblockMachine impleme
         return 1;
     }
 
-    public static Block getCasingState(int tier) {
+    public static net.minecraft.world.level.block.Block getCasingState(int tier) {
         if (tier == GTValues.MV)
             return GTBlocks.CASING_STEEL_SOLID.get();
         if (tier == GTValues.HV)
@@ -134,7 +130,7 @@ public class FluidDrillMachine extends WorkableElectricMultiblockMachine impleme
     }
 
     @SuppressWarnings("DataFlowIssue")
-    public static Block getFrameState(int tier) {
+    public static net.minecraft.world.level.block.Block getFrameState(int tier) {
         if (tier == GTValues.MV)
             return GTMaterialBlocks.MATERIAL_BLOCKS.get(TagPrefix.frameGt, GTMaterials.Steel).get();
         if (tier == GTValues.HV)

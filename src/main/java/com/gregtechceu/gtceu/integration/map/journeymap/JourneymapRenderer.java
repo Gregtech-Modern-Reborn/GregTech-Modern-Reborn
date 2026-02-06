@@ -1,11 +1,11 @@
 package com.gregtechceu.gtceu.integration.map.journeymap;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialIconType;
-import com.gregtechceu.gtceu.api.data.worldgen.ores.GeneratedVeinMetadata;
 import com.gregtechceu.gtceu.api.gui.misc.ProspectorMode;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.info.MaterialIconType;
+import com.gregtechceu.gtceu.api.worldgen.ores.GeneratedVeinMetadata;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.integration.map.GenericMapRenderer;
 import com.gregtechceu.gtceu.integration.map.WaypointManager;
@@ -22,17 +22,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.*;
-import journeymap.client.api.model.MapImage;
-import journeymap.client.api.model.MapPolygon;
-import journeymap.client.api.model.ShapeProperties;
-import journeymap.client.api.util.PolygonHelper;
-import journeymap.client.api.util.UIState;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.*;
+import journeymap.api.v2.client.fullscreen.ModPopupMenu;
+import journeymap.api.v2.client.model.MapImage;
+import journeymap.api.v2.client.model.MapPolygon;
+import journeymap.api.v2.client.model.ShapeProperties;
+import journeymap.api.v2.client.util.PolygonHelper;
+import journeymap.api.v2.client.util.UIState;
 import lombok.Getter;
 
 import java.awt.geom.Point2D;
@@ -46,7 +47,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
  */
 public class JourneymapRenderer extends GenericMapRenderer {
 
-    protected static final ResourceLocation STONE = new ResourceLocation("block/stone");
+    protected static final ResourceLocation STONE = ResourceLocation.withDefaultNamespace("block/stone");
     protected static final Map<Material, NativeImage> MATERIAL_ICONS = new HashMap<>();
 
     @Getter
@@ -132,7 +133,7 @@ public class JourneymapRenderer extends GenericMapRenderer {
                 .setDisplayWidth(ConfigHolder.INSTANCE.compat.minimap.oreIconSize)
                 .setDisplayHeight(ConfigHolder.INSTANCE.compat.minimap.oreIconSize);
 
-        MarkerOverlay overlay = new MarkerOverlay(GTCEu.MOD_ID, id, center, image);
+        MarkerOverlay overlay = new MarkerOverlay(GTCEu.MOD_ID, center, image);
 
         overlay.setDimension(dim);
         overlay.setLabel("")
@@ -162,7 +163,7 @@ public class JourneymapRenderer extends GenericMapRenderer {
             return MATERIAL_ICONS.get(material);
         }
 
-        int materialABGR = GradientUtil.argbToAbgr(material.getMaterialARGB());
+        int materialRGBA = GradientUtil.argbToRgba(material.getMaterialARGB());
 
         ResourceLocation layer1 = MaterialIconType.rawOre.getItemTexturePath(material.getMaterialIconSet(), true);
         TextureAtlasSprite baseTexture = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
@@ -180,11 +181,11 @@ public class JourneymapRenderer extends GenericMapRenderer {
             for (int y = 0; y < result.getHeight(); ++y) {
                 int color = baseTexture.getPixelRGBA(0, x, y);
                 result.setPixelRGBA(x, y, GradientUtil
-                        .multiplyBlendWithAlpha(color, materialABGR));
+                        .multiplyBlendRGBA(color, materialRGBA));
             }
         }
         if (material.getMaterialSecondaryARGB() != -1) {
-            int materialSecondaryABGR = GradientUtil.argbToAbgr(material.getMaterialSecondaryARGB());
+            int materialSecondaryRGBA = GradientUtil.argbToRgba(material.getMaterialSecondaryARGB());
             ResourceLocation layer2 = MaterialIconType.rawOre.getItemTexturePath(material.getMaterialIconSet(),
                     "secondary", true);
             if (layer2 == null) {
@@ -197,7 +198,7 @@ public class JourneymapRenderer extends GenericMapRenderer {
                 for (int y = 0; y < result.getHeight(); ++y) {
                     int color = image2.getPixelRGBA(0, x, y);
                     result.blendPixel(x, y, GradientUtil
-                            .multiplyBlendWithAlpha(color, materialSecondaryABGR));
+                            .multiplyBlendRGBA(color, materialSecondaryRGBA));
                 }
             }
         }
@@ -230,7 +231,7 @@ public class JourneymapRenderer extends GenericMapRenderer {
                 .setImageLocation(texture);
 
         MapPolygon polygon = PolygonHelper.createChunkPolygon(pos.x, 0, pos.z);
-        var overlay = new PolygonOverlay(GTCEu.MOD_ID, id, dim, shapeProps, polygon);
+        var overlay = new PolygonOverlay(GTCEu.MOD_ID, dim, shapeProps, polygon);
 
         overlay.setDimension(dim);
         overlay.setLabel("")
@@ -292,7 +293,7 @@ public class JourneymapRenderer extends GenericMapRenderer {
                                     boolean doubleClick) {
             if (button == 0 && doubleClick) {
                 if (oreVein != null) {
-                    Material firstMaterial = oreVein.definition().veinGenerator().getAllMaterials().get(0);
+                    Material firstMaterial = oreVein.definition().value().veinGenerator().getAllMaterials().getFirst();
                     int color = firstMaterial.getMaterialARGB();
 
                     BlockPos center = oreVein.center();
@@ -322,7 +323,7 @@ public class JourneymapRenderer extends GenericMapRenderer {
             });
             modPopupMenu.addMenuItem("button.gtceu.toggle_waypoint.name", (b) -> {
                 if (oreVein != null) {
-                    Material firstMaterial = oreVein.definition().veinGenerator().getAllMaterials().get(0);
+                    Material firstMaterial = oreVein.definition().value().veinGenerator().getAllMaterials().getFirst();
                     int color = firstMaterial.getMaterialARGB();
                     BlockPos center = oreVein.center();
                     WaypointManager.toggleWaypoint("ore_veins", label, color,

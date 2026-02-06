@@ -3,11 +3,9 @@ package com.gregtechceu.gtceu.api.recipe.modifier;
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
-
-import net.minecraft.MethodsReturnNonnullByDefault;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -15,10 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class ParallelLogic {
 
     /**

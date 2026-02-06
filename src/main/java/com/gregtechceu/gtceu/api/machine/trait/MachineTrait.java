@@ -8,7 +8,7 @@ import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import lombok.Getter;
 import lombok.Setter;

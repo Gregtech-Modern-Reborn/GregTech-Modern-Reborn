@@ -1,16 +1,15 @@
 package com.gregtechceu.gtceu.data.recipe;
 
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
-import com.gregtechceu.gtceu.api.data.tag.TagUtil;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
@@ -100,17 +99,17 @@ public final class WoodTypeEntry {
     public final String pressurePlateRecipeName;
     public final Material material;
 
-    public final boolean addLogOreDict;
-    public final boolean addPlanksOreDict;
-    public final boolean addDoorsOreDict;
-    public final boolean addSlabsOreDict;
-    public final boolean addFencesOreDict;
-    public final boolean addFenceGatesOreDict;
-    public final boolean addStairsOreDict;
-    public final boolean addBoatsOreDict;
-    public final boolean addChestBoatsOreDict;
-    public final boolean addButtonsOreDict;
-    public final boolean addPressurePlatesOreDict;
+    public final boolean addLogTag;
+    public final boolean addPlanksTag;
+    public final boolean addDoorsTag;
+    public final boolean addSlabsTag;
+    public final boolean addFencesTag;
+    public final boolean addFenceGatesTag;
+    public final boolean addStairsTag;
+    public final boolean addBoatsTag;
+    public final boolean addChestBoatsTag;
+    public final boolean addButtonsTag;
+    public final boolean addPressurePlatesTag;
 
     public final boolean addPlanksMaterialInfo;
     public final boolean addDoorsMaterialInfo;
@@ -145,11 +144,11 @@ public final class WoodTypeEntry {
                           @Nullable Item button, @Nullable String buttonRecipeName,
                           @Nullable Item pressurePlate, @Nullable String pressurePlateRecipeName,
                           @NotNull Material material,
-                          boolean addLogOreDict, boolean addPlanksOreDict, boolean addDoorsOreDict,
-                          boolean addSlabsOreDict,
-                          boolean addFencesOreDict, boolean addFenceGatesOreDict, boolean addStairsOreDict,
-                          boolean addBoatsOreDict, boolean addChestBoatsOreDict,
-                          boolean addButtonsOreDict, boolean addPressurePlatesOreDict,
+                          boolean addLogTag, boolean addPlanksTag, boolean addDoorsTag,
+                          boolean addSlabsTag,
+                          boolean addFencesTag, boolean addFenceGatesTag, boolean addStairsTag,
+                          boolean addBoatsTag, boolean addChestBoatsTag,
+                          boolean addButtonsTag, boolean addPressurePlatesTag,
                           boolean addPlanksMaterialInfo, boolean addDoorsMaterialInfo,
                           boolean addSlabsMaterialInfo, boolean addFencesMaterialInfo,
                           boolean addFenceGatesMaterialInfo, boolean addStairsMaterialInfo,
@@ -195,17 +194,17 @@ public final class WoodTypeEntry {
         this.pressurePlateRecipeName = pressurePlateRecipeName;
         this.material = !material.isNull() ? material : GTMaterials.Wood;
 
-        this.addLogOreDict = addLogOreDict;
-        this.addPlanksOreDict = addPlanksOreDict;
-        this.addDoorsOreDict = addDoorsOreDict;
-        this.addSlabsOreDict = addSlabsOreDict;
-        this.addFencesOreDict = addFencesOreDict;
-        this.addFenceGatesOreDict = addFenceGatesOreDict;
-        this.addStairsOreDict = addStairsOreDict;
-        this.addBoatsOreDict = addBoatsOreDict;
-        this.addChestBoatsOreDict = addChestBoatsOreDict;
-        this.addButtonsOreDict = addButtonsOreDict;
-        this.addPressurePlatesOreDict = addPressurePlatesOreDict;
+        this.addLogTag = addLogTag;
+        this.addPlanksTag = addPlanksTag;
+        this.addDoorsTag = addDoorsTag;
+        this.addSlabsTag = addSlabsTag;
+        this.addFencesTag = addFencesTag;
+        this.addFenceGatesTag = addFenceGatesTag;
+        this.addStairsTag = addStairsTag;
+        this.addBoatsTag = addBoatsTag;
+        this.addChestBoatsTag = addChestBoatsTag;
+        this.addButtonsTag = addButtonsTag;
+        this.addPressurePlatesTag = addPressurePlatesTag;
         this.addPlanksMaterialInfo = addPlanksMaterialInfo;
         this.addDoorsMaterialInfo = addDoorsMaterialInfo;
         this.addSlabsMaterialInfo = addSlabsMaterialInfo;
@@ -276,17 +275,17 @@ public final class WoodTypeEntry {
         @NotNull
         private Material material = GTMaterials.NULL;
 
-        private boolean addLogOreDict;
-        private boolean addPlanksOreDict;
-        private boolean addDoorsOreDict;
-        private boolean addSlabsOreDict;
-        private boolean addFencesOreDict;
-        private boolean addFenceGatesOreDict;
-        private boolean addStairsOreDict;
-        private boolean addBoatsOreDict;
-        private boolean addChestBoatsOreDict;
-        private boolean addButtonOreDict;
-        private boolean addPressurePlateOreDict;
+        private boolean addLogTag;
+        private boolean addPlanksTag;
+        private boolean addDoorsTag;
+        private boolean addSlabsTag;
+        private boolean addFencesTag;
+        private boolean addFenceGatesTag;
+        private boolean addStairsTag;
+        private boolean addBoatsTag;
+        private boolean addChestBoatsTag;
+        private boolean addButtonTag;
+        private boolean addPressurePlateTag;
 
         private boolean addPlanksMaterialInfo;
         private boolean addDoorsMaterialInfo;
@@ -622,17 +621,17 @@ public final class WoodTypeEntry {
         public Builder registerTag(boolean log, boolean planks, boolean door, boolean slab, boolean fence,
                                    boolean fenceGate, boolean stairs, boolean boat, boolean chestBoat, boolean button,
                                    boolean pressurePlate) {
-            this.addLogOreDict = log;
-            this.addPlanksOreDict = planks;
-            this.addDoorsOreDict = door;
-            this.addSlabsOreDict = slab;
-            this.addFencesOreDict = fence;
-            this.addFenceGatesOreDict = fenceGate;
-            this.addStairsOreDict = stairs;
-            this.addBoatsOreDict = boat;
-            this.addChestBoatsOreDict = chestBoat;
-            this.addButtonOreDict = button;
-            this.addPressurePlateOreDict = pressurePlate;
+            this.addLogTag = log;
+            this.addPlanksTag = planks;
+            this.addDoorsTag = door;
+            this.addSlabsTag = slab;
+            this.addFencesTag = fence;
+            this.addFenceGatesTag = fenceGate;
+            this.addStairsTag = stairs;
+            this.addBoatsTag = boat;
+            this.addChestBoatsTag = chestBoat;
+            this.addButtonTag = button;
+            this.addPressurePlateTag = pressurePlate;
             return this;
         }
 
@@ -687,8 +686,8 @@ public final class WoodTypeEntry {
 
             // add default tag if logTag is null
             if (logTag == null)
-                logTag = TagUtil.optionalTag(BuiltInRegistries.ITEM,
-                        new ResourceLocation(modid, woodName + "_logs"));
+                logTag = TagKey.create(Registries.ITEM,
+                        ResourceLocation.fromNamespaceAndPath(modid, woodName + "_logs"));
 
             return new WoodTypeEntry(modid, woodName, logTag, log, strippedLog, wood, strippedWood,
                     removeCharcoalRecipe, addCharcoalRecipe,
@@ -702,9 +701,9 @@ public final class WoodTypeEntry {
                     sign, signRecipeName, hangingSign, hangingSignRecipeName,
                     button, buttonRecipeName, pressurePlate, pressurePlateRecipeName,
                     material,
-                    addLogOreDict, addPlanksOreDict, addDoorsOreDict, addSlabsOreDict,
-                    addFencesOreDict, addFenceGatesOreDict, addStairsOreDict, addBoatsOreDict, addChestBoatsOreDict,
-                    addButtonOreDict, addPressurePlateOreDict,
+                    addLogTag, addPlanksTag, addDoorsTag, addSlabsTag,
+                    addFencesTag, addFenceGatesTag, addStairsTag, addBoatsTag, addChestBoatsTag,
+                    addButtonTag, addPressurePlateTag,
                     addPlanksMaterialInfo, addDoorsMaterialInfo, addSlabsMaterialInfo,
                     addFencesMaterialInfo,
                     addFenceGatesMaterialInfo, addStairsMaterialInfo, addBoatsMaterialInfo,

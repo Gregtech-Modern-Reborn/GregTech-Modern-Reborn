@@ -1,11 +1,13 @@
 package com.gregtechceu.gtceu.common.machine.storage;
 
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.capability.IControllable;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.widget.PhantomFluidWidget;
 import com.gregtechceu.gtceu.api.gui.widget.TankWidget;
 import com.gregtechceu.gtceu.api.gui.widget.ToggleButtonWidget;
+import com.gregtechceu.gtceu.api.item.datacomponents.LargeFluidContent;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.machine.*;
 import com.gregtechceu.gtceu.api.machine.feature.IAutoOutputFluid;
@@ -13,8 +15,11 @@ import com.gregtechceu.gtceu.api.machine.feature.IDropSaveMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IFancyUIMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IInteractedMachine;
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.api.transfer.fluid.CustomFluidTank;
 import com.gregtechceu.gtceu.api.transfer.fluid.IFluidHandlerModifiable;
+import com.gregtechceu.gtceu.core.MixinHelpers;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 import com.gregtechceu.gtceu.utils.GTMath;
 import com.gregtechceu.gtceu.utils.GTTransferUtils;
@@ -30,46 +35,48 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
-import com.mojang.blaze3d.MethodsReturnNonnullByDefault;
 import it.unimi.dsi.fastutil.objects.Object2LongArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class QuantumTankMachine extends TieredMachine implements IAutoOutputFluid, IInteractedMachine, IControllable,
                                 IDropSaveMachine, IFancyUIMachine {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(QuantumTankMachine.class,
             MetaMachine.MANAGED_FIELD_HOLDER);
 
-    public static Object2LongMap<MachineDefinition> TANK_CAPACITY = new Object2LongArrayMap<>();
+    public static Object2LongMap<MachineDefinition> TANK_CAPACITY = Util.make(new Object2LongArrayMap<>(), map -> {
+        map.defaultReturnValue(-1L);
+    });
 
     @Getter
     @Persisted
@@ -117,7 +124,7 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
     //////////////////////////////////////
 
     @Override
-    public ManagedFieldHolder getFieldHolder() {
+    public @NotNull ManagedFieldHolder getFieldHolder() {
         return MANAGED_FIELD_HOLDER;
     }
 
@@ -152,8 +159,12 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
     @Override
     public void saveCustomPersistedData(@NotNull CompoundTag tag, boolean forDrop) {
         super.saveCustomPersistedData(tag, forDrop);
-        if (!forDrop) tag.put("lockedFluid", lockedFluid.writeToNBT(new CompoundTag()));
-        tag.put("stored", stored.writeToNBT(new CompoundTag()));
+        if (!forDrop) tag.put("lockedFluid", lockedFluid.serializeNBT(GTRegistries.builtinRegistry()));
+        if (!stored.isEmpty()) {
+            tag.put("stored", stored.save(GTRegistries.builtinRegistry()));
+        } else {
+            tag.remove("stored");
+        }
         tag.putLong("storedAmount", storedAmount);
     }
 
@@ -162,14 +173,44 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
         super.loadCustomPersistedData(tag);
 
         var from = tag.contains("cache") ? tag.getCompound("cache") : tag;
-        this.lockedFluid.readFromNBT(from.getCompound("lockedFluid"));
+        var registry = Objects.requireNonNullElse(MixinHelpers.getCurrentBERegistries(),
+                GTRegistries.builtinRegistry());
+        this.lockedFluid.readFromNBT(registry, from.getCompound("lockedFluid"));
 
-        var stored = FluidStack.loadFluidStackFromNBT(tag.getCompound("stored"));
-        this.stored = new FluidStack(stored, 1000);
+        if (tag.contains("stored")) {
+            var v = MixinHelpers.getCurrentBERegistries();
+            LogManager.getLogger().warn("{}", v);
+            var stored = FluidStack.parseOptional(registry, tag.getCompound("stored"));
+            this.stored = stored.copyWithAmount(FluidType.BUCKET_VOLUME);
+        } else {
+            this.stored = FluidStack.EMPTY;
+        }
 
         if (!tag.contains("storedAmount")) this.storedAmount = stored.getAmount();
         else this.storedAmount = tag.getLong("storedAmount");
         if (storedAmount == 0 && !stored.isEmpty()) this.storedAmount = stored.getAmount();
+    }
+
+    @Override
+    public void applyImplicitComponents(MetaMachineBlockEntity.@NotNull ExDataComponentInput componentInput) {
+        super.applyImplicitComponents(componentInput);
+        LargeFluidContent storage = componentInput.getOrDefault(GTDataComponents.LARGE_FLUID_CONTENT,
+                LargeFluidContent.EMPTY);
+        stored = storage.stored();
+        storedAmount = storage.amount();
+    }
+
+    @Override
+    public void collectImplicitComponents(DataComponentMap.@NotNull Builder components) {
+        super.collectImplicitComponents(components);
+        components.set(GTDataComponents.LARGE_FLUID_CONTENT, new LargeFluidContent(stored, storedAmount));
+    }
+
+    @Override
+    public void removeItemComponentsFromTag(@NotNull CompoundTag tag) {
+        super.removeItemComponentsFromTag(tag);
+        tag.remove("stored");
+        tag.remove("storedAmount");
     }
 
     //////////////////////////////////////
@@ -219,7 +260,7 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
     }
 
     @Override
-    public void onNeighborChanged(Block block, BlockPos fromPos, boolean isMoving) {
+    public void onNeighborChanged(net.minecraft.world.level.block.Block block, BlockPos fromPos, boolean isMoving) {
         super.onNeighborChanged(block, fromPos, isMoving);
         updateAutoOutputSubscription();
     }
@@ -255,37 +296,41 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
     }
 
     @Override
-    public InteractionResult onUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand,
-                                   BlockHitResult hit) {
-        if (hit.getDirection() == getFrontFacing() && !isRemote()) {
+    public ItemInteractionResult onUseWithItem(ItemStack stack, BlockState state, Level world, BlockPos pos,
+                                               Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!world.isClientSide) {
             if (FluidUtil.interactWithFluidHandler(player, hand, cache)) {
-                return InteractionResult.SUCCESS;
+                return ItemInteractionResult.SUCCESS;
             }
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        } else {
+            return ItemInteractionResult.SUCCESS;
         }
-        return IInteractedMachine.super.onUse(state, world, pos, player, hand, hit);
     }
 
     @Override
-    protected InteractionResult onWrenchClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                              BlockHitResult hitResult) {
-        if (!playerIn.isShiftKeyDown() && !isRemote()) {
+    protected ItemInteractionResult onWrenchClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                  Direction gridSide,
+                                                  BlockHitResult hitResult) {
+        if (!playerIn.isShiftKeyDown()) {
             var tool = playerIn.getItemInHand(hand);
-            if (tool.getDamageValue() >= tool.getMaxDamage()) return InteractionResult.PASS;
-            if (hasFrontFacing() && gridSide == getFrontFacing()) return InteractionResult.PASS;
+            if (tool.getDamageValue() >= tool.getMaxDamage()) return ItemInteractionResult.FAIL;
+            if (hasFrontFacing() && gridSide == getFrontFacing()) return ItemInteractionResult.FAIL;
             if (gridSide != getOutputFacingFluids()) {
                 setOutputFacingFluids(gridSide);
             } else {
                 setOutputFacingFluids(null);
             }
-            return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
+            return ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide);
         }
 
-        return super.onWrenchClick(playerIn, hand, gridSide, hitResult);
+        return super.onWrenchClick(playerIn, hand, held, gridSide, hitResult);
     }
 
     @Override
-    protected InteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                                   BlockHitResult hitResult) {
+    protected ItemInteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                       Direction gridSide,
+                                                       BlockHitResult hitResult) {
         if (!isRemote()) {
             if (gridSide == getOutputFacingFluids()) {
                 if (isAllowInputFromOutputSideFluids()) {
@@ -300,9 +345,9 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
                                     .append(Component.translatable("gtceu.creative.tank.fluid")));
                 }
             }
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
-        return super.onScrewdriverClick(playerIn, hand, gridSide, hitResult);
+        return super.onScrewdriverClick(playerIn, hand, held, gridSide, hitResult);
     }
 
     public boolean isLocked() {
@@ -311,7 +356,7 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
 
     protected void setLocked(boolean locked) {
         if (!stored.isEmpty() && locked) {
-            var copied = new FluidStack(stored, 1000);
+            var copied = stored.copyWithAmount(FluidType.BUCKET_VOLUME);
             lockedFluid.setFluid(copied);
         } else if (!locked) {
             lockedFluid.setFluid(FluidStack.EMPTY);
@@ -321,7 +366,7 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
     protected void setLocked(FluidStack fluid) {
         if (fluid.isEmpty()) setLocked(false);
         else if (stored.isEmpty()) lockedFluid.setFluid(fluid);
-        else if (stored.isFluidEqual(fluid)) setLocked(true);
+        else if (stored.is(fluid.getFluid())) setLocked(true);
     }
 
     public FluidStack getLockedFluid() {
@@ -365,8 +410,8 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
     // ******* Rendering ********//
     //////////////////////////////////////
     @Override
-    public @Nullable ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
-                                              Direction side) {
+    public ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
+                                    ItemStack held, Direction side) {
         if (toolTypes.contains(GTToolType.WRENCH)) {
             if (!player.isShiftKeyDown()) {
                 if (!hasFrontFacing() || side != getFrontFacing()) {
@@ -380,12 +425,13 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
         } else if (toolTypes.contains(GTToolType.SOFT_MALLET)) {
             if (side == getFrontFacing()) return null;
         }
-        return super.sideTips(player, pos, state, toolTypes, side);
+        return super.sideTips(player, pos, state, toolTypes, held, side);
     }
 
     protected class FluidCache extends MachineTrait implements IFluidHandler {
 
-        private final Predicate<FluidStack> filter = f -> !isLocked() || getLockedFluid().isFluidEqual(f);
+        private final Predicate<FluidStack> filter = f -> !isLocked() ||
+                FluidStack.isSameFluidSameComponents(f, getLockedFluid());
 
         public FluidCache(MetaMachine holder) {
             super(holder);
@@ -393,18 +439,18 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
 
         @Override
         public @NotNull FluidStack getFluidInTank(int tank) {
-            return new FluidStack(stored, GTMath.saturatedCast(storedAmount));
+            return stored.copyWithAmount(GTMath.saturatedCast(storedAmount));
         }
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
             long free = isVoiding ? Long.MAX_VALUE : maxAmount - storedAmount;
             long canFill = 0;
-            if ((stored.isEmpty() || stored.isFluidEqual(resource)) && filter.test(resource)) {
+            if ((stored.isEmpty() || FluidStack.isSameFluidSameComponents(resource, stored)) && filter.test(resource)) {
                 canFill = Math.min(resource.getAmount(), free);
             }
             if (action.execute() && canFill > 0) {
-                if (stored.isEmpty()) stored = new FluidStack(resource, 1000);
+                if (stored.isEmpty()) stored = resource.copyWithAmount(FluidType.BUCKET_VOLUME);
                 storedAmount = Math.min(maxAmount, storedAmount + canFill);
                 onFluidChanged();
             }
@@ -415,7 +461,7 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
         public @NotNull FluidStack drain(int maxDrain, FluidAction action) {
             if (stored.isEmpty()) return FluidStack.EMPTY;
             long toDrain = Math.min(storedAmount, maxDrain);
-            var copy = new FluidStack(stored, (int) toDrain);
+            var copy = stored.copyWithAmount((int) toDrain);
             if (action.execute() && toDrain > 0) {
                 storedAmount -= toDrain;
                 if (storedAmount == 0) stored = FluidStack.EMPTY;
@@ -426,7 +472,7 @@ public class QuantumTankMachine extends TieredMachine implements IAutoOutputFlui
 
         @Override
         public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
-            if (!resource.isFluidEqual(stored)) return FluidStack.EMPTY;
+            if (!FluidStack.isSameFluidSameComponents(resource, stored)) return FluidStack.EMPTY;
             return drain(resource.getAmount(), action);
         }
 

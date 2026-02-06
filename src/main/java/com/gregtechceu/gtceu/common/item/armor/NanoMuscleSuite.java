@@ -5,14 +5,16 @@ import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
 import com.gregtechceu.gtceu.api.capability.IElectricItem;
 import com.gregtechceu.gtceu.api.item.armor.ArmorLogicSuite;
 import com.gregtechceu.gtceu.api.item.armor.ArmorUtils;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.utils.input.KeyBind;
+import com.gregtechceu.gtceu.api.item.datacomponents.GTArmor;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.utils.input.SyncedKeyMappings;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -22,12 +24,14 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -45,18 +49,18 @@ public class NanoMuscleSuite extends ArmorLogicSuite implements IStepAssist {
     }
 
     @Override
-    public void onArmorTick(Level world, Player player, ItemStack itemStack) {
-        IElectricItem item = GTCapabilityHelper.getElectricItem(itemStack);
+    public void onArmorTick(Level level, Player player, ItemStack stack) {
+        IElectricItem item = GTCapabilityHelper.getElectricItem(stack);
         if (item == null) {
             return;
         }
-        CompoundTag data = itemStack.getOrCreateTag();
-        byte toggleTimer = data.contains("toggleTimer") ? data.getByte("toggleTimer") : 0;
-        int nightVisionTimer = data.contains("nightVisionTimer") ? data.getInt("nightVisionTimer") :
-                ArmorUtils.NIGHTVISION_DURATION;
+        GTArmor.Mutable data = stack.getOrDefault(GTDataComponents.ARMOR_DATA, GTArmor.EMPTY).toMutable();
+        byte toggleTimer = data.toggleTimer();
+        int nightVisionTimer = data.nightVisionTimer();
+
         if (type == ArmorItem.Type.HELMET) {
-            boolean nightVision = data.contains("nightVision") && data.getBoolean("nightVision");
-            if (toggleTimer == 0 && KeyBind.ARMOR_MODE_SWITCH.isKeyDown(player)) {
+            boolean nightVision = data.nightVision();
+            if (toggleTimer == 0 && SyncedKeyMappings.ARMOR_MODE_SWITCH.isKeyDown(player)) {
                 nightVision = !nightVision;
                 toggleTimer = 5;
                 if (item.getCharge() < ArmorUtils.MIN_NIGHTVISION_CHARGE) {
@@ -70,25 +74,27 @@ public class NanoMuscleSuite extends ArmorLogicSuite implements IStepAssist {
 
             if (nightVision) {
                 player.removeEffect(MobEffects.BLINDNESS);
-                if (nightVisionTimer <= ArmorUtils.NIGHT_VISION_RESET) {
-                    nightVisionTimer = ArmorUtils.NIGHTVISION_DURATION;
+                float tickRate = level.tickRateManager().tickrate();
+                if (nightVisionTimer <= ArmorUtils.NIGHT_VISION_RESET * tickRate) {
+                    nightVisionTimer = Mth.floor(ArmorUtils.NIGHTVISION_DURATION * tickRate);
                     player.addEffect(
-                            new MobEffectInstance(MobEffects.NIGHT_VISION, ArmorUtils.NIGHTVISION_DURATION, 0, true,
+                            new MobEffectInstance(MobEffects.NIGHT_VISION, nightVisionTimer, 0, true,
                                     false));
-                    item.discharge((4), this.tier, true, false, false);
+                    item.discharge(4, this.tier, true, false, false);
                 }
             } else {
                 player.removeEffect(MobEffects.NIGHT_VISION);
             }
-            data.putBoolean("nightVision", nightVision);
+            data.nightVision(nightVision);
 
         }
 
         if (nightVisionTimer > 0) nightVisionTimer--;
         if (toggleTimer > 0) toggleTimer--;
 
-        data.putInt("nightVisionTimer", nightVisionTimer);
-        data.putByte("toggleTimer", toggleTimer);
+        data.nightVisionTimer(nightVisionTimer);
+        data.toggleTimer(toggleTimer);
+        stack.set(GTDataComponents.ARMOR_DATA, data.toImmutable());
     }
 
     public static void disableNightVision(@NotNull Level world, Player player, boolean sendMsg) {
@@ -121,17 +127,18 @@ public class NanoMuscleSuite extends ArmorLogicSuite implements IStepAssist {
      */
 
     @Override
-    public int damageArmor(LivingEntity entity, ItemStack itemStack, DamageSource source, int damage,
-                           EquipmentSlot equipmentSlot) {
+    public int damageArmor(@Nullable LivingEntity entity, ItemStack itemStack,
+                           int damage, EquipmentSlot equipmentSlot) {
         IElectricItem item = GTCapabilityHelper.getElectricItem(itemStack);
         if (item != null) {
             item.discharge(energyPerUse / 10L * damage, item.getTier(), true, false, false);
         }
-        return super.damageArmor(entity, itemStack, source, damage, equipmentSlot);
+        return super.damageArmor(entity, itemStack, damage, equipmentSlot);
     }
 
     @Override
-    public ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
+    public ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+                                            ArmorMaterial.Layer layer) {
         ItemStack currentChest = Minecraft.getInstance().player.getInventory()
                 .getArmor(ArmorItem.Type.CHESTPLATE.getSlot().getIndex());
         ItemStack advancedChest = GTItems.NANO_CHESTPLATE_ADVANCED.asStack();
@@ -164,8 +171,8 @@ public class NanoMuscleSuite extends ArmorLogicSuite implements IStepAssist {
     public void addInfo(ItemStack itemStack, List<Component> lines) {
         super.addInfo(itemStack, lines);
         if (type == ArmorItem.Type.HELMET) {
-            CompoundTag nbtData = itemStack.getOrCreateTag();
-            boolean nv = nbtData.getBoolean("nightVision");
+            GTArmor data = itemStack.getOrDefault(GTDataComponents.ARMOR_DATA, GTArmor.EMPTY);
+            boolean nv = data.nightVision();
             if (nv) {
                 lines.add(Component.translatable("metaarmor.message.nightvision.enabled"));
             } else {

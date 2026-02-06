@@ -5,11 +5,11 @@ import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderFluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 import com.gregtechceu.gtceu.utils.GTUtil;
@@ -19,7 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -42,6 +42,7 @@ public class MultiblockDisplayText {
         return new Builder(textList, isStructureFormed, showIncompleteStructureWarning);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public static class Builder {
 
         private final List<Component> textList;
@@ -317,6 +318,23 @@ public class MultiblockDisplayText {
         }
 
         /**
+         * Adds a progress line based on the recipe logic.
+         *
+         * @param recipeLogic The recipe logic that provides the progress info
+         *
+         * @see #addProgressLine(double, double, double)
+         * @see #addCustomProgressLine(RecipeLogic)
+         */
+        public Builder addProgressLine(RecipeLogic recipeLogic) {
+            if (recipeLogic.hasCustomProgressLine()) {
+                return this.addCustomProgressLine(recipeLogic);
+            } else {
+                return this.addProgressLine(recipeLogic.getProgress(), recipeLogic.getMaxProgress(),
+                        recipeLogic.getProgressPercent());
+            }
+        }
+
+        /**
          * Adds a simple progress line that displays the current time of a recipe and its progress as a percentage.
          * <br>
          * Added if structure is formed and the machine is active.
@@ -337,9 +355,53 @@ public class MultiblockDisplayText {
             return this;
         }
 
+        /**
+         * Adds a customized progress line that is often used to display the current time of a recipe and its progress
+         * as a percentage.
+         * <p>
+         * Added if structure if formed and the machine is active.
+         *
+         * @param recipeLogic The recipe logic that provides the line
+         */
+        public Builder addCustomProgressLine(RecipeLogic recipeLogic) {
+            if (!isStructureFormed || !isActive)
+                return this;
+            Component line = recipeLogic.getCustomProgressLine();
+            if (line != null) {
+                textList.add(line);
+            }
+            return this;
+        }
+
         public Builder addBatchModeLine(boolean batchEnabled, int batchAmount) {
             if (batchEnabled && batchAmount > 0) {
-                textList.add(Component.translatable("gtceu.multiblock.batch_enabled", batchAmount));
+                Component runs = Component.literal(FormattingUtil.formatNumbers(batchAmount))
+                        .withStyle(ChatFormatting.DARK_PURPLE);
+                String key = "gtceu.multiblock.batch_enabled";
+                textList.add(Component.translatable(key, runs)
+                        .withStyle(ChatFormatting.GRAY));
+            }
+            return this;
+        }
+
+        public Builder addSubtickParallelsLine(int subtickParallels) {
+            if (subtickParallels > 1) {
+                Component runs = Component.literal(FormattingUtil.formatNumbers(subtickParallels))
+                        .withStyle(ChatFormatting.DARK_PURPLE);
+                String key = "gtceu.multiblock.subtick_parallels";
+                textList.add(Component.translatable(key, runs)
+                        .withStyle(ChatFormatting.GRAY));
+            }
+            return this;
+        }
+
+        public Builder addTotalRunsLine(int totalRuns) {
+            if (totalRuns > 1) {
+                Component runs = Component.literal(FormattingUtil.formatNumbers(totalRuns))
+                        .withStyle(ChatFormatting.DARK_PURPLE);
+                String key = "gtceu.multiblock.total_runs";
+                textList.add(Component.translatable(key, runs)
+                        .withStyle(ChatFormatting.GRAY));
             }
             return this;
         }
@@ -354,7 +416,7 @@ public class MultiblockDisplayText {
                 double maxDurationSec = (double) recipe.duration / 20.0;
                 var itemOutputs = recipe.getOutputContents(ItemRecipeCapability.CAP);
                 var fluidOutputs = recipe.getOutputContents(FluidRecipeCapability.CAP);
-                int runs = recipe.parallels * recipe.batchParallels;
+                int runs = recipe.getTotalRuns();
 
                 for (var item : itemOutputs) {
                     boolean rounded = false;
@@ -421,7 +483,7 @@ public class MultiblockDisplayText {
                         }
                         amountD = amountD * provider.getMidRoll();
                     } else {
-                        var stacks = FluidRecipeCapability.CAP.of(fluid.content).getStacks();
+                        var stacks = FluidRecipeCapability.CAP.of(fluid.content).getFluids();
                         if (stacks.length == 0) continue;
                         stack = stacks[0];
                         amount = stack.getAmount();
@@ -436,11 +498,11 @@ public class MultiblockDisplayText {
                     }
                     if (amountD < maxDurationSec) {
                         String key = "gtceu.multiblock.output_line." + (rounded ? "2" : "0");
-                        textList.add(Component.translatable(key, stack.getDisplayName(), displaycount,
+                        textList.add(Component.translatable(key, stack.getHoverName(), displaycount,
                                 FormattingUtil.formatNumber2Places(maxDurationSec / amountD)));
                     } else {
                         String key = "gtceu.multiblock.output_line." + (rounded ? "3" : "1");
-                        textList.add(Component.translatable(key, stack.getDisplayName(), displaycount,
+                        textList.add(Component.translatable(key, stack.getHoverName(), displaycount,
                                 FormattingUtil.formatNumber2Places(amountD / maxDurationSec)));
                     }
                 }
@@ -451,31 +513,13 @@ public class MultiblockDisplayText {
         /**
          * Adds a line indicating the current mode of the multi
          */
-        public Builder addMachineModeLine(GTRecipeType recipeType, boolean hasMultipleModes, RecipeLogic recipeLogic,
-                                          WorkableElectricMultiblockMachine workableElectricMultiblockMachine) {
+        public Builder addMachineModeLine(GTRecipeType recipeType, boolean hasMultipleModes) {
             if (!isStructureFormed || !hasMultipleModes)
                 return this;
-            if (recipeLogic.isMultiParallelLogic()) {
-                for (int i = 0; i < workableElectricMultiblockMachine.recipeLogic.machine.getRecipeLogic()
-                        .getActiveModesList().size(); i++) {
-                    if (workableElectricMultiblockMachine.recipeLogic.machine.getRecipeLogic().getActiveModesList()
-                            .get(i)) {
-                        textList.add(Component
-                                .translatable("gtceu.gui.machinemode",
-                                        Component.translatable(
-                                                workableElectricMultiblockMachine.getRecipeTypes()[i].registryName
-                                                        .toLanguageKey()))
-                                .withStyle(ChatFormatting.AQUA));
-                    }
-                }
-                return this;
-            } else {
-                textList.add(Component
-                        .translatable("gtceu.gui.machinemode",
-                                Component.translatable(recipeType.registryName.toLanguageKey()))
-                        .withStyle(ChatFormatting.AQUA));
-                return this;
-            }
+            textList.add(Component
+                    .translatable("gtceu.gui.machinemode", recipeType.getName())
+                    .withStyle(ChatFormatting.AQUA));
+            return this;
         }
 
         public Builder addParallelsLine(int numParallels) {

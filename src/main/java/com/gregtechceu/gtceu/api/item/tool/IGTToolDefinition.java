@@ -1,9 +1,13 @@
 package com.gregtechceu.gtceu.api.item.tool;
 
-import com.gregtechceu.gtceu.api.item.tool.aoe.AoESymmetrical;
+import com.gregtechceu.gtceu.api.item.datacomponents.AoESymmetrical;
 import com.gregtechceu.gtceu.api.item.tool.behavior.IToolBehavior;
 
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -19,7 +23,9 @@ public interface IGTToolDefinition {
     /**
      * Tool Component/Behaviours
      */
-    List<IToolBehavior> getBehaviors();
+    List<IToolBehavior<?>> getBehaviors();
+
+    Tool getTool();
 
     boolean isToolEffective(BlockState state);
 
@@ -54,35 +60,35 @@ public interface IGTToolDefinition {
     /**
      * Tool Stat
      */
-    default int getBaseDurability(ItemStack stack) {
+    default int getBaseDurability() {
         return 0;
     }
 
-    default float getDurabilityMultiplier(ItemStack stack) {
+    default float getDurabilityMultiplier() {
         return 1f;
     }
 
-    default int getBaseQuality(ItemStack stack) {
+    default int getBaseQuality() {
         return 0;
     }
 
-    default float getBaseDamage(ItemStack stack) {
+    default float getBaseDamage() {
         return 1.0F;
     }
 
-    default float getBaseEfficiency(ItemStack stack) {
+    default float getBaseEfficiency() {
         return 1.0F;
     }
 
-    default float getEfficiencyMultiplier(ItemStack stack) {
+    default float getEfficiencyMultiplier() {
         return 1.0F;
     }
 
-    default float getAttackSpeed(ItemStack stack) {
+    default float getAttackSpeed() {
         return 0.0F;
     }
 
-    default AoESymmetrical getAoEDefinition(ItemStack stack) {
+    default AoESymmetrical getAoEDefinition() {
         return AoESymmetrical.ZERO;
     }
 
@@ -93,9 +99,9 @@ public interface IGTToolDefinition {
         return true;
     }
 
-    boolean canApplyEnchantment(ItemStack stack, Enchantment enchantment);
+    List<TagKey<Item>> getValidEnchantmentTags();
 
-    Object2IntMap<Enchantment> getDefaultEnchantments(ItemStack stack);
+    Object2IntMap<ResourceKey<Enchantment>> getDefaultEnchantments();
 
     /**
      * Misc

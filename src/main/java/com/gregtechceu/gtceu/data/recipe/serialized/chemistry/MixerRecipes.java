@@ -1,21 +1,19 @@
 package com.gregtechceu.gtceu.data.recipe.serialized.chemistry;
 
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
 
-import net.minecraft.data.recipes.FinishedRecipe;
-
-import java.util.function.Consumer;
+import net.minecraft.data.recipes.RecipeOutput;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.dust;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.MIXER_RECIPES;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.dust;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.MIXER_RECIPES;
 
 public class MixerRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         MIXER_RECIPES.recipeBuilder("nitration_mixture")
                 .inputFluids(NitricAcid.getFluid(1000))
                 .inputFluids(SulfuricAcid.getFluid(1000))
@@ -362,7 +360,7 @@ public class MixerRecipes {
                 .outputItems(dust, Graphene)
                 .save(provider);
 
-        MIXER_RECIPES.recipeBuilder("vanadiumsteel").duration(400).EUt(VA[MV])
+        MIXER_RECIPES.recipeBuilder("vanadium_steel").duration(400).EUt(VA[MV])
                 .inputItems(dust, Steel, 7)
                 .inputItems(dust, Vanadium)
                 .inputItems(dust, Chromium)
@@ -379,14 +377,14 @@ public class MixerRecipes {
                 .outputItems(dust, Ultimet, 9)
                 .save(provider);
 
-        MIXER_RECIPES.recipeBuilder("tungstencarbide").duration(200).EUt(VA[EV])
+        MIXER_RECIPES.recipeBuilder("tungsten_carbide").duration(200).EUt(VA[EV])
                 .inputItems(dust, Tungsten)
                 .inputItems(dust, Carbon)
                 .circuitMeta(2)
                 .outputItems(dust, TungstenCarbide, 2)
                 .save(provider);
 
-        MIXER_RECIPES.recipeBuilder("tungstensteel").duration(200).EUt(VA[EV])
+        MIXER_RECIPES.recipeBuilder("tungsten_steel").duration(200).EUt(VA[EV])
                 .inputItems(dust, Tungsten)
                 .inputItems(dust, Steel)
                 .circuitMeta(1)

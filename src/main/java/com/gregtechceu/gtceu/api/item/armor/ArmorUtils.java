@@ -2,10 +2,9 @@ package com.gregtechceu.gtceu.api.item.armor;
 
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
 import com.gregtechceu.gtceu.api.capability.IElectricItem;
-import com.gregtechceu.gtceu.common.data.GTSoundEntries;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.core.mixins.ServerGamePacketListenerImplAccessor;
-import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
+import com.gregtechceu.gtceu.data.sound.GTSoundEntries;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,29 +19,26 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.ForgeEventFactory;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.event.EventHooks;
 
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.annotation.Nonnull;
 
 public class ArmorUtils {
 
     public static final int MIN_NIGHTVISION_CHARGE = 4;
-    public static final int NIGHTVISION_DURATION = 20 * 20; // 20 seconds
+    public static final int NIGHTVISION_DURATION = 20; // 20 seconds
     // Flashing starts at 10 seconds + two second buffer to prevent flicker
-    public static final int NIGHT_VISION_RESET = 12 * 20;
+    public static final int NIGHT_VISION_RESET = 12;
 
     /**
      * Check is possible to charge item
@@ -113,7 +109,7 @@ public class ArmorUtils {
     /**
      * Spawn particle behind player with speedY speed
      */
-    public static void spawnParticle(Level world, Player player, ParticleOptions type, double speedY) {
+    public static void spawnParticle(Level world, Player player, @Nullable ParticleOptions type, double speedY) {
         if (type != null) {
             Vec3 forward = player.getForward();
             world.addParticle(type, player.getX() - forward.x, player.getY() + 0.5D, player.getZ() - forward.z, 0.0D,
@@ -121,7 +117,7 @@ public class ArmorUtils {
         }
     }
 
-    public static void playJetpackSound(@Nonnull Player player) {
+    public static void playJetpackSound(@NotNull Player player) {
         if (player.level().isClientSide()) {
             float cons = (float) player.getDeltaMovement().y + player.moveDist;
             cons = Mth.clamp(cons, 0.6F, 1.0F);
@@ -154,53 +150,18 @@ public class ArmorUtils {
      * @return result of eating food
      */
     public static InteractionResultHolder<ItemStack> eat(Player player, ItemStack food) {
-        if (!food.isEdible()) {
+        if (food.getFoodProperties(player) == null) {
             return InteractionResultHolder.fail(food);
         }
 
         FoodProperties foodItem = food.getFoodProperties(player);
         if (foodItem != null && player.getFoodData().needsFood()) {
-            ItemStack result = ForgeEventFactory.onItemUseFinish(player, food.copy(), player.getUseItemRemainingTicks(),
+            ItemStack result = EventHooks.onItemUseFinish(player, food.copy(), player.getUseItemRemainingTicks(),
                     food.finishUsingItem(player.level(), player));
             return InteractionResultHolder.success(result);
         } else {
             return InteractionResultHolder.fail(food);
         }
-    }
-
-    /**
-     * Format itemstacks list from [1xitem@1, 1xitem@1, 1xitem@2] to
-     * [2xitem@1, 1xitem@2]
-     *
-     * @return Formated list
-     */
-    public static List<ItemStack> format(List<ItemStack> input) {
-        Object2IntMap<ItemStack> items = new Object2IntOpenCustomHashMap<>(
-                ItemStackHashStrategy.comparingAllButCount());
-        List<ItemStack> output = new ArrayList<>();
-        for (ItemStack itemStack : input) {
-            if (items.containsKey(itemStack)) {
-                int amount = items.getInt(itemStack);
-                items.replace(itemStack, ++amount);
-            } else {
-                items.put(itemStack, 1);
-            }
-        }
-        for (Object2IntMap.Entry<ItemStack> entry : items.object2IntEntrySet()) {
-            ItemStack stack = entry.getKey().copy();
-            stack.setCount(entry.getIntValue());
-            output.add(stack);
-        }
-        return output;
-    }
-
-    @Nonnull
-    public static String format(long value) {
-        return new DecimalFormat("###,###.##").format(value);
-    }
-
-    public static String format(double value) {
-        return new DecimalFormat("###,###.##").format(value);
     }
 
     /**
@@ -232,7 +193,7 @@ public class ArmorUtils {
             }
         }
 
-        @Nonnull
+        @NotNull
         private IntIntPair getStringCoord(int index) {
             int posX;
             int posY;

@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class CleanroomType {
+public record CleanroomType(String name, String translationKey) {
 
     private static final Map<String, CleanroomType> CLEANROOM_TYPES = new Object2ObjectOpenHashMap<>();
 
@@ -17,10 +17,7 @@ public class CleanroomType {
     public static final CleanroomType STERILE_CLEANROOM = new CleanroomType("sterile_cleanroom",
             "gtceu.recipe.cleanroom_sterile.display_name");
 
-    public static final Codec<CleanroomType> CODEC = Codec.STRING.xmap(CLEANROOM_TYPES::get, CleanroomType::getName);
-
-    private final String name;
-    private final String translationKey;
+    public static final Codec<CleanroomType> CODEC = Codec.stringResolver(CleanroomType::name, CLEANROOM_TYPES::get);
 
     public CleanroomType(@NotNull String name, @NotNull String translationKey) {
         if (CLEANROOM_TYPES.get(name) != null)
@@ -30,16 +27,6 @@ public class CleanroomType {
         this.name = name;
         this.translationKey = translationKey;
         CLEANROOM_TYPES.put(name, this);
-    }
-
-    @NotNull
-    public String getName() {
-        return this.name;
-    }
-
-    @NotNull
-    public String getTranslationKey() {
-        return this.translationKey;
     }
 
     @Nullable

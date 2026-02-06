@@ -1,18 +1,17 @@
 package com.gregtechceu.gtceu.client.renderer.item.decorator;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.IItemDecorator;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.IItemDecorator;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
-import static com.gregtechceu.gtceu.common.block.LampBlock.isBloomEnabled;
-import static com.gregtechceu.gtceu.common.block.LampBlock.isLightEnabled;
+import org.jetbrains.annotations.NotNull;
 
 @OnlyIn(Dist.CLIENT)
 public class GTLampItemOverlayRenderer implements IItemDecorator {
@@ -30,10 +29,11 @@ public class GTLampItemOverlayRenderer implements IItemDecorator {
     }
 
     @Override
-    public boolean render(GuiGraphics graphics, Font font, ItemStack stack, int xPosition, int yPosition) {
-        if (stack.hasTag()) {
-            var tag = stack.getOrCreateTag();
-            var overlayType = getOverlayType(isLightEnabled(tag), isBloomEnabled(tag));
+    public boolean render(@NotNull GuiGraphics graphics, @NotNull Font font,
+                          ItemStack stack, int xPosition, int yPosition) {
+        var lampData = stack.get(GTDataComponents.LAMP_DATA);
+        if (lampData != null) {
+            var overlayType = getOverlayType(lampData.lit(), lampData.bloom());
             if (overlayType == OverlayType.NONE) {
                 return true;
             }

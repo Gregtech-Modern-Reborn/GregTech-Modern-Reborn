@@ -5,7 +5,7 @@ import com.gregtechceu.gtceu.api.capability.ICoverable;
 import com.gregtechceu.gtceu.api.placeholder.IPlaceholderInfoProviderCover;
 
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.ComponentContents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
 import com.simibubi.create.api.behaviour.display.DisplayTarget;
@@ -19,7 +19,7 @@ public class ComputerMonitorCoverDisplayTarget extends DisplayTarget {
     @Override
     public void acceptText(int line, List<MutableComponent> text, DisplayLinkContext context) {
         ICoverable coverable = GTCapabilityHelper.getCoverable(context.level(), context.getTargetPos(), Direction.DOWN);
-        MutableComponent component = MutableComponent.create(ComponentContents.EMPTY);
+        MutableComponent component = Component.empty();
         text.forEach(component::append);
         if (coverable != null) {
             for (Direction face : Direction.values()) {

@@ -3,7 +3,7 @@ package com.gregtechceu.gtceu.integration.emi.multipage;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
 
 import net.minecraft.network.chat.Component;
 
@@ -20,7 +20,7 @@ public class MultiblockInfoEmiCategory extends EmiRecipeCategory {
     }
 
     public static void registerDisplays(EmiRegistry registry) {
-        GTRegistries.MACHINES.values().stream()
+        GTRegistries.MACHINES.stream()
                 .filter(MultiblockMachineDefinition.class::isInstance)
                 .map(MultiblockMachineDefinition.class::cast)
                 .filter(MultiblockMachineDefinition::isRenderXEIPreview)

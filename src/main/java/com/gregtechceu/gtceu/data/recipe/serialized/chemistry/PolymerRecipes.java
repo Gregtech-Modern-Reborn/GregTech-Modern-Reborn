@@ -1,17 +1,15 @@
 package com.gregtechceu.gtceu.data.recipe.serialized.chemistry;
 
-import net.minecraft.data.recipes.FinishedRecipe;
-
-import java.util.function.Consumer;
+import net.minecraft.data.recipes.RecipeOutput;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public class PolymerRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         polyethyleneProcess(provider);
         polyvinylChlorideProcess(provider);
         ptfeProcess(provider);
@@ -21,7 +19,7 @@ public class PolymerRecipes {
         polycaprolactamProcess(provider);
     }
 
-    private static void polyethyleneProcess(Consumer<FinishedRecipe> provider) {
+    private static void polyethyleneProcess(RecipeOutput provider) {
         CHEMICAL_RECIPES.recipeBuilder("ethylene_from_ethanol")
                 .inputFluids(SulfuricAcid.getFluid(1000))
                 .inputFluids(Ethanol.getFluid(1000))
@@ -67,7 +65,7 @@ public class PolymerRecipes {
                 .duration(800).EUt(VA[LV]).save(provider);
     }
 
-    private static void polyvinylChlorideProcess(Consumer<FinishedRecipe> provider) {
+    private static void polyvinylChlorideProcess(RecipeOutput provider) {
         CHEMICAL_RECIPES.recipeBuilder("vinyl_chloride_from_hydrochloric")
                 .circuitMeta(3)
                 .inputFluids(Oxygen.getFluid(1000))
@@ -123,7 +121,7 @@ public class PolymerRecipes {
                 .duration(800).EUt(VA[LV]).save(provider);
     }
 
-    private static void ptfeProcess(Consumer<FinishedRecipe> provider) {
+    private static void ptfeProcess(RecipeOutput provider) {
         CHEMICAL_RECIPES.recipeBuilder("chloroform")
                 .circuitMeta(1)
                 .inputFluids(Chlorine.getFluid(6000))
@@ -179,7 +177,7 @@ public class PolymerRecipes {
                 .duration(800).EUt(VA[LV]).save(provider);
     }
 
-    private static void epoxyProcess(Consumer<FinishedRecipe> provider) {
+    private static void epoxyProcess(RecipeOutput provider) {
         CHEMICAL_RECIPES.recipeBuilder("glycerol_from_seed_oil_methanol")
                 .inputItems(dustTiny, SodiumHydroxide)
                 .inputFluids(SeedOil.getFluid(6000))
@@ -326,7 +324,7 @@ public class PolymerRecipes {
                 .duration(480).EUt(VA[LV]).save(provider);
     }
 
-    private static void styreneButadieneProcess(Consumer<FinishedRecipe> provider) {
+    private static void styreneButadieneProcess(RecipeOutput provider) {
         CHEMICAL_RECIPES.recipeBuilder("styrene_from_benzene")
                 .inputFluids(Ethylene.getFluid(1000))
                 .inputFluids(Benzene.getFluid(1000))
@@ -362,7 +360,7 @@ public class PolymerRecipes {
                 .duration(600).EUt(VA[LV]).save(provider);
     }
 
-    private static void polybenzimidazoleProcess(Consumer<FinishedRecipe> provider) {
+    private static void polybenzimidazoleProcess(RecipeOutput provider) {
         CHEMICAL_RECIPES.recipeBuilder("polybenzimidazole").EUt(VA[IV]).duration(100)
                 .inputFluids(Diaminobenzidine.getFluid(1000))
                 .inputFluids(DiphenylIsophtalate.getFluid(1000))
@@ -470,7 +468,7 @@ public class PolymerRecipes {
                 .save(provider);
     }
 
-    public static void polycaprolactamProcess(Consumer<FinishedRecipe> provider) {
+    public static void polycaprolactamProcess(RecipeOutput provider) {
         CHEMICAL_RECIPES.recipeBuilder("cyclohexane").EUt(VA[HV]).duration(400)
                 .notConsumable(dust, Nickel)
                 .inputFluids(Benzene.getFluid(1000))

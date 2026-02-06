@@ -3,19 +3,20 @@ package com.gregtechceu.gtceu.core.mixins.client;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.block.MaterialBlock;
 import com.gregtechceu.gtceu.api.block.MaterialPipeBlock;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.item.datacomponents.AoESymmetrical;
 import com.gregtechceu.gtceu.api.item.tool.ToolHelper;
-import com.gregtechceu.gtceu.api.item.tool.aoe.AoESymmetrical;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.gregtechceu.gtceu.api.machine.steam.SteamMachine;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
 import com.gregtechceu.gtceu.common.blockentity.CableBlockEntity;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
@@ -34,12 +35,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.SheetedDecalTextureGenerator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -79,15 +81,18 @@ public abstract class LevelRendererMixin {
     @Unique
     private final RandomSource gtceu$modelRandom = RandomSource.create();
 
-    @Inject(method = "renderLevel", at = @At("HEAD"))
-    private void renderLevel(PoseStack poseStack, float partialTick, long finishNanoTime, boolean renderBlockOutline,
-                             Camera camera, GameRenderer gameRenderer, LightTexture lightTexture,
-                             Matrix4f projectionMatrix, CallbackInfo ci) {
-        if (minecraft.player == null || level == null) return;
+    @Inject(method = "renderLevel",
+            at = @At(value = "INVOKE",
+                     target = "Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;long2ObjectEntrySet()Lit/unimi/dsi/fastutil/objects/ObjectSet;"))
+    private void renderLevel(DeltaTracker partialTick, boolean renderBlockOutline, Camera camera,
+                             GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f viewMatrix,
+                             Matrix4f projectionMatrix, CallbackInfo ci,
+                             @Local(ordinal = 0) PoseStack poseStack) {
+        if (minecraft.player == null || minecraft.level == null) return;
 
         ItemStack mainHandItem = minecraft.player.getMainHandItem();
         if (minecraft.player.isShiftKeyDown() ||
-                !ToolHelper.hasBehaviorsTag(mainHandItem) ||
+                !ToolHelper.hasBehaviorsComponent(mainHandItem) ||
                 !(minecraft.hitResult instanceof BlockHitResult hitResult)) {
             return;
         }
@@ -117,10 +122,10 @@ public abstract class LevelRendererMixin {
             VertexConsumer breakProgressDecal = new SheetedDecalTextureGenerator(
                     this.renderBuffers.crumblingBufferSource()
                             .getBuffer(ModelBakery.DESTROY_TYPES.get(progress.getProgress())),
-                    last.pose(), last.normal(), 1.0f);
-            ModelData modelData = level.getModelDataManager().getAt(pos);
+                    last, 1.0f);
+            ModelData modelData = level.getModelData(pos);
             this.minecraft.getBlockRenderer().renderBreakingTexture(level.getBlockState(pos), pos,
-                    level, poseStack, breakProgressDecal, modelData != null ? modelData : ModelData.EMPTY);
+                    level, poseStack, breakProgressDecal, modelData);
             poseStack.popPose();
         }
 
@@ -145,7 +150,7 @@ public abstract class LevelRendererMixin {
         ItemStack mainHandItem = minecraft.player.getMainHandItem();
 
         if (state.isAir() || minecraft.player.isShiftKeyDown() || !level.isInWorldBounds(pos) ||
-                !mainHandItem.isCorrectToolForDrops(state) || !ToolHelper.hasBehaviorsTag(mainHandItem) ||
+                !mainHandItem.isCorrectToolForDrops(state) || !ToolHelper.hasBehaviorsComponent(mainHandItem) ||
                 !(minecraft.hitResult instanceof BlockHitResult hitResult)) {
             gtceu$renderContextAwareOutline(instance, poseStack, consumer, entity, camX, camY, camZ,
                     pos, state, original);
@@ -239,8 +244,7 @@ public abstract class LevelRendererMixin {
         }
 
         BakedModel blockModel = minecraft.getBlockRenderer().getBlockModel(state);
-        ModelData modelData = level.getModelDataManager().getAt(pos);
-        if (modelData == null) modelData = ModelData.EMPTY;
+        ModelData modelData = level.getModelData(pos);
         modelData = blockModel.getModelData(level, pos, state, modelData);
 
         gtceu$modelRandom.setSeed(state.getSeed(pos));

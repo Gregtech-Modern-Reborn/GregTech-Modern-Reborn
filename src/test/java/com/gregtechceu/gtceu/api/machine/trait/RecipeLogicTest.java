@@ -3,9 +3,10 @@ package com.gregtechceu.gtceu.api.machine.trait;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
@@ -16,8 +17,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import static com.gregtechceu.gtceu.gametest.util.TestUtils.getMetaMachine;
 
@@ -30,28 +31,30 @@ public class RecipeLogicTest {
 
     @BeforeBatch(batch = "RecipeLogic")
     public static void prepare(ServerLevel level) {
-        LCR_RECIPE_TYPE = TestUtils.createRecipeType("recipe_logic_test_lcr");
-        CR_RECIPE_TYPE = TestUtils.createRecipeType("recipe_logic_test_cr");
+        LCR_RECIPE_TYPE = TestUtils.createRecipeType("recipe_logic_test_lcr", GTRecipeTypes.LARGE_CHEMICAL_RECIPES);
+        CR_RECIPE_TYPE = TestUtils.createRecipeType("recipe_logic_test_cr", GTRecipeTypes.CHEMICAL_RECIPES);
+        LCR_RECIPE_TYPE.getLookup().removeAllRecipes();
+        CR_RECIPE_TYPE.getLookup().removeAllRecipes();
 
         LCR_RECIPE_TYPE.getLookup().addRecipe(LCR_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_multiblock_recipelogic"))
                 .inputItems(new ItemStack(Blocks.COBBLESTONE))
                 .outputItems(new ItemStack(Blocks.STONE))
                 .EUt(GTValues.VA[GTValues.HV]).duration(1)
-                .buildRawRecipe());
+                .build());
         LCR_RECIPE_TYPE.getLookup().addRecipe(LCR_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_multiblock_recipelogic_16_items"))
                 .inputItems(new ItemStack(Blocks.STONE, 16))
                 .outputItems(new ItemStack(Blocks.STONE))
                 .EUt(GTValues.VA[GTValues.HV]).duration(1)
-                .buildRawRecipe());
+                .build());
 
         CR_RECIPE_TYPE.getLookup().addRecipe(CR_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_singleblock_recipelogic"))
                 .inputItems(new ItemStack(Blocks.COBBLESTONE))
                 .outputItems(new ItemStack(Blocks.STONE))
                 .EUt(GTValues.VA[GTValues.HV]).duration(1)
-                .buildRawRecipe());
+                .build());
     }
 
     private record BusHolder(ItemBusPartMachine inputBus1, ItemBusPartMachine inputBus2, ItemBusPartMachine outputBus1,
@@ -67,6 +70,7 @@ public class RecipeLogicTest {
         WorkableMultiblockMachine controller = (WorkableMultiblockMachine) getMetaMachine(
                 helper.getBlockEntity(new BlockPos(1, 2, 0)));
         TestUtils.formMultiblock(controller);
+
         controller.setRecipeType(LCR_RECIPE_TYPE);
         ItemBusPartMachine inputBus1 = (ItemBusPartMachine) getMetaMachine(
                 helper.getBlockEntity(new BlockPos(2, 1, 0)));
@@ -232,10 +236,13 @@ public class RecipeLogicTest {
         RecipeLogicTest.BusHolder busHolder = getBussesAndForm(helper);
         busHolder.inputBus1.getInventory().setStackInSlot(0, new ItemStack(Blocks.STONE, 10));
         busHolder.inputBus1.getInventory().setStackInSlot(1, new ItemStack(Blocks.STONE, 6));
+        busHolder.controller.recipeLogic.findAndHandleRecipe();
+        helper.assertTrue(busHolder.controller.recipeLogic.isWorking(), "Controller should be working!");
+        busHolder.controller.recipeLogic.isWorking();
         helper.succeedWhen(() -> {
             helper.assertTrue(
                     TestUtils.isItemStackEqual(busHolder.outputBus1.getInventory().getStackInSlot(0),
-                            new ItemStack(Blocks.STONE)),
+                            new ItemStack(Blocks.STONE, 1)),
                     "Crafting items in same bus failed, expected STONE but was " +
                             busHolder.outputBus1.getInventory().getStackInSlot(0).getDisplayName());
         });

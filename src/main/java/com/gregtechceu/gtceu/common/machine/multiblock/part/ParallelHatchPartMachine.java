@@ -34,7 +34,8 @@ public class ParallelHatchPartMachine extends TieredPartMachine implements IFanc
 
     public ParallelHatchPartMachine(IMachineBlockEntity holder, int tier) {
         super(holder, tier);
-        this.maxParallel = (int) Math.pow(2, tier+1);
+        this.maxParallel = (int) Math.pow(4, tier - GTValues.EV);
+        this.currentParallel = maxParallel;
     }
 
     public void setCurrentParallel(int parallelAmount) {

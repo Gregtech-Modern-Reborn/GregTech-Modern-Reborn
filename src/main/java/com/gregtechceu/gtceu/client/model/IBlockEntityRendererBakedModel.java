@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.model.IDynamicBakedModel;
+import net.neoforged.neoforge.client.model.IDynamicBakedModel;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +32,7 @@ public interface IBlockEntityRendererBakedModel<T extends BlockEntity>
 
     default AABB getRenderBoundingBox(T blockEntity) {
         BlockPos pos = blockEntity.getBlockPos();
-        return new AABB(pos.offset(-1, 0, -1), pos.offset(2, 2, 2));
+        return AABB.encapsulatingFullBlocks(pos.offset(-1, -1, -1), pos.offset(1, 1, 1));
     }
 
     @Override

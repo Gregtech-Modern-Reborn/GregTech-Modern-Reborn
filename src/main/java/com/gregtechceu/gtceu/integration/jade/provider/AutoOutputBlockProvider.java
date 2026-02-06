@@ -19,6 +19,7 @@ import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
+import snownee.jade.api.ui.IElementHelper;
 
 public class AutoOutputBlockProvider implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -88,10 +89,10 @@ public class AutoOutputBlockProvider implements IBlockComponentProvider, IServer
         if (direction != null) {
             iTooltip.add(Component.translatable(text, StringUtils.capitalize(direction.getName())));
             if (blockAccessor.showDetails()) {
-                var block = BuiltInRegistries.BLOCK.get(new ResourceLocation(compoundTag.getString("block"))).asItem()
+                var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(compoundTag.getString("block"))).asItem()
                         .getDefaultInstance();
                 if (!block.isEmpty()) {
-                    iTooltip.append(iTooltip.getElementHelper().smallItem(block));
+                    iTooltip.append(IElementHelper.get().smallItem(block));
                 }
             }
 

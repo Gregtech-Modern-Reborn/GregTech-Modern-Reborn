@@ -5,14 +5,11 @@ import com.gregtechceu.gtceu.api.capability.ICoverable;
 import com.gregtechceu.gtceu.api.capability.IMonitorComponent;
 import com.gregtechceu.gtceu.api.cover.CoverBehavior;
 import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -108,19 +105,16 @@ public class MonitorGroup {
         IMonitorComponent component = GTCapabilityHelper.getMonitorComponent(level, target, null);
         if (component != null && component.getDataItems() != null) {
             ItemStack stack = component.getDataItems().getStackInSlot(dataSlot);
-            CompoundTag tag = stack.getTag();
-            if (tag == null) {
+            BlockPos pos = stack.getOrDefault(GTDataComponents.MONITOR_TARGET, null);
+            if (pos == null) {
                 return null;
             }
-            int x = tag.getInt("targetX");
-            int y = tag.getInt("targetY");
-            int z = tag.getInt("targetZ");
-            Direction face = Direction.byName(tag.getString("face"));
+            Direction face = stack.getOrDefault(GTDataComponents.MONITOR_TARGET_FACE, null);
             if (face == null) {
                 return null;
             }
             setTargetCoverSide(face);
-            return new BlockPos(x, y, z);
+            return pos;
         }
         return target;
     }
@@ -131,13 +125,11 @@ public class MonitorGroup {
         IMonitorComponent component = GTCapabilityHelper.getMonitorComponent(level, target, null);
         if (component != null && component.getDataItems() != null) {
             ItemStack stack = component.getDataItems().getStackInSlot(dataSlot);
-            CompoundTag tag = stack.getTag();
-            if (tag == null || !tag.contains("dim")) {
-                return level;
-            }
+            var dim = stack.getOrDefault(GTDataComponents.MONITOR_TARGET_DIMENSION, null);
+            if (dim == null) return level;
             if (level.getServer() == null) return level;
             return level.getServer()
-                    .getLevel(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("dim"))));
+                    .getLevel(dim);
         }
         return level;
     }

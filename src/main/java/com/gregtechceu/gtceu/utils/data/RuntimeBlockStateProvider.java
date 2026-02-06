@@ -6,7 +6,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.model.generators.*;
+import net.neoforged.neoforge.client.model.generators.*;
 
 import com.google.gson.JsonElement;
 import com.tterrag.registrate.AbstractRegistrate;
@@ -27,7 +27,6 @@ public class RuntimeBlockStateProvider extends GTBlockstateProvider {
     @Override
     protected void registerStatesAndModels() {}
 
-    @SuppressWarnings("deprecation")
     public void run() {
         processModelProvider(models());
         processModelProvider(itemModels());

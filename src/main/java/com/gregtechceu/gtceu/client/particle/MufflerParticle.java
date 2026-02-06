@@ -1,19 +1,16 @@
 package com.gregtechceu.gtceu.client.particle;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jetbrains.annotations.NotNull;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 @OnlyIn(Dist.CLIENT)
 public class MufflerParticle extends TextureSheetParticle {
 
@@ -21,8 +18,9 @@ public class MufflerParticle extends TextureSheetParticle {
 
     private final SpriteSet sprites;
 
-    protected MufflerParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed,
-                              double zSpeed, SimpleParticleType options, SpriteSet sprites) {
+    protected MufflerParticle(ClientLevel level,
+                              double x, double y, double z, double xSpeed, double ySpeed, double zSpeed,
+                              SimpleParticleType options, SpriteSet sprites) {
         super(level, x, y, z, xSpeed, ySpeed, zSpeed);
         this.speedUpWhenYMotionIsBlocked = true;
         this.sprites = sprites;
@@ -79,7 +77,8 @@ public class MufflerParticle extends TextureSheetParticle {
             this.sprites = sprites;
         }
 
-        public Particle createParticle(SimpleParticleType options, ClientLevel level, double x, double y, double z,
+        public Particle createParticle(@NotNull SimpleParticleType options, ClientLevel level,
+                                       double x, double y, double z,
                                        double xSpeed, double ySpeed, double zSpeed) {
             RandomSource randomSource = level.random;
             ySpeed += (double) randomSource.nextFloat() * -1.9 * (double) randomSource.nextFloat() * 0.1 * 5.0;

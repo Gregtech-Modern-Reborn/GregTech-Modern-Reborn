@@ -10,8 +10,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.util.TriState;
 
 public class LampRenderer extends IModelRenderer implements ICTMPredicate {
 
@@ -33,8 +34,8 @@ public class LampRenderer extends IModelRenderer implements ICTMPredicate {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public boolean useAO() {
-        return true;
+    public TriState useAO() {
+        return TriState.DEFAULT;
     }
 
     @Override

@@ -2,13 +2,21 @@ package com.gregtechceu.gtceu.api.item.capability;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.IElectricItem;
+import com.gregtechceu.gtceu.api.item.datacomponents.SimpleEnergyContent;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 
-import net.minecraft.nbt.Tag;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.world.item.ItemStack;
 
+import lombok.AllArgsConstructor;
+
+import java.util.function.Supplier;
+
+@AllArgsConstructor
 public class ElectricItem implements IElectricItem {
 
-    protected final ItemStack itemStack;
+    protected final Supplier<DataComponentType<SimpleEnergyContent>> componentType;
+    protected ItemStack container;
 
     protected final long maxCharge;
     protected final int tier;
@@ -16,21 +24,30 @@ public class ElectricItem implements IElectricItem {
     protected final boolean chargeable;
     protected final boolean canProvideEnergyExternally;
 
-    public ElectricItem(ItemStack itemStack, long maxCharge, int tier, boolean chargeable,
+    public ElectricItem(ItemStack container, long maxCharge, int tier, boolean chargeable,
                         boolean canProvideEnergyExternally) {
-        this.itemStack = itemStack;
-        this.maxCharge = maxCharge;
+        componentType = GTDataComponents.ENERGY_CONTENT;
+        this.container = container;
+        if (container.has(componentType)) {
+            this.maxCharge = getMaxCharge();
+        } else {
+            this.maxCharge = maxCharge;
+            // do this here to force the max charge to be set on the stats
+            setMaxChargeOverride(maxCharge);
+        }
         this.tier = tier;
         this.chargeable = chargeable;
         this.canProvideEnergyExternally = canProvideEnergyExternally;
     }
 
     public void setCharge(long change) {
-        itemStack.getOrCreateTag().putLong("Charge", change);
+        container.update(componentType, new SimpleEnergyContent(maxCharge, 0),
+                content -> content.withCharge(change));
     }
 
     public void setMaxChargeOverride(long maxCharge) {
-        itemStack.getOrCreateTag().putLong("MaxCharge", maxCharge);
+        container.update(componentType, new SimpleEnergyContent(maxCharge, 0),
+                content -> content.withMaxCharge(maxCharge));
     }
 
     @Override
@@ -40,25 +57,22 @@ public class ElectricItem implements IElectricItem {
 
     @Override
     public long getMaxCharge() {
-        var tagCompound = itemStack.getTag();
-        if (tagCompound == null)
+        if (!container.has(componentType)) {
             return maxCharge;
-        if (tagCompound.contains("MaxCharge", Tag.TAG_LONG))
-            return tagCompound.getLong("MaxCharge");
-        return maxCharge;
+        }
+        return container.get(componentType).maxCharge();
     }
 
     public long getCharge() {
-        var tagCompound = itemStack.getTag();
-        if (tagCompound == null)
+        if (!container.has(componentType)) {
             return 0;
-        if (tagCompound.getBoolean("Infinite"))
-            return getMaxCharge();
-        return Math.min(tagCompound.getLong("Charge"), getMaxCharge());
+        }
+        return container.get(componentType).charge();
     }
 
     public void setInfiniteCharge(boolean infiniteCharge) {
-        itemStack.getOrCreateTag().putBoolean("Infinite", infiniteCharge);
+        container.update(componentType, new SimpleEnergyContent(maxCharge, 0),
+                content -> content.withInfinite(infiniteCharge));
     }
 
     @Override
@@ -72,8 +86,22 @@ public class ElectricItem implements IElectricItem {
     }
 
     @Override
+    public boolean isDischargeMode() {
+        if (!container.has(componentType)) {
+            return false;
+        }
+        return container.get(componentType).dischargeMode();
+    }
+
+    @Override
+    public void setDischargeMode(boolean dischargeMode) {
+        container.update(componentType, new SimpleEnergyContent(maxCharge, 0),
+                content -> content.withDischargeMode(dischargeMode));
+    }
+
+    @Override
     public long charge(long amount, int chargerTier, boolean ignoreTransferLimit, boolean simulate) {
-        if (itemStack.getCount() != 1) {
+        if (container.getCount() != 1) {
             return 0L;
         }
         if ((chargeable || amount == Long.MAX_VALUE) && (chargerTier >= tier) && amount > 0L) {
@@ -93,7 +121,7 @@ public class ElectricItem implements IElectricItem {
     @Override
     public long discharge(long amount, int chargerTier, boolean ignoreTransferLimit, boolean externally,
                           boolean simulate) {
-        if (itemStack.getCount() != 1) {
+        if (container.getCount() != 1) {
             return 0L;
         }
         if ((canProvideEnergyExternally || !externally || amount == Long.MAX_VALUE) && (chargerTier >= tier) &&

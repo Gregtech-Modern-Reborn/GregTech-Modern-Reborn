@@ -1,21 +1,17 @@
 package com.gregtechceu.gtceu.integration.ae2.slot;
 
 import com.gregtechceu.gtceu.api.transfer.fluid.IFluidHandlerModifiable;
+import com.gregtechceu.gtceu.integration.ae2.utils.AEUtil;
 import com.gregtechceu.gtceu.utils.GTMath;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
 
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.GenericStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class ExportOnlyAEFluidSlot extends ExportOnlyAESlot implements IFluidHandlerModifiable, IFluidTank {
 
     public ExportOnlyAEFluidSlot() {
@@ -51,8 +47,8 @@ public class ExportOnlyAEFluidSlot extends ExportOnlyAESlot implements IFluidHan
 
     @Override
     public FluidStack getFluid() {
-        if (this.stock != null && this.stock.what() instanceof AEFluidKey fluidKey) {
-            return fluidKey.toStack(GTMath.saturatedCast(this.stock.amount()));
+        if (this.stock != null) {
+            return AEUtil.toFluidStack(this.stock);
         }
         return FluidStack.EMPTY;
     }
@@ -108,7 +104,7 @@ public class ExportOnlyAEFluidSlot extends ExportOnlyAESlot implements IFluidHan
 
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
-        if (this.getFluid().isFluidEqual(resource)) {
+        if (FluidStack.isSameFluid(this.getFluid(), resource)) {
             return this.drain(resource.getAmount(), action);
         }
         return FluidStack.EMPTY;

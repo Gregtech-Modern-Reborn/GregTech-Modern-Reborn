@@ -15,6 +15,6 @@ public class GTUIEditor extends UIEditor {
             Icons.WIDGET_CONTAINER);
 
     public GTUIEditor() {
-        super(LDLib.location);
+        super(LDLib.getLDLibDir());
     }
 }

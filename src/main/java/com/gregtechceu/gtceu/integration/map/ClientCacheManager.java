@@ -4,13 +4,16 @@ import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.integration.map.cache.client.IClientCache;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.neoforged.fml.loading.FMLPaths;
 
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
@@ -32,11 +35,11 @@ import java.util.stream.Collectors;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class ClientCacheManager {
 
-    public static final File clientCacheDir = new File(Minecraft.getInstance().gameDirectory,
+    public static final File clientCacheDir = new File(FMLPaths.GAMEDIR.get().toFile(),
             GTCEu.MOD_ID + File.separator + "prospection_cache");
     private static final char resourceLocationSeparator = '=';
     private static final String filePrefix = "DIM";
-    private static final String fileEnding = ".nbt";
+    private static final String fileEnding = ".componentPatch";
     @Getter
     private static File worldFolder;
     private static final Reference2ObjectMap<IClientCache, ClientCacheInfo> caches = new Reference2ObjectArrayMap<>();
@@ -49,18 +52,17 @@ public class ClientCacheManager {
     public static void init(String worldId) {
         if (shouldInit) {
             final Player player = Minecraft.getInstance().player;
-            worldFolder = new File(clientCacheDir,
-                    sanitizeFilename(player.getName().getString()) + "_" + player.getUUID() +
-                            File.separator + sanitizeFilename(worldId));
+            worldFolder = new File(clientCacheDir, player.getUUID() +
+                    File.separator + sanitizeFilename(worldId));
             worldFolder.mkdirs();
             // to ensure any cache data that might somehow be lying around gets dealt with
             clearCaches();
-            loadCaches();
+            loadCaches(player.registryAccess());
             shouldInit = false;
         }
     }
 
-    private static void loadCaches() {
+    private static void loadCaches(HolderLookup.Provider provider) {
         for (IClientCache cache : caches.keySet()) {
             cache.setupCacheFiles();
             ClientCacheInfo cacheInfo = caches.get(cache);
@@ -69,12 +71,14 @@ public class ClientCacheManager {
             for (String dimFilePrefix : cacheInfo.dimFilePrefixes) {
                 for (File dimFile : getDimFiles(cacheInfo.cacheFolder, dimFilePrefix)) {
                     ResourceKey<Level> dimId = ResourceKey.create(Registries.DIMENSION,
-                            ResourceLocation.of(
+                            ResourceLocation.bySeparator(
                                     dimFile.getName().substring(dimFilePrefix.length() + filePrefix.length(),
                                             dimFile.getName().length() - fileEnding.length()),
                                     resourceLocationSeparator));
                     try {
-                        cache.readDimFile(dimFilePrefix, dimId, NbtIo.readCompressed(new FileInputStream(dimFile)));
+                        cache.readDimFile(dimFilePrefix, dimId,
+                                NbtIo.readCompressed(new FileInputStream(dimFile), NbtAccounter.unlimitedHeap()),
+                                provider);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -84,7 +88,9 @@ public class ClientCacheManager {
                 File singleFile = new File(cacheInfo.cacheFolder, singleFileName + fileEnding);
                 if (!singleFile.exists()) continue;
                 try {
-                    cache.readSingleFile(singleFileName, NbtIo.readCompressed(new FileInputStream(singleFile)));
+                    cache.readSingleFile(singleFileName,
+                            NbtIo.readCompressed(new FileInputStream(singleFile), NbtAccounter.unlimitedHeap()),
+                            provider);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -99,12 +105,12 @@ public class ClientCacheManager {
         GroupingMapRenderer.getInstance().clear();
     }
 
-    public static void saveCaches() {
+    public static void saveCaches(HolderLookup.Provider provider) {
         for (IClientCache cache : caches.keySet()) {
             ClientCacheInfo cacheInfo = caches.get(cache);
             for (String dimFilePrefix : cacheInfo.dimFilePrefixes) {
                 for (ResourceKey<Level> dim : cache.getExistingDimensions(dimFilePrefix)) {
-                    CompoundTag data = cache.saveDimFile(dimFilePrefix, dim);
+                    CompoundTag data = cache.saveDimFile(dimFilePrefix, dim, provider);
                     if (data == null) continue;
                     File dimFile = new File(cacheInfo.cacheFolder,
                             dimFilePrefix + filePrefix + dim.location().getNamespace() + "=" +
@@ -117,7 +123,7 @@ public class ClientCacheManager {
                 }
             }
             for (String singleFileName : cacheInfo.singleFiles) {
-                CompoundTag data = cache.saveSingleFile(singleFileName);
+                CompoundTag data = cache.saveSingleFile(singleFileName, provider);
                 if (data == null) continue;
                 File singleFile = new File(cacheInfo.cacheFolder, singleFileName + fileEnding);
                 try {
@@ -151,17 +157,18 @@ public class ClientCacheManager {
 
     public static List<ProspectionInfo> getProspectionShareData() {
         List<ProspectionInfo> result = new ArrayList<>();
+        HolderLookup.Provider registries = Minecraft.getInstance().level.registryAccess();
         for (IClientCache cache : caches.keySet()) {
             ClientCacheInfo cacheInfo = caches.get(cache);
             for (String dimPrefix : cacheInfo.dimFilePrefixes) {
                 for (ResourceKey<Level> dim : cache.getExistingDimensions(dimPrefix)) {
-                    CompoundTag data = cache.saveDimFile(dimPrefix, dim);
+                    CompoundTag data = cache.saveDimFile(dimPrefix, dim, registries);
                     if (data == null) continue;
                     result.add(new ProspectionInfo(cacheInfo.key, dimPrefix, true, dim, data));
                 }
             }
             for (String singleFileName : cacheInfo.singleFiles) {
-                CompoundTag data = cache.saveSingleFile(singleFileName);
+                CompoundTag data = cache.saveSingleFile(singleFileName, registries);
                 if (data == null) continue;
                 result.add(new ProspectionInfo(cacheInfo.key, singleFileName, false, Level.OVERWORLD, data));
             }
@@ -170,14 +177,14 @@ public class ClientCacheManager {
     }
 
     public static void processProspectionShare(String cacheName, String key, boolean isDimCache, ResourceKey<Level> dim,
-                                               CompoundTag data) {
+                                               CompoundTag data, HolderLookup.Provider provider) {
         for (IClientCache cache : caches.keySet()) {
             ClientCacheInfo cacheInfo = caches.get(cache);
             if (cacheInfo.key.equals(cacheName)) {
                 if (isDimCache) {
-                    cache.readDimFile(key, dim, data);
+                    cache.readDimFile(key, dim, data, provider);
                 } else {
-                    cache.readSingleFile(key, data);
+                    cache.readSingleFile(key, data, provider);
                 }
                 break;
             }

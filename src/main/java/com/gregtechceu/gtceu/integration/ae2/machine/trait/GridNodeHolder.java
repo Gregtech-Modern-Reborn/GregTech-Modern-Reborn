@@ -2,6 +2,7 @@ package com.gregtechceu.gtceu.integration.ae2.machine.trait;
 
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.core.MixinHelpers;
 import com.gregtechceu.gtceu.integration.ae2.machine.feature.IGridConnectedMachine;
 import com.gregtechceu.gtceu.integration.ae2.utils.SerializableManagedGridNode;
 
@@ -22,8 +23,11 @@ import lombok.Getter;
 import java.util.EnumSet;
 
 /**
- * A MachineTrait that is only used for hosting grid node and does not provide grid node capability.
- * Because IGridConnectedMachine has already extended IInWorldGridNodeHost.
+ * A MachineTrait that is only used for hosting a grid node and does not provide grid node capability,
+ * because {@link IGridConnectedMachine} already extends {@link appeng.api.networking.IInWorldGridNodeHost}.
+ *
+ * @see appeng.api.networking.IInWorldGridNodeHost
+ * @see IGridConnectedMachine
  */
 public class GridNodeHolder extends MachineTrait {
 
@@ -85,12 +89,12 @@ public class GridNodeHolder extends MachineTrait {
 
     @SuppressWarnings("unused")
     public CompoundTag serializeGridNode(SerializableManagedGridNode node) {
-        return node.serializeNBT();
+        return node.serializeNBT(MixinHelpers.getCurrentBERegistries());
     }
 
     @SuppressWarnings("unused")
     public SerializableManagedGridNode deserializeGridNode(CompoundTag tag) {
-        this.mainNode.deserializeNBT(tag);
+        this.mainNode.deserializeNBT(MixinHelpers.getCurrentBERegistries(), tag);
         return this.mainNode;
     }
 }

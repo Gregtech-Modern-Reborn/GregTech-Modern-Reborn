@@ -12,6 +12,10 @@ public interface IElectricItem {
 
     boolean chargeable();
 
+    boolean isDischargeMode();
+
+    void setDischargeMode(boolean dischargeMode);
+
     /**
      * Charge an item with a specified amount of energy.
      *

@@ -2,18 +2,18 @@ package com.gregtechceu.gtceu.common.machine.trait;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockfluid.BedrockFluidVeinSavedData;
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockfluid.FluidVeinWorldEntry;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.api.worldgen.bedrockfluid.BedrockFluidVeinSavedData;
+import com.gregtechceu.gtceu.api.worldgen.bedrockfluid.FluidVeinWorldEntry;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.FluidDrillMachine;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
 
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
@@ -68,7 +68,7 @@ public class FluidDrillLogic extends RecipeLogic {
                     .EUt(GTValues.VA[getMachine().getEnergyTier()])
                     .outputFluids(new FluidStack(veinFluid,
                             getFluidToProduce(data.getFluidVeinWorldEntry(getChunkX(), getChunkZ()))))
-                    .buildRawRecipe();
+                    .build();
             if (RecipeHelper.matchContents(getMachine(), recipe).isSuccess()) {
                 return recipe;
             }
@@ -87,7 +87,7 @@ public class FluidDrillLogic extends RecipeLogic {
     private int getFluidToProduce(FluidVeinWorldEntry entry) {
         var definition = entry.getDefinition();
         if (definition != null) {
-            int depletedYield = definition.getDepletedYield();
+            int depletedYield = definition.value().getDepletedYield();
             int regularYield = entry.getFluidYield();
             int remainingOperations = entry.getOperationsRemaining();
 

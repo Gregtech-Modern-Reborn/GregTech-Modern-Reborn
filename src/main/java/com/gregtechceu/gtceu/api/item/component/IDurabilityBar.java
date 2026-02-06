@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface IDurabilityBar extends IItemDecoratorComponent {
@@ -62,7 +63,8 @@ public interface IDurabilityBar extends IItemDecoratorComponent {
     }
 
     @Override
-    default boolean render(GuiGraphics guiGraphics, Font font, ItemStack stack, int xOffset, int yOffset) {
+    default boolean render(@NotNull GuiGraphics guiGraphics, @NotNull Font font,
+                           @NotNull ItemStack stack, int xOffset, int yOffset) {
         return ToolChargeBarRenderer.renderDurabilityBar(guiGraphics, stack, this, xOffset, yOffset);
     }
 }

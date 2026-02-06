@@ -7,8 +7,8 @@ import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.gui.widget.ToggleButtonWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
-import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
 
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
@@ -75,10 +75,9 @@ public class SteamItemBusPartMachine extends ItemBusPartMachine {
 
         if (getLevel().getBlockEntity(blockPos) instanceof IMachineBlockEntity newHolder) {
             if (newHolder.getMetaMachine() instanceof SteamItemBusPartMachine newMachine) {
-                // We don't set the circuit or distinct busses, since
-                // that doesn't make sense on an output bus.
-                // Furthermore, existing inventory items
-                // and conveyors will drop to the floor on block override.
+                // We don't set the circuit or distinct buses, since that doesn't make sense on an output bus.
+                // Furthermore, existing inventory items and
+                // conveyors will drop to the floor when the block is replaced.
                 newMachine.setFrontFacing(this.getFrontFacing());
                 newMachine.setUpwardsFacing(this.getUpwardsFacing());
             }

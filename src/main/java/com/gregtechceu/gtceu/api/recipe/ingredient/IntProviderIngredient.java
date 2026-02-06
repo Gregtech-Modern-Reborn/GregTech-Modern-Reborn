@@ -2,29 +2,31 @@ package com.gregtechceu.gtceu.api.recipe.ingredient;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.data.tag.GTIngredientTypes;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.crafting.IIngredientSerializer;
-import net.minecraftforge.common.crafting.StrictNBTIngredient;
+import net.neoforged.neoforge.common.crafting.ICustomIngredient;
+import net.neoforged.neoforge.common.crafting.IngredientType;
+import net.neoforged.neoforge.common.util.NeoForgeExtraCodecs;
+import net.neoforged.neoforge.fluids.FluidType;
 
 import com.google.common.base.Preconditions;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.mojang.serialization.JsonOps;
-import it.unimi.dsi.fastutil.ints.IntList;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.stream.Stream;
+
+import static com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderFluidIngredient.intProviderEqual;
 
 /**
  * Allows an {@link Ingredient} to be created with a ranged {@code count}, which will be randomly rolled upon recipe
@@ -33,16 +35,23 @@ import java.util.stream.Stream;
  * and an {@link IntProvider}.
  * Functions similarly to {@link IntProviderFluidIngredient}.
  */
-public class IntProviderIngredient extends Ingredient {
+public class IntProviderIngredient implements ICustomIngredient, IRangedIngredient {
 
+    public static final MapCodec<IntProviderIngredient> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Ingredient.CODEC.fieldOf("inner").forGetter(IntProviderIngredient::getInner),
+            IntProvider.CODEC.fieldOf("count_provider").forGetter(IntProviderIngredient::getCountProvider),
+            NeoForgeExtraCodecs.optionalFieldAlwaysWrite(Codec.INT, "sampledCount", FluidType.BUCKET_VOLUME)
+                    .forGetter(IRangedIngredient::getSampledCount))
+            .apply(instance, IntProviderIngredient::new));
     public static final ResourceLocation TYPE = GTCEu.id("int_provider");
     public static final ItemStack[] EMPTY_STACK_ARRAY = new ItemStack[0];
 
     @Getter
     protected final IntProvider countProvider;
     /**
-     * The last result of {@link IntProviderIngredient#getSampledCount(RandomSource)}. -1 if not rolled.
+     * The last result of {@link IntProviderIngredient#rollSampledCount(RandomSource)}. -1 if not rolled.
      */
+    @Getter
     @Setter
     protected int sampledCount = -1;
     /**
@@ -51,12 +60,17 @@ public class IntProviderIngredient extends Ingredient {
     @Getter
     protected final Ingredient inner;
     @Setter
-    protected ItemStack[] itemStacks = null;
+    protected ItemStack @NotNull [] itemStacks = null;
 
     protected IntProviderIngredient(Ingredient inner, IntProvider countProvider) {
-        super(Stream.empty());
         this.inner = inner;
         this.countProvider = countProvider;
+    }
+
+    protected IntProviderIngredient(Ingredient inner, IntProvider countProvider, int sampledCount) {
+        this.inner = inner;
+        this.countProvider = countProvider;
+        this.sampledCount = sampledCount;
     }
 
     /**
@@ -74,7 +88,7 @@ public class IntProviderIngredient extends Ingredient {
      * @param countProvider usually as {@link net.minecraft.util.valueproviders.UniformInt#of(int, int)}
      */
     public static IntProviderIngredient of(ItemStack stack, IntProvider countProvider) {
-        Ingredient inner = stack.hasTag() ? StrictNBTIngredient.of(stack) : Ingredient.of(stack);
+        Ingredient inner = Ingredient.of(stack);
         return of(inner, countProvider);
     }
 
@@ -89,10 +103,9 @@ public class IntProviderIngredient extends Ingredient {
      * 
      * @return a {@link ItemStack ItemStack[]} with count {@link IntProviderIngredient#sampledCount}
      */
-    @Override
-    public ItemStack @NotNull [] getItems() {
+    public ItemStack[] getItemStacks() {
         if (itemStacks == null) {
-            int cachedCount = getSampledCount(GTValues.RNG);
+            int cachedCount = rollSampledCount();
             if (cachedCount == 0) {
                 return EMPTY_STACK_ARRAY;
             }
@@ -103,6 +116,36 @@ public class IntProviderIngredient extends Ingredient {
             }
         }
         return itemStacks;
+    }
+
+    @Override
+    public Stream<ItemStack> getItems() {
+        return Arrays.stream(getItemStacks());
+    }
+
+    @Override
+    public boolean isSimple() {
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.inner.hashCode() * 31 * this.countProvider.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof IntProviderIngredient other)) {
+            return false;
+        }
+
+        return this.inner.equals(other.inner) && intProviderEqual(this.countProvider, other.countProvider);
+    }
+
+    @Override
+    public IngredientType<?> getType() {
+        return GTIngredientTypes.INT_PROVIDER_INGREDIENT.get();
     }
 
     /**
@@ -125,7 +168,8 @@ public class IntProviderIngredient extends Ingredient {
      * @param random {@link RandomSource}, must be threadsafe, usually called using {@link GTValues#RNG}.
      * @return the count rolled
      */
-    public int getSampledCount(@NotNull RandomSource random) {
+    @Override
+    public int rollSampledCount(@NotNull RandomSource random) {
         if (sampledCount == -1) {
             sampledCount = countProvider.sample(random);
         }
@@ -133,82 +177,10 @@ public class IntProviderIngredient extends Ingredient {
     }
 
     /**
-     * @return the average roll of this ranged amount
+     * Resets the random roll on this ingredient
      */
-    public double getMidRoll() {
-        return ((countProvider.getMaxValue() + countProvider.getMinValue()) / 2.0);
+    public void reset() {
+        sampledCount = -1;
+        itemStacks = null;
     }
-
-    @Override
-    public @NotNull IntList getStackingIds() {
-        return inner.getStackingIds();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return inner.isEmpty();
-    }
-
-    @Override
-    @NotNull
-    public IIngredientSerializer<? extends Ingredient> getSerializer() {
-        return SERIALIZER;
-    }
-
-    /**
-     * @param json containing
-     *             <ul>
-     *             <li>{@code type}</li>
-     *             <li>{@code count_provider}</li>
-     *             <li>{@code ingredient}</li>
-     *             </ul>
-     */
-    public static IntProviderIngredient fromJson(JsonObject json) {
-        return SERIALIZER.parse(json);
-    }
-
-    /**
-     * Properties:
-     * <ul>
-     * <li>{@code type}</li>
-     * <li>{@code count_provider}</li>
-     * <li>{@code ingredient}</li>
-     * </ul>
-     */
-    @Override
-    public @NotNull JsonElement toJson() {
-        JsonObject json = new JsonObject();
-        json.addProperty("type", TYPE.toString());
-        json.add("count_provider", IntProvider.CODEC.encodeStart(JsonOps.INSTANCE, countProvider)
-                .getOrThrow(false, GTCEu.LOGGER::error));
-        json.add("ingredient", inner.toJson());
-        return json;
-    }
-
-    public static final IIngredientSerializer<IntProviderIngredient> SERIALIZER = new IIngredientSerializer<>() {
-
-        @Override
-        public @NotNull IntProviderIngredient parse(FriendlyByteBuf buffer) {
-            IntProvider amount = IntProvider.CODEC.parse(NbtOps.INSTANCE, buffer.readNbt().get("provider"))
-                    .getOrThrow(false, GTCEu.LOGGER::error);
-            return new IntProviderIngredient(Ingredient.fromNetwork(buffer), amount);
-        }
-
-        @Override
-        public @NotNull IntProviderIngredient parse(JsonObject json) {
-            IntProvider amount = IntProvider.CODEC.parse(JsonOps.INSTANCE, json.get("count_provider"))
-                    .getOrThrow(false, GTCEu.LOGGER::error);
-            Ingredient inner = Ingredient.fromJson(json.get("ingredient"));
-            return new IntProviderIngredient(inner, amount);
-        }
-
-        @Override
-        public void write(FriendlyByteBuf buffer, IntProviderIngredient ingredient) {
-            CompoundTag wrapper = new CompoundTag();
-            wrapper.put("provider", IntProvider.CODEC.encodeStart(NbtOps.INSTANCE, ingredient.countProvider)
-                    .getOrThrow(false, GTCEu.LOGGER::error));
-            buffer.writeNbt(wrapper);
-            ingredient.inner.toNetwork(buffer);
-        }
-    };
 }

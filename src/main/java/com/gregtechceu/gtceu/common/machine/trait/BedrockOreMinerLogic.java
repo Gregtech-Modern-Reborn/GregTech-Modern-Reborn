@@ -2,18 +2,18 @@ package com.gregtechceu.gtceu.common.machine.trait;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockore.BedrockOreVeinSavedData;
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockore.OreVeinWorldEntry;
-import com.gregtechceu.gtceu.api.data.worldgen.bedrockore.WeightedMaterial;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.api.worldgen.bedrockore.BedrockOreVeinSavedData;
+import com.gregtechceu.gtceu.api.worldgen.bedrockore.OreVeinWorldEntry;
+import com.gregtechceu.gtceu.api.worldgen.bedrockore.WeightedMaterial;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.BedrockOreMinerMachine;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.core.SectionPos;
@@ -72,28 +72,17 @@ public class BedrockOreMinerLogic extends RecipeLogic {
             WeightedMaterial wm = GTUtil.getRandomItem(serverLevel.random, veinMaterials);
             if (wm == null) return null;
             Material material = wm.material();
+            if (material.isNull()) return null;
             ItemStack stack = ChemicalHelper.get(TagPrefix.get(ConfigHolder.INSTANCE.machines.bedrockOreDropTagPrefix),
                     material, getOreToProduce());
-            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.crushed, material, getOreToProduce()); // backup
-                                                                                                             // 1:
-                                                                                                             // crushed;
-                                                                                                             // if raw
-                                                                                                             // ore
-                                                                                                             // doesn't
-                                                                                                             // exist
-            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.gem, material, getOreToProduce()); // backup 2:
-                                                                                                         // gem; if
-                                                                                                         // crushed ore
-                                                                                                         // doesn't
-                                                                                                         // exist
-            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.ore, material, getOreToProduce()); // backup 3:
-                                                                                                         // normal ore;
-                                                                                                         // if gem
-                                                                                                         // doesn't
-                                                                                                         // exist.
-            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.dust, material, getOreToProduce()); // backup 4:
-                                                                                                          // fallback to
-                                                                                                          // dust
+            // backup 1: crushed; if raw ore doesn't exist
+            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.crushed, material, getOreToProduce());
+            // backup 2: gem; if crushed ore doesn't exist
+            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.gem, material, getOreToProduce());
+            // backup 3: normal ore; if gem doesn't exist.
+            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.ore, material, getOreToProduce());
+            // backup 4: fallback to dust
+            if (stack.isEmpty()) stack = ChemicalHelper.get(TagPrefix.dust, material, getOreToProduce());
             if (stack.isEmpty()) {
                 return null;
             }
@@ -101,7 +90,7 @@ public class BedrockOreMinerLogic extends RecipeLogic {
                     .duration(MAX_PROGRESS)
                     .EUt(GTValues.VA[getMachine().getEnergyTier()])
                     .outputItems(stack)
-                    .buildRawRecipe();
+                    .build();
             if (RecipeHelper.matchContents(getMachine(), recipe).isSuccess()) {
                 return recipe;
             }
@@ -112,7 +101,7 @@ public class BedrockOreMinerLogic extends RecipeLogic {
     private int getOreToProduce(OreVeinWorldEntry entry) {
         var definition = entry.getDefinition();
         if (definition != null) {
-            int depletedYield = definition.depletedYield();
+            int depletedYield = definition.value().depletedYield();
             int regularYield = entry.getOreYield();
             int remainingOperations = entry.getOperationsRemaining();
 

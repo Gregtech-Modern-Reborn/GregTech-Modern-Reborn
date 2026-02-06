@@ -43,11 +43,11 @@ public record MultiPartUnbakedModel(StateDefinition<MachineDefinition, MachineRe
 
     @Override
     public MultiPartBakedModel bake(ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter,
-                                    ModelState state, ResourceLocation location) {
+                                    ModelState state) {
         MultiPartBakedModel.Builder builder = new MultiPartBakedModel.Builder();
 
         for (MultiPartSelector selector : this.selectors()) {
-            BakedModel bakedmodel = selector.getVariant().bake(baker, spriteGetter, state, location);
+            BakedModel bakedmodel = selector.getVariant().bake(baker, spriteGetter, state);
             if (bakedmodel != null) {
                 builder.add(selector.getPredicate(this.definition), bakedmodel);
             }

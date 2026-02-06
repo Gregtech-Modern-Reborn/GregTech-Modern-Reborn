@@ -1,15 +1,14 @@
 package com.gregtechceu.gtceu.api.item;
 
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.fluids.GTFluid;
-import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKey;
-import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
+import com.gregtechceu.gtceu.api.fluid.GTFluid;
+import com.gregtechceu.gtceu.api.fluid.store.FluidStorageKey;
+import com.gregtechceu.gtceu.api.fluid.store.FluidStorageKeys;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -25,25 +24,20 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.wrappers.FluidBucketWrapper;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidUtil;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
-import java.util.function.Supplier;
-
-import javax.annotation.Nullable;
 
 public class GTBucketItem extends BucketItem {
 
     final Material material;
     final String langKey;
 
-    public GTBucketItem(Supplier<? extends Fluid> fluid, Properties properties, Material material, String langKey) {
+    public GTBucketItem(Fluid fluid, Properties properties, Material material, String langKey) {
         super(fluid, properties);
         this.material = material;
         this.langKey = langKey;
@@ -52,15 +46,10 @@ public class GTBucketItem extends BucketItem {
     public static int color(ItemStack itemStack, int index) {
         if (itemStack.getItem() instanceof GTBucketItem item) {
             if (index == 1) {
-                return IClientFluidTypeExtensions.of(item.getFluid()).getTintColor();
+                return IClientFluidTypeExtensions.of(item.content).getTintColor();
             }
         }
         return -1;
-    }
-
-    public ICapabilityProvider initCapabilities(@NotNull ItemStack stack, @Nullable CompoundTag nbt) {
-        return this.getClass() == GTBucketItem.class ? new FluidBucketWrapper(stack) :
-                super.initCapabilities(stack, nbt);
     }
 
     @Override
@@ -95,21 +84,21 @@ public class GTBucketItem extends BucketItem {
     public boolean emptyContents(@Nullable Player player, Level level, BlockPos pos,
                                  @Nullable BlockHitResult result,
                                  @Nullable ItemStack container) {
-        if (!(this.getFluid() instanceof FlowingFluid)) return false;
+        if (!(material.getFluid() instanceof FlowingFluid)) return false;
 
         BlockState blockstate = level.getBlockState(pos);
         Block block = blockstate.getBlock();
-        boolean canReplace = blockstate.canBeReplaced(this.getFluid());
+        boolean canReplace = blockstate.canBeReplaced(material.getFluid());
         boolean canPlace = blockstate.isAir() || canReplace ||
                 block instanceof LiquidBlockContainer lbc &&
-                        lbc.canPlaceLiquid(level, pos, blockstate, this.getFluid());
+                        lbc.canPlaceLiquid(player, level, pos, blockstate, material.getFluid());
 
         if (!canPlace) {
             return result != null && this.emptyContents(player, level,
                     result.getBlockPos().relative(result.getDirection()), null, container);
         }
 
-        var fluidType = this.getFluid().getFluidType();
+        var fluidType = material.getFluid().getFluidType();
         Optional<FluidStack> containedFluidStack = Optional.ofNullable(container).flatMap(FluidUtil::getFluidContained);
         if (containedFluidStack.isPresent() &&
                 fluidType.isVaporizedOnPlacement(level, pos, containedFluidStack.get())) {
@@ -134,8 +123,8 @@ public class GTBucketItem extends BucketItem {
         }
 
         if (block instanceof LiquidBlockContainer blockContainer &&
-                blockContainer.canPlaceLiquid(level, pos, blockstate, getFluid())) {
-            var flowingFluid = ((FlowingFluid) this.getFluid());
+                blockContainer.canPlaceLiquid(player, level, pos, blockstate, material.getFluid())) {
+            var flowingFluid = ((FlowingFluid) material.getFluid());
             blockContainer.placeLiquid(level, pos, blockstate, flowingFluid.getSource(false));
             this.playEmptySound(player, level, pos);
             return true;
@@ -171,7 +160,7 @@ public class GTBucketItem extends BucketItem {
 
     private boolean doesFluidVaporize(Material mat, Level level) {
         // water in nether behavior
-        if (level.dimensionType().ultraWarm() && this.getFluid().defaultFluidState().is(FluidTags.WATER)) {
+        if (level.dimensionType().ultraWarm() && material.getFluid().defaultFluidState().is(FluidTags.WATER)) {
             return true;
         }
         var fluidStorage = mat.getProperty(PropertyKey.FLUID).getStorage();

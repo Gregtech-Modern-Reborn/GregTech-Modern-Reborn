@@ -4,6 +4,7 @@ import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.blockentity.ITickSubscription;
 import com.gregtechceu.gtceu.api.cover.CoverBehavior;
 import com.gregtechceu.gtceu.api.cover.CoverDefinition;
+import com.gregtechceu.gtceu.api.item.tool.ToolHelper;
 import com.gregtechceu.gtceu.api.transfer.fluid.IFluidHandlerModifiable;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
@@ -21,8 +22,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -62,14 +64,15 @@ public interface ICoverable extends ITickSubscription {
     IFluidHandlerModifiable getFluidHandlerCap(@Nullable Direction side, boolean useCoverCapability);
 
     /**
-     * Its an internal method, you should never call it yourself.
+     * Internal method, do not call yourself.
      * <br>
      * Use {@link ICoverable#removeCover(boolean, Direction, Player)} and
      * {@link ICoverable#placeCoverOnSide(Direction, ItemStack, CoverDefinition, ServerPlayer)} instead
      * 
-     * @param coverBehavior
-     * @param side
+     * @param coverBehavior the cover to set, or {@code null} to remove an existing cover
+     * @param side          the side to set the cover for
      */
+    @ApiStatus.Internal
     void setCoverAtSide(@Nullable CoverBehavior coverBehavior, Direction side);
 
     @Nullable
@@ -204,11 +207,11 @@ public interface ICoverable extends ITickSubscription {
 
     @Nullable
     static Direction rayTraceCoverableSide(ICoverable coverable, Player player) {
-        BlockHitResult rayTrace = (BlockHitResult) player.pick(player.getBlockReach(), 0, false);
-        if (rayTrace.getType() == HitResult.Type.MISS) {
+        HitResult rayTrace = ToolHelper.getPlayerDefaultRaytrace(player);
+        if (rayTrace.getType() != HitResult.Type.BLOCK) {
             return null;
         }
-        return traceCoverSide(rayTrace);
+        return traceCoverSide((BlockHitResult) rayTrace);
     }
 
     default boolean hasDynamicCovers() {

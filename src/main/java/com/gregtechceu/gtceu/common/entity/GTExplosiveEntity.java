@@ -12,14 +12,15 @@ import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.event.ForgeEventFactory;
+import net.neoforged.neoforge.event.EventHooks;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class GTExplosiveEntity extends PrimedTnt {
 
-    public GTExplosiveEntity(EntityType<? extends GTExplosiveEntity> type, Level level, double x, double y, double z,
+    public GTExplosiveEntity(EntityType<? extends GTExplosiveEntity> type,
+                             Level level, double x, double y, double z,
                              @Nullable LivingEntity owner) {
         this(type, level);
         this.setPos(x, y, z);
@@ -32,8 +33,8 @@ public abstract class GTExplosiveEntity extends PrimedTnt {
         ((PrimedTntAccessor) this).setOwner(owner);
     }
 
-    public GTExplosiveEntity(EntityType<? extends GTExplosiveEntity> type, Level world) {
-        super(type, world);
+    public GTExplosiveEntity(EntityType<? extends GTExplosiveEntity> type, Level level) {
+        super(type, level);
     }
 
     /**
@@ -63,16 +64,15 @@ public abstract class GTExplosiveEntity extends PrimedTnt {
         explode(level(), this, this.getX(), this.getY(0.0625), this.getZ(), getStrength(), dropsAllBlocks());
     }
 
-    protected void explode(
-                           Level level, @Nullable Entity source,
-                           double x, double y, double z, float radius, boolean dropBlocks) {
+    protected void explode(Level level, @Nullable Entity source, double x, double y, double z,
+                           float radius, boolean dropBlocks) {
         Explosion explosion = new Explosion(
                 level, source,
                 x, y, z,
                 radius,
                 false,
                 dropBlocks ? Explosion.BlockInteraction.DESTROY_WITH_DECAY : Explosion.BlockInteraction.DESTROY);
-        if (!ForgeEventFactory.onExplosionStart(level, explosion)) {
+        if (!EventHooks.onExplosionStart(level, explosion)) {
             explosion.explode();
             explosion.finalizeExplosion(false);
         }
@@ -80,8 +80,13 @@ public abstract class GTExplosiveEntity extends PrimedTnt {
         if (level instanceof ServerLevel serverLevel) {
             for (ServerPlayer serverplayer : serverLevel.players()) {
                 if (serverplayer.distanceToSqr(x, y, z) < 4096.0) {
-                    serverplayer.connection.send(new ClientboundExplodePacket(x, y, z, radius, explosion.getToBlow(),
-                            explosion.getHitPlayers().get(serverplayer)));
+                    serverplayer.connection.send(new ClientboundExplodePacket(x, y, z, radius,
+                            explosion.getToBlow(),
+                            explosion.getHitPlayers().get(serverplayer),
+                            explosion.getBlockInteraction(),
+                            explosion.getSmallExplosionParticles(),
+                            explosion.getLargeExplosionParticles(),
+                            explosion.getExplosionSound()));
                 }
             }
         }

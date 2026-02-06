@@ -1,13 +1,15 @@
 package com.gregtechceu.gtceu.client.renderer.machine.impl;
 
+import com.gregtechceu.gtceu.api.item.datacomponents.LargeItemContent;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRender;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRenderType;
 import com.gregtechceu.gtceu.client.util.PoseStackExtensions;
 import com.gregtechceu.gtceu.client.util.RenderUtil;
-import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.machine.storage.CreativeChestMachine;
 import com.gregtechceu.gtceu.common.machine.storage.QuantumChestMachine;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import net.minecraft.client.Minecraft;
@@ -20,12 +22,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import lombok.experimental.ExtensionMethod;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
@@ -36,7 +38,7 @@ import static com.gregtechceu.gtceu.utils.GTMatrixUtils.*;
 public class QuantumChestItemRender extends DynamicRender<QuantumChestMachine, QuantumChestItemRender> {
 
     // spotless:off
-    public static final Codec<QuantumChestItemRender> CODEC = Codec.unit(QuantumChestItemRender::new);
+    public static final MapCodec<QuantumChestItemRender> CODEC = MapCodec.unit(QuantumChestItemRender::new);
     public static final DynamicRenderType<QuantumChestMachine, QuantumChestItemRender> TYPE = new DynamicRenderType<>(QuantumChestItemRender.CODEC);
     // spotless:on
 
@@ -53,13 +55,16 @@ public class QuantumChestItemRender extends DynamicRender<QuantumChestMachine, Q
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext,
                              PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
         if (CREATIVE_CHEST_ITEM == null) CREATIVE_CHEST_ITEM = GTMachines.CREATIVE_ITEM.getItem();
-        if (stack.hasTag()) {
+
+        LargeItemContent content = stack.get(GTDataComponents.LARGE_ITEM_CONTENT);
+        if (content != null) {
             poseStack.pushPose();
             poseStack.translate(-0.5f, -0.5f, -0.5f);
 
-            ItemStack itemStack = ItemStack.of(stack.getOrCreateTagElement("stored"));
-            long storedAmount = stack.getOrCreateTag().getLong("storedAmount");
-            float totalTick = Minecraft.getInstance().level.getGameTime() + Minecraft.getInstance().getFrameTime();
+            ItemStack itemStack = content.stored();
+            long storedAmount = content.amount();
+            float totalTick = Minecraft.getInstance().player.tickCount +
+                    Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
             // Don't need to handle locked items here since they don't get saved to the item
             renderChestItem(poseStack, buffer, totalTick, Direction.NORTH,
                     itemStack, storedAmount, ItemStack.EMPTY, stack.is(CREATIVE_CHEST_ITEM));

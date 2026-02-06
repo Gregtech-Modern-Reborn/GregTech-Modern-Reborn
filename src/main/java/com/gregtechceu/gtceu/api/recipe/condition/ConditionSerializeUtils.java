@@ -116,7 +116,7 @@ public class ConditionSerializeUtils {
 
         // Case 1: Tag-based holder set
         if (encodedSet.startsWith("#")) {
-            ResourceLocation tagId = new ResourceLocation(encodedSet.substring(1));
+            ResourceLocation tagId = ResourceLocation.parse(encodedSet.substring(1));
             TagKey<T> tagKey = TagKey.create(registryKey, tagId);
             return registry.getOrCreateTag(tagKey);
         }
@@ -125,7 +125,7 @@ public class ConditionSerializeUtils {
         String[] parts = encodedSet.split(",");
         List<Holder<T>> holders = new ArrayList<>();
         for (String part : parts) {
-            ResourceLocation rl = new ResourceLocation(part.trim());
+            ResourceLocation rl = ResourceLocation.parse(part.trim());
             T item = registry.get(rl);
             if (item != null && item != getDefaultEmptyValue(registryKey)) { // Use a generic default empty check
                 holders.add(registry.wrapAsHolder(item));

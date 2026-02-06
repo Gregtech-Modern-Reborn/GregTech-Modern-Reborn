@@ -3,7 +3,7 @@ package com.gregtechceu.gtceu.integration.jade;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.common.blockentity.FluidPipeBlockEntity;
-import com.gregtechceu.gtceu.common.data.GTMaterialItems;
+import com.gregtechceu.gtceu.data.item.GTMaterialItems;
 import com.gregtechceu.gtceu.integration.jade.provider.*;
 
 import net.minecraft.world.item.Item;
@@ -18,6 +18,7 @@ import snownee.jade.api.IWailaCommonRegistration;
 import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
+import java.util.List;
 import java.util.Objects;
 
 @WailaPlugin
@@ -42,7 +43,9 @@ public class GTJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(new HazardCleanerBlockProvider(), BlockEntity.class);
         registration.registerBlockDataProvider(new TransformerBlockProvider(), BlockEntity.class);
         registration.registerBlockDataProvider(new PrimitivePumpBlockProvider(), BlockEntity.class);
+        registration.registerBlockDataProvider(new DataBankBlockProvider(), BlockEntity.class);
         registration.registerBlockDataProvider(new EnergyConverterModeProvider(), BlockEntity.class);
+        registration.registerBlockDataProvider(new LDPEndpointProvider(), BlockEntity.class);
         if (GTCEu.Mods.isAE2Loaded()) {
             registration.registerBlockDataProvider(new MEPatternBufferProvider(), BlockEntity.class);
             registration.registerBlockDataProvider(new MEPatternBufferProxyProvider(), BlockEntity.class);
@@ -72,6 +75,8 @@ public class GTJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(new HazardCleanerBlockProvider(), Block.class);
         registration.registerBlockComponent(new TransformerBlockProvider(), Block.class);
         registration.registerBlockComponent(new PrimitivePumpBlockProvider(), Block.class);
+        registration.registerBlockComponent(new DataBankBlockProvider(), Block.class);
+        registration.registerBlockComponent(new LDPEndpointProvider(), Block.class);
         registration.registerBlockComponent(new EnergyConverterModeProvider(), Block.class);
         if (GTCEu.Mods.isAE2Loaded()) {
             registration.registerBlockComponent(new MEPatternBufferProvider(), Block.class);
@@ -85,11 +90,17 @@ public class GTJadePlugin implements IWailaPlugin {
 
     static {
         GTMaterialItems.TOOL_ITEMS.columnMap().forEach((type, map) -> {
-            if (type.harvestTags.isEmpty() || type.harvestTags.get(0).location().getNamespace().equals("minecraft"))
-                return;
-            HarvestToolProvider.registerHandler(new SimpleToolHandler(type.name, type.harvestTags.get(0),
-                    map.values().stream().filter(Objects::nonNull).filter(ItemProviderEntry::isPresent)
-                            .map(ItemProviderEntry::asItem).toArray(Item[]::new)));
+            if (type.toolDefinition.getTool().rules().isEmpty() || map.isEmpty()) return;
+
+            List<Item> tools = map
+                    .values()
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(ItemProviderEntry::isBound)
+                    .map(ItemProviderEntry::asItem)
+                    .toList();
+            if (tools.isEmpty()) return;
+            HarvestToolProvider.registerHandler(SimpleToolHandler.create(GTCEu.id(type.name), tools, true));
         });
     }
 }

@@ -4,10 +4,11 @@ import com.gregtechceu.gtceu.api.transfer.fluid.IFluidHandlerModifiable;
 import com.gregtechceu.gtceu.integration.xei.entry.fluid.FluidEntryList;
 import com.gregtechceu.gtceu.integration.xei.entry.fluid.FluidStackList;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ public class CycleFluidEntryHandler implements IFluidHandlerModifiable {
     @Getter
     private final List<FluidEntryList> entries;
 
+    @Nullable
     private List<List<FluidStack>> unwrapped = null;
 
     public CycleFluidEntryHandler(List<FluidEntryList> entries) {
@@ -33,7 +35,8 @@ public class CycleFluidEntryHandler implements IFluidHandlerModifiable {
         return unwrapped;
     }
 
-    private static List<FluidStack> getStacksNullable(FluidEntryList list) {
+    @Nullable
+    private static List<FluidStack> getStacksNullable(@Nullable FluidEntryList list) {
         if (list == null) return null;
         return list.getStacks();
     }
@@ -74,7 +77,7 @@ public class CycleFluidEntryHandler implements IFluidHandlerModifiable {
     }
 
     @Override
-    public int fill(FluidStack resource, FluidAction action) {
+    public int fill(@NotNull FluidStack resource, @NotNull FluidAction action) {
         return 0;
     }
 
@@ -85,12 +88,12 @@ public class CycleFluidEntryHandler implements IFluidHandlerModifiable {
 
     @NotNull
     @Override
-    public FluidStack drain(FluidStack resource, FluidAction action) {
+    public FluidStack drain(@NotNull FluidStack resource, @NotNull FluidAction action) {
         return FluidStack.EMPTY;
     }
 
     @Override
-    public @NotNull FluidStack drain(int maxDrain, FluidAction action) {
+    public @NotNull FluidStack drain(int maxDrain, @NotNull FluidAction action) {
         return FluidStack.EMPTY;
     }
 

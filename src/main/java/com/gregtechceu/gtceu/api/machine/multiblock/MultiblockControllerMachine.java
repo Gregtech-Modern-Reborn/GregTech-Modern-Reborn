@@ -3,7 +3,6 @@ package com.gregtechceu.gtceu.api.machine.multiblock;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
-import com.gregtechceu.gtceu.api.capability.IMultiParallelHatch;
 import com.gregtechceu.gtceu.api.capability.IParallelHatch;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -11,8 +10,8 @@ import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
-import com.gregtechceu.gtceu.api.pattern.MultiblockState;
-import com.gregtechceu.gtceu.api.pattern.MultiblockWorldSavedData;
+import com.gregtechceu.gtceu.api.multiblock.MultiblockState;
+import com.gregtechceu.gtceu.api.multiblock.MultiblockWorldSavedData;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
@@ -21,31 +20,24 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.annotation.UpdateListener;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class MultiblockControllerMachine extends MetaMachine implements IMultiController {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
@@ -53,7 +45,6 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
     private MultiblockState multiblockState;
     private final List<IMultiPart> parts = new ArrayList<>();
     private @Nullable IParallelHatch parallelHatch = null;
-    private @Nullable IMultiParallelHatch parallelMultiHatch = null;
     @Getter
     @DescSynced
     @UpdateListener(methodName = "onPartsUpdated")
@@ -68,22 +59,6 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
     @Persisted
     @DescSynced
     protected boolean isFlipped;
-
-    private final AtomicBoolean isBuilding = new AtomicBoolean(false);
-    @Getter
-    private Queue<BlockPos> buildQueue = new ConcurrentLinkedQueue<>();
-
-    public boolean tryStartBuilding() {
-        return isBuilding.compareAndSet(false, true);
-    }
-
-    public void finishBuilding() {
-        isBuilding.set(false);
-    }
-
-    public boolean isBuilding() {
-        return isBuilding.get();
-    }
 
     public MultiblockControllerMachine(IMachineBlockEntity holder) {
         super(holder);
@@ -161,10 +136,6 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
         return Optional.ofNullable(parallelHatch);
     }
 
-    public Optional<IMultiParallelHatch> getMultiParallelHatch() {
-        return Optional.ofNullable(parallelMultiHatch);
-    }
-
     //////////////////////////////////////
     // *** Multiblock LifeCycle ***//
     //////////////////////////////////////
@@ -211,10 +182,6 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
             if (part instanceof IParallelHatch pHatch) {
                 parallelHatch = pHatch;
             }
-            if (part instanceof IMultiParallelHatch pHatch) {
-                this.parallelMultiHatch = pHatch;
-
-            }
             part.addedToController(this);
         }
         updatePartPositions();
@@ -232,7 +199,6 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
             part.removedFromController(this);
         }
         parallelHatch = null;
-        parallelMultiHatch = null;
         parts.clear();
         updatePartPositions();
     }
@@ -288,26 +254,6 @@ public class MultiblockControllerMachine extends MetaMachine implements IMultiCo
                 checkPattern();
             }
         }
-    }
-
-    @Override
-    protected InteractionResult onWrenchClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                              BlockHitResult hitResult) {
-        if (gridSide == getFrontFacing() && allowExtendedFacing()) {
-            setUpwardsFacing(playerIn.isShiftKeyDown() ? getUpwardsFacing().getCounterClockWise() :
-                    getUpwardsFacing().getClockWise());
-            return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
-        }
-        if (playerIn.isShiftKeyDown()) {
-            if (gridSide == getFrontFacing() || !isFacingValid(gridSide)) {
-                return InteractionResult.FAIL;
-            }
-            if (!isRemote()) {
-                setFrontFacing(gridSide);
-            }
-            return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
-        }
-        return super.onWrenchClick(playerIn, hand, gridSide, hitResult);
     }
 
     @Override

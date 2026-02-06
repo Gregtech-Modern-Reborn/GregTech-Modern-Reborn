@@ -1,7 +1,8 @@
 package com.gregtechceu.gtceu.core.mixins;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.storage.loot.LootTable;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
@@ -9,9 +10,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(BlockBehaviour.class)
 public interface BlockBehaviourAccessor {
 
-    @Accessor("properties")
-    BlockBehaviour.Properties getBlockProperties();
-
     @Accessor
-    void setDrops(ResourceLocation location);
+    void setDrops(ResourceKey<LootTable> location);
 }

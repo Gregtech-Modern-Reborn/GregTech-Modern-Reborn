@@ -1,35 +1,29 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
-import com.gregtechceu.gtceu.common.data.GTRecipeCategories;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeCategories;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
-import java.util.function.Consumer;
-
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.block;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.plate;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.LARGE_METAL_SHEETS;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.METAL_SHEETS;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.STUDS;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLER_RECIPES;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.CHEMICAL_BATH_RECIPES;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.block.GTBlocks.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public class DecorationRecipes {
 
     private DecorationRecipes() {}
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         assemblerRecipes(provider);
         dyeRecipes(provider);
         copperOxidationRecipes(provider);
     }
 
-    private static void assemblerRecipes(Consumer<FinishedRecipe> provider) {
+    private static void assemblerRecipes(RecipeOutput provider) {
         ASSEMBLER_RECIPES.recipeBuilder("metal_sheet_white")
                 .inputItems(block, Concrete, 5)
                 .inputItems(plate, Iron, 2)
@@ -55,7 +49,7 @@ public class DecorationRecipes {
                 .addMaterialInfo(true).save(provider);
     }
 
-    private static void dyeRecipes(Consumer<FinishedRecipe> provider) {
+    private static void dyeRecipes(RecipeOutput provider) {
         for (int i = 0; i < CHEMICAL_DYES.length; i++) {
             var color = DyeColor.values()[i];
             var colorName = color.getName();
@@ -85,7 +79,7 @@ public class DecorationRecipes {
         }
     }
 
-    private static void copperOxidationRecipes(Consumer<FinishedRecipe> provider) {
+    private static void copperOxidationRecipes(RecipeOutput provider) {
         registerOxidationChain(provider, "copper_block", Items.COPPER_BLOCK, Items.EXPOSED_COPPER,
                 Items.WEATHERED_COPPER, Items.OXIDIZED_COPPER);
         registerOxidationChain(provider, "cut_copper", Items.CUT_COPPER, Items.EXPOSED_CUT_COPPER,
@@ -196,7 +190,7 @@ public class DecorationRecipes {
 
     private static final String[] OXIDATION_STAGES = { "raw", "exposed", "weathered", "oxidized" };
 
-    private static void registerOxidationChain(Consumer<FinishedRecipe> provider, String name, Item... items) {
+    private static void registerOxidationChain(RecipeOutput provider, String name, Item... items) {
         for (int i = 0; i < items.length - 1; i++) {
             CHEMICAL_BATH_RECIPES
                     .recipeBuilder(

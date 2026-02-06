@@ -2,11 +2,10 @@ package com.gregtechceu.gtceu.common.recipe.condition;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
@@ -18,8 +17,8 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import static com.gregtechceu.gtceu.gametest.util.TestUtils.getMetaMachine;
 
@@ -31,24 +30,25 @@ public class AdjacentFluidConditionTest {
 
     @BeforeBatch(batch = "AdjacentFluidCondition")
     public static void prepare(ServerLevel level) {
-        ROCK_BREAKER_RECIPE_TYPE = TestUtils.createRecipeType("adjacent_fluid_conditions_tests");
+        ROCK_BREAKER_RECIPE_TYPE = TestUtils.createRecipeType("adjacent_fluid_conditions_tests",
+                GTRecipeTypes.ROCK_BREAKER_RECIPES);
         ROCK_BREAKER_RECIPE_TYPE.getLookup().addRecipe(ROCK_BREAKER_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_adjacent_fluid_conditions"))
                 .inputItems(new ItemStack(Blocks.COBBLESTONE))
                 .outputItems(new ItemStack(Blocks.STONE))
-                .adjacentFluid(FluidTags.WATER)
+                .adjacentFluidTag(FluidTags.WATER)
                 .EUt(GTValues.VA[GTValues.HV])
                 .duration(8)
-                .buildRawRecipe());
+                .build());
 
         ROCK_BREAKER_RECIPE_TYPE.getLookup().addRecipe(ROCK_BREAKER_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_adjacent_fluid_conditions_multiple_fluids"))
                 .inputItems(new ItemStack(Blocks.OAK_WOOD))
                 .outputItems(new ItemStack(Items.CHARCOAL))
-                .adjacentFluid(FluidTags.WATER, FluidTags.LAVA)
+                .adjacentFluidTag(FluidTags.WATER, FluidTags.LAVA)
                 .EUt(GTValues.VA[GTValues.HV])
                 .duration(8)
-                .buildRawRecipe());
+                .build());
     }
 
     // Test for checking if the rock breaker works when the condition is fulfilled
@@ -61,10 +61,8 @@ public class AdjacentFluidConditionTest {
                 helper.getBlockEntity(new BlockPos(1, 1, 1)));
 
         machine.setRecipeType(ROCK_BREAKER_RECIPE_TYPE);
-        NotifiableItemStackHandler itemIn = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.IN, ItemRecipeCapability.CAP).get(0);
-        NotifiableItemStackHandler itemOut = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP).get(0);
+        NotifiableItemStackHandler itemIn = machine.importItems;
+        NotifiableItemStackHandler itemOut = machine.exportItems;
 
         itemIn.setStackInSlot(0, new ItemStack(Items.COBBLESTONE));
         // 1t to turn on, 8t to run the recipe
@@ -83,10 +81,8 @@ public class AdjacentFluidConditionTest {
                 helper.getBlockEntity(new BlockPos(1, 1, 1)));
 
         machine.setRecipeType(ROCK_BREAKER_RECIPE_TYPE);
-        NotifiableItemStackHandler itemIn = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.IN, ItemRecipeCapability.CAP).get(0);
-        NotifiableItemStackHandler itemOut = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP).get(0);
+        NotifiableItemStackHandler itemIn = machine.importItems;
+        NotifiableItemStackHandler itemOut = machine.exportItems;
 
         itemIn.setStackInSlot(0, new ItemStack(Items.COBBLESTONE));
         helper.onEachTick(() -> {
@@ -106,10 +102,8 @@ public class AdjacentFluidConditionTest {
                 helper.getBlockEntity(new BlockPos(1, 1, 1)));
 
         machine.setRecipeType(ROCK_BREAKER_RECIPE_TYPE);
-        NotifiableItemStackHandler itemIn = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.IN, ItemRecipeCapability.CAP).get(0);
-        NotifiableItemStackHandler itemOut = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP).get(0);
+        NotifiableItemStackHandler itemIn = machine.importItems;
+        NotifiableItemStackHandler itemOut = machine.exportItems;
 
         itemIn.setStackInSlot(0, new ItemStack(Items.COBBLESTONE));
         // 1t to turn on, 8t to run the recipe
@@ -131,10 +125,8 @@ public class AdjacentFluidConditionTest {
                 helper.getBlockEntity(new BlockPos(1, 1, 1)));
 
         machine.setRecipeType(ROCK_BREAKER_RECIPE_TYPE);
-        NotifiableItemStackHandler itemIn = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.IN, ItemRecipeCapability.CAP).get(0);
-        NotifiableItemStackHandler itemOut = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP).get(0);
+        NotifiableItemStackHandler itemIn = machine.importItems;
+        NotifiableItemStackHandler itemOut = machine.exportItems;
 
         itemIn.setStackInSlot(0, new ItemStack(Items.OAK_WOOD));
         // 1t to turn on, 8t to run the recipe
@@ -155,10 +147,8 @@ public class AdjacentFluidConditionTest {
                 helper.getBlockEntity(new BlockPos(1, 1, 1)));
 
         machine.setRecipeType(ROCK_BREAKER_RECIPE_TYPE);
-        NotifiableItemStackHandler itemIn = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.IN, ItemRecipeCapability.CAP).get(0);
-        NotifiableItemStackHandler itemOut = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP).get(0);
+        NotifiableItemStackHandler itemIn = machine.importItems;
+        NotifiableItemStackHandler itemOut = machine.exportItems;
 
         itemIn.setStackInSlot(0, new ItemStack(Items.OAK_WOOD));
         helper.onEachTick(() -> {
@@ -178,10 +168,8 @@ public class AdjacentFluidConditionTest {
                 helper.getBlockEntity(new BlockPos(1, 1, 1)));
 
         machine.setRecipeType(ROCK_BREAKER_RECIPE_TYPE);
-        NotifiableItemStackHandler itemIn = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.IN, ItemRecipeCapability.CAP).get(0);
-        NotifiableItemStackHandler itemOut = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP).get(0);
+        NotifiableItemStackHandler itemIn = machine.importItems;
+        NotifiableItemStackHandler itemOut = machine.exportItems;
 
         itemIn.setStackInSlot(0, new ItemStack(Items.OAK_WOOD));
         helper.onEachTick(() -> {
@@ -199,10 +187,8 @@ public class AdjacentFluidConditionTest {
                 helper.getBlockEntity(new BlockPos(1, 1, 1)));
 
         machine.setRecipeType(ROCK_BREAKER_RECIPE_TYPE);
-        NotifiableItemStackHandler itemIn = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.IN, ItemRecipeCapability.CAP).get(0);
-        NotifiableItemStackHandler itemOut = (NotifiableItemStackHandler) machine
-                .getCapabilitiesFlat(IO.OUT, ItemRecipeCapability.CAP).get(0);
+        NotifiableItemStackHandler itemIn = machine.importItems;
+        NotifiableItemStackHandler itemOut = machine.exportItems;
 
         itemIn.setStackInSlot(0, new ItemStack(Items.OAK_WOOD));
         helper.onEachTick(() -> {

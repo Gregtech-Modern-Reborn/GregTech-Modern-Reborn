@@ -3,9 +3,11 @@ package com.gregtechceu.gtceu.api.misc.virtualregistry.entries;
 import com.gregtechceu.gtceu.api.misc.virtualregistry.EntryTypes;
 import com.gregtechceu.gtceu.api.misc.virtualregistry.VirtualEntry;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraft.nbt.NbtOps;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -45,23 +47,23 @@ public class VirtualTank extends VirtualEntry {
     }
 
     @Override
-    public CompoundTag serializeNBT() {
-        var tag = super.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.@NotNull Provider registries) {
+        var tag = super.serializeNBT(registries);
         tag.putInt(CAPACITY_KEY, this.capacity);
 
-        if (this.fluidTank.getFluid() != FluidStack.EMPTY)
-            tag.put(FLUID_KEY, this.fluidTank.getFluid().writeToNBT(new CompoundTag()));
-
+        if (!this.fluidTank.getFluid().isEmpty()) {
+            tag.put(FLUID_KEY, FluidStack.CODEC.encodeStart(NbtOps.INSTANCE, this.fluidTank.getFluid()).getOrThrow());
+        }
         return tag;
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        super.deserializeNBT(nbt);
+    public void deserializeNBT(HolderLookup.@NotNull Provider registries, CompoundTag nbt) {
+        super.deserializeNBT(registries, nbt);
         this.capacity = nbt.getInt(CAPACITY_KEY);
 
         if (nbt.contains(FLUID_KEY))
-            setFluid(FluidStack.loadFluidStackFromNBT(nbt.getCompound(FLUID_KEY)));
+            setFluid(FluidStack.CODEC.parse(NbtOps.INSTANCE, nbt.getCompound(FLUID_KEY)).getOrThrow());
     }
 
     @Override

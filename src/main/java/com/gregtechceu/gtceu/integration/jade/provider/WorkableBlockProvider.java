@@ -20,6 +20,7 @@ import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 import snownee.jade.api.ui.BoxStyle;
+import snownee.jade.api.ui.IElementHelper;
 
 public class WorkableBlockProvider extends CapabilityBlockProvider<IWorkable> {
 
@@ -60,11 +61,13 @@ public class WorkableBlockProvider extends CapabilityBlockProvider<IWorkable> {
             text = Component.translatable("gtceu.jade.progress_computation", current, max);
 
             tooltip.add(
-                    tooltip.getElementHelper().progress(
+                    IElementHelper.get().progress(
                             getProgress(currentProgress, maxProgress),
                             text,
-                            tooltip.getElementHelper().progressStyle().color(0xFF006D6A).textColor(-1),
-                            Util.make(BoxStyle.DEFAULT, style -> style.borderColor = 0xFF555555),
+                            IElementHelper.get().progressStyle().color(0xFF006D6A).textColor(-1),
+                            Util.make(BoxStyle.GradientBorder.DEFAULT_NESTED_BOX,
+                                    style -> style.borderColor = new int[] { 0xFF555555, 0xFF555555, 0xFF555555,
+                                            0xFF555555 }),
                             true));
             return;
         }
@@ -79,11 +82,13 @@ public class WorkableBlockProvider extends CapabilityBlockProvider<IWorkable> {
         if (maxProgress > 0) {
             int color = capData.getBoolean("WorkingEnabled") ? 0xFF4CBB17 : 0xFFBB1C28;
             tooltip.add(
-                    tooltip.getElementHelper().progress(
+                    IElementHelper.get().progress(
                             getProgress(currentProgress, maxProgress),
                             text,
-                            tooltip.getElementHelper().progressStyle().color(color).textColor(-1),
-                            Util.make(BoxStyle.DEFAULT, style -> style.borderColor = 0xFF555555),
+                            IElementHelper.get().progressStyle().color(color).textColor(-1),
+                            Util.make(BoxStyle.GradientBorder.DEFAULT_NESTED_BOX,
+                                    style -> style.borderColor = new int[] { 0xFF555555, 0xFF555555, 0xFF555555,
+                                            0xFF555555 }),
                             true));
         }
     }

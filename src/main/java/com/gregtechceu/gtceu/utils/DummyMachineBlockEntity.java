@@ -9,16 +9,12 @@ import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 
 import com.lowdragmc.lowdraglib.syncdata.managed.MultiManagedStorage;
 
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
 
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -26,6 +22,8 @@ import java.util.Collection;
  * Dummy machine BE used for wrapping {@link DummyRecipeLogicMachine}s
  */
 public class DummyMachineBlockEntity implements IMachineBlockEntity {
+
+    public final MultiManagedStorage managedStorage = new MultiManagedStorage();
 
     @Getter
     public final DummyRecipeLogicMachine metaMachine;
@@ -53,17 +51,12 @@ public class DummyMachineBlockEntity implements IMachineBlockEntity {
     }
 
     @Override
-    public MultiManagedStorage getRootStorage() {
-        return null;
+    public @NotNull MultiManagedStorage getRootStorage() {
+        return managedStorage;
     }
 
     @Override
     public CompoundTag getPersistentData() {
         return new CompoundTag();
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return LazyOptional.empty();
     }
 }

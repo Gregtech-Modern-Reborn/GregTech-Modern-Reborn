@@ -1,29 +1,27 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
-import com.gregtechceu.gtceu.data.recipe.GTCraftingComponents;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.Items;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLER_RECIPES;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLY_LINE_RECIPES;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.item.GTItems.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.ASSEMBLER_RECIPES;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.ASSEMBLY_LINE_RECIPES;
 
 public class ComponentRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         // Motors
         // Start--------------------------------------------------------------------------------------------------
         VanillaRecipeHelper.addShapedRecipe(provider, "electric_motor_lv_steel", ELECTRIC_MOTOR_LV.asStack(), "CWR",
@@ -907,25 +905,25 @@ public class ComponentRecipes {
         // Start-------------------------------------------------------------------------------------------------
         VanillaRecipeHelper.addShapedRecipe(provider, true, "sensor_lv", SENSOR_LV.asStack(), "P G", "PR ", "XPP", 'P',
                 new MaterialEntry(plate, Steel), 'R', new MaterialEntry(rod, Brass), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(LV), 'X', CustomTags.LV_CIRCUITS);
+                new MaterialEntry(gem, Quartzite), 'X', CustomTags.LV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "sensor_mv", SENSOR_MV.asStack(), "P G", "PR ", "XPP", 'P',
                 new MaterialEntry(plate, Aluminium), 'R', new MaterialEntry(rod, Electrum), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(MV), 'X', CustomTags.MV_CIRCUITS);
+                new MaterialEntry(gemFlawless, Emerald), 'X', CustomTags.MV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "sensor_hv", SENSOR_HV.asStack(), "P G", "PR ", "XPP", 'P',
                 new MaterialEntry(plate, StainlessSteel), 'R', new MaterialEntry(rod, Chromium), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(HV), 'X', CustomTags.HV_CIRCUITS);
+                new MaterialEntry(gem, EnderEye), 'X', CustomTags.HV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "sensor_ev", SENSOR_EV.asStack(), "P G", "PR ", "XPP", 'P',
                 new MaterialEntry(plate, Titanium), 'R', new MaterialEntry(rod, Platinum), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(EV), 'X', CustomTags.EV_CIRCUITS);
+                QUANTUM_EYE.asStack(), 'X', CustomTags.EV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "sensor_iv", SENSOR_IV.asStack(), "P G", "PR ", "XPP", 'P',
                 new MaterialEntry(plate, TungstenSteel), 'R', new MaterialEntry(rod, Iridium), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(IV), 'X', CustomTags.IV_CIRCUITS);
+                QUANTUM_STAR.asStack(), 'X', CustomTags.IV_CIRCUITS);
 
         ASSEMBLER_RECIPES.recipeBuilder("sensor_lv")
                 .inputItems(rod, Brass)
                 .inputItems(plate, Steel, 4)
                 .inputItems(CustomTags.LV_CIRCUITS)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(LV))
+                .inputItems(gem, Quartzite)
                 .outputItems(SENSOR_LV)
                 .duration(100).EUt(VA[LV]).save(provider);
 
@@ -933,7 +931,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Electrum)
                 .inputItems(plate, Aluminium, 4)
                 .inputItems(CustomTags.MV_CIRCUITS)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(MV))
+                .inputItems(gemFlawless, Emerald)
                 .outputItems(SENSOR_MV)
                 .duration(100).EUt(VA[LV]).save(provider);
 
@@ -941,7 +939,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Chromium)
                 .inputItems(plate, StainlessSteel, 4)
                 .inputItems(CustomTags.HV_CIRCUITS)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(HV))
+                .inputItems(gem, EnderEye)
                 .outputItems(SENSOR_HV)
                 .duration(100).EUt(VA[LV]).save(provider);
 
@@ -949,7 +947,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Platinum)
                 .inputItems(plate, Titanium, 4)
                 .inputItems(CustomTags.EV_CIRCUITS)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(EV))
+                .inputItems(QUANTUM_EYE)
                 .outputItems(SENSOR_EV)
                 .duration(100).EUt(VA[LV]).save(provider);
 
@@ -957,7 +955,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Iridium)
                 .inputItems(plate, TungstenSteel, 4)
                 .inputItems(CustomTags.IV_CIRCUITS)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(IV))
+                .inputItems(QUANTUM_STAR)
                 .outputItems(SENSOR_IV)
                 .duration(100).EUt(VA[LV]).save(provider);
 
@@ -965,7 +963,7 @@ public class ComponentRecipes {
                 .inputItems(frameGt, HSSS)
                 .inputItems(ELECTRIC_MOTOR_LuV)
                 .inputItems(plate, Ruridit, 4)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(LuV))
+                .inputItems(QUANTUM_STAR)
                 .inputItems(CustomTags.LuV_CIRCUITS, 2)
                 .inputItems(foil, Palladium, 64)
                 .inputItems(foil, Palladium, 32)
@@ -983,7 +981,7 @@ public class ComponentRecipes {
                 .inputItems(frameGt, NaquadahAlloy)
                 .inputItems(ELECTRIC_MOTOR_ZPM)
                 .inputItems(plate, Osmiridium, 4)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(ZPM), 2)
+                .inputItems(QUANTUM_STAR, 2)
                 .inputItems(CustomTags.ZPM_CIRCUITS, 2)
                 .inputItems(foil, Trinium, 64)
                 .inputItems(foil, Trinium, 32)
@@ -1000,7 +998,7 @@ public class ComponentRecipes {
                 .inputItems(frameGt, Tritanium)
                 .inputItems(ELECTRIC_MOTOR_UV)
                 .inputItems(plate, Tritanium, 4)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(UV))
+                .inputItems(GRAVI_STAR)
                 .inputItems(CustomTags.UV_CIRCUITS, 2)
                 .inputItems(foil, Naquadria, 64)
                 .inputItems(foil, Naquadria, 32)
@@ -1019,25 +1017,25 @@ public class ComponentRecipes {
         // Start------------------------------------------------------------------------------------------------
         VanillaRecipeHelper.addShapedRecipe(provider, true, "emitter_lv", EMITTER_LV.asStack(), "CRX", "RGR", "XRC",
                 'R', new MaterialEntry(rod, Brass), 'C', new MaterialEntry(cableGtSingle, Tin), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(LV), 'X', CustomTags.LV_CIRCUITS);
+                new MaterialEntry(gem, Quartzite), 'X', CustomTags.LV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "emitter_mv", EMITTER_MV.asStack(), "CRX", "RGR", "XRC",
                 'R', new MaterialEntry(rod, Electrum), 'C', new MaterialEntry(cableGtSingle, Copper), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(MV), 'X', CustomTags.MV_CIRCUITS);
+                new MaterialEntry(gemFlawless, Emerald), 'X', CustomTags.MV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "emitter_hv", EMITTER_HV.asStack(), "CRX", "RGR", "XRC",
                 'R', new MaterialEntry(rod, Chromium), 'C', new MaterialEntry(cableGtSingle, Gold), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(HV), 'X', CustomTags.HV_CIRCUITS);
+                new MaterialEntry(gem, EnderEye), 'X', CustomTags.HV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "emitter_ev", EMITTER_EV.asStack(), "CRX", "RGR", "XRC",
                 'R', new MaterialEntry(rod, Platinum), 'C', new MaterialEntry(cableGtSingle, Aluminium), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(EV), 'X', CustomTags.EV_CIRCUITS);
+                QUANTUM_EYE.asStack(), 'X', CustomTags.EV_CIRCUITS);
         VanillaRecipeHelper.addShapedRecipe(provider, true, "emitter_iv", EMITTER_IV.asStack(), "CRX", "RGR", "XRC",
                 'R', new MaterialEntry(rod, Iridium), 'C', new MaterialEntry(cableGtSingle, Tungsten), 'G',
-                GTCraftingComponents.SENSOR_EMITTER_GEM.get(IV), 'X', CustomTags.IV_CIRCUITS);
+                QUANTUM_STAR.asStack(), 'X', CustomTags.IV_CIRCUITS);
 
         ASSEMBLER_RECIPES.recipeBuilder("emitter_lv")
                 .inputItems(rod, Brass, 4)
                 .inputItems(cableGtSingle, Tin, 2)
                 .inputItems(CustomTags.LV_CIRCUITS, 2)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(LV))
+                .inputItems(gem, Quartzite)
                 .circuitMeta(1)
                 .outputItems(EMITTER_LV)
                 .duration(100).EUt(VA[LV]).save(provider);
@@ -1046,7 +1044,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Electrum, 4)
                 .inputItems(cableGtSingle, Copper, 2)
                 .inputItems(CustomTags.MV_CIRCUITS, 2)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(MV))
+                .inputItems(gemFlawless, Emerald)
                 .circuitMeta(1)
                 .outputItems(EMITTER_MV)
                 .duration(100).EUt(VA[LV]).save(provider);
@@ -1055,7 +1053,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Chromium, 4)
                 .inputItems(cableGtSingle, Gold, 2)
                 .inputItems(CustomTags.HV_CIRCUITS, 2)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(HV))
+                .inputItems(gem, EnderEye)
                 .circuitMeta(1)
                 .outputItems(EMITTER_HV)
                 .duration(100).EUt(VA[LV]).save(provider);
@@ -1064,7 +1062,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Platinum, 4)
                 .inputItems(cableGtSingle, Aluminium, 2)
                 .inputItems(CustomTags.EV_CIRCUITS, 2)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(EV))
+                .inputItems(QUANTUM_EYE)
                 .circuitMeta(1)
                 .outputItems(EMITTER_EV)
                 .duration(100).EUt(VA[LV]).save(provider);
@@ -1073,7 +1071,7 @@ public class ComponentRecipes {
                 .inputItems(rod, Iridium, 4)
                 .inputItems(cableGtSingle, Tungsten, 2)
                 .inputItems(CustomTags.IV_CIRCUITS, 2)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(IV))
+                .inputItems(QUANTUM_STAR)
                 .circuitMeta(1)
                 .outputItems(EMITTER_IV)
                 .duration(100).EUt(VA[LV]).save(provider);
@@ -1082,7 +1080,7 @@ public class ComponentRecipes {
                 .inputItems(frameGt, HSSS)
                 .inputItems(ELECTRIC_MOTOR_LuV)
                 .inputItems(rodLong, Ruridit, 4)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(LuV))
+                .inputItems(QUANTUM_STAR)
                 .inputItems(CustomTags.LuV_CIRCUITS, 2)
                 .inputItems(foil, Palladium, 64)
                 .inputItems(foil, Palladium, 32)
@@ -1100,7 +1098,7 @@ public class ComponentRecipes {
                 .inputItems(frameGt, NaquadahAlloy)
                 .inputItems(ELECTRIC_MOTOR_ZPM)
                 .inputItems(rodLong, Osmiridium, 4)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(ZPM), 2)
+                .inputItems(QUANTUM_STAR, 2)
                 .inputItems(CustomTags.ZPM_CIRCUITS, 2)
                 .inputItems(foil, Trinium, 64)
                 .inputItems(foil, Trinium, 32)
@@ -1117,7 +1115,7 @@ public class ComponentRecipes {
                 .inputItems(frameGt, Tritanium)
                 .inputItems(ELECTRIC_MOTOR_UV)
                 .inputItems(rodLong, Tritanium, 4)
-                .inputItems(GTCraftingComponents.SENSOR_EMITTER_GEM.get(UV))
+                .inputItems(GRAVI_STAR)
                 .inputItems(CustomTags.UV_CIRCUITS, 2)
                 .inputItems(foil, Naquadria, 64)
                 .inputItems(foil, Naquadria, 32)
