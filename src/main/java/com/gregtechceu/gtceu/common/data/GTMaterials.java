@@ -94,7 +94,7 @@ public class GTMaterials {
         gemExquisite.setIgnored(Sugar);
         gemFlawless.setIgnored(Sugar);
 
-        // gem.setIgnored(Diamond, Items.DIAMOND);
+        gem.setIgnored(Diamond, Items.DIAMOND);
         gem.setIgnored(Emerald, Items.EMERALD);
         gem.setIgnored(Lapis, Items.LAPIS_LAZULI);
         gem.setIgnored(NetherQuartz, Items.QUARTZ);
