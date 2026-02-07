@@ -1,5 +1,6 @@
 package com.gregtechceu.gtceu.data.datagen.tag;
 
+import com.gregtechceu.gtceu.api.tag.TagUtil;
 import com.gregtechceu.gtceu.common.block.StoneTypes;
 import com.gregtechceu.gtceu.data.block.GTBlocks;
 import com.gregtechceu.gtceu.data.machine.GTMachines;
@@ -15,9 +16,13 @@ import net.neoforged.neoforge.common.Tags;
 
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 
+import static net.minecraft.world.level.block.Blocks.COAL_BLOCK;
+
 public class BlockTagLoader {
 
     public static void init(RegistrateTagsProvider.IntrinsicImpl<Block> provider) {
+        var oreTag = TagUtil.createBlockTag("ores");
+        provider.addTag(oreTag).add(COAL_BLOCK);
         provider.addTag(CustomTags.CONCRETE_BLOCK)
                 .add(Blocks.WHITE_CONCRETE, Blocks.ORANGE_CONCRETE, Blocks.MAGENTA_CONCRETE, Blocks.LIGHT_BLUE_CONCRETE,
                         Blocks.YELLOW_CONCRETE, Blocks.LIME_CONCRETE, Blocks.PINK_CONCRETE, Blocks.GRAY_CONCRETE,

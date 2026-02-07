@@ -61,6 +61,9 @@ public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockIn
                 .toList());
     }
 
+    // Fix JEI Slots display Bugs
+    // Code Form GTCEuModern the newest branch
+    // The author is vfyjxy
     @Override
     public void createRecipeExtras(@NotNull IRecipeExtrasBuilder builder, @NotNull MultiblockInfoWrapper recipe,
                                    @NotNull IFocusGroup focuses) {
@@ -82,6 +85,7 @@ public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockIn
                         .filter(slot -> {
                             Optional<String> slotName = slot.getSlotName();
                             if (slotName.isEmpty()) return false;
+                            if (slot.getRect().getY() != 132) return false;
                             String name = slotName.get();
                             int index = Integer.parseInt(name.substring(5));
                             Widget widget = widgets.get(index);

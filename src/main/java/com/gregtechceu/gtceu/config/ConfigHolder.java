@@ -578,7 +578,7 @@ public class ConfigHolder {
         @Configurable
         @Configurable.Comment({ "Whether the Assembly Line should require the fluid inputs to be in order.",
                 "(Requires Ordered Assembly Line Item Inputs to be enabled.)", "Default: true" })
-        public boolean orderedAssemblyLineFluids = true;
+        public boolean orderedAssemblyLineFluids = false;
 
         @Configurable
         @Configurable.Comment({

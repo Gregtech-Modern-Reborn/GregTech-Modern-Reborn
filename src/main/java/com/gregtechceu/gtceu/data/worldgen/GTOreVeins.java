@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 import static com.gregtechceu.gtceu.api.worldgen.generator.veins.DikeVeinGenerator.DikeBlockDefinition;
 import static com.gregtechceu.gtceu.api.worldgen.generator.veins.VeinedVeinGenerator.VeinBlockDefinition;
 import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static net.minecraft.world.level.block.Blocks.COAL_BLOCK;
 
 @SuppressWarnings("unused")
 public class GTOreVeins {
@@ -450,17 +451,19 @@ public class GTOreVeins {
                         .maxEdgeRoundoff(0.1f))
                 .surfaceIndicatorGenerator(indicator -> indicator
                         .surfaceRock(Cassiterite)));
-        register(context, COAL_VEIN, vein -> vein
-                .clusterSize(UniformInt.of(38, 44)).density(0.25f).weight(80)
-                .layer(WorldGenLayers.STONE)
-                .heightRangeUniform(10, 140)
-                .biomes(BiomeTags.IS_OVERWORLD)
-                .layeredVeinGenerator(generator -> generator
-                        .withLayerPattern(() -> GTLayerPattern.builder(stoneRules)
-                                .layer(l -> l.weight(3).mat(Coal).size(2, 4))
-                                .build()))
-                .surfaceIndicatorGenerator(indicator -> indicator
-                        .surfaceRock(Coal)));
+        /*
+         * register(context, COAL_VEIN, vein -> vein
+         * .clusterSize(UniformInt.of(38, 44)).density(0.25f).weight(80)
+         * .layer(WorldGenLayers.STONE)
+         * .heightRangeUniform(10, 140)
+         * .biomes(BiomeTags.IS_OVERWORLD)
+         * .layeredVeinGenerator(generator -> generator
+         * .withLayerPattern(() -> GTLayerPattern.builder(stoneRules)
+         * .layer(l -> l.weight(3).mat(Coal).size(2, 4))
+         * .build()))
+         * .surfaceIndicatorGenerator(indicator -> indicator
+         * .surfaceRock(Coal)));
+         */
         register(context, COPPER_TIN_VEIN, vein -> vein
                 .clusterSize(UniformInt.of(40, 52)).density(1.0f).weight(50)
                 .layer(WorldGenLayers.STONE)
@@ -748,5 +751,18 @@ public class GTOreVeins {
                         .density(0.15f)
                         .placement(SurfaceIndicatorGenerator.IndicatorPlacement.ABOVE)
                         .radius(3)));
+        register(context, COAL_VEIN, vein -> vein
+                .clusterSize(UniformInt.of(70, 80)).density(1.0f).weight(50)
+                .layer(WorldGenLayers.STONE)
+                .heightRangeUniform(10, 140)
+                .biomes(BiomeTags.IS_OVERWORLD)
+                .veinedVeinGenerator(generator -> generator
+                        .oreBlock(COAL_BLOCK.defaultBlockState(), 50)
+                        .minRichness(1.0f)
+                        .maxRichness(1.0f)
+                        .veininessThreshold(0.01f)
+                        .maxRichnessThreshold(0.05f))
+                .surfaceIndicatorGenerator(indicator -> indicator
+                        .surfaceRock(Coal)));
     }
 }

@@ -48,12 +48,12 @@ public class DualHatchPartMachine extends ItemBusPartMachine {
     ////////////////////////////////
 
     public static int getTankCapacity(int initialCapacity, int tier) {
-        return initialCapacity * (1 << (tier - 6));
+        return initialCapacity * (1 << (tier));
     }
 
     @Override
     public int getInventorySize() {
-        return (int) Math.pow((getTier() - 4), 2);
+        return (int) Math.pow((getTier()) + 1, 2);
     }
 
     protected NotifiableFluidTank createTank(int initialCapacity, int slots, Object... args) {

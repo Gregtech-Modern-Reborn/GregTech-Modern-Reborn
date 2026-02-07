@@ -247,7 +247,7 @@ public class PatternPreviewWidget extends WidgetGroup {
                 scrollableWidgetGroup.removeWidget(slotWidget);
             }
         }
-        slotWidgets = new SlotWidget[Math.min(pattern.parts.size(), 18)];
+        slotWidgets = new SlotWidget[pattern.parts.size()];
         var itemHandler = CycleItemEntryHandler.createFromStacks(pattern.parts);
         int xOffset = 0;
         for (int i = 0; i < slotWidgets.length; i++) {

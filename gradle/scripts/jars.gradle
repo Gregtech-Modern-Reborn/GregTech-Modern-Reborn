@@ -23,6 +23,7 @@ base {
 }
 
 afterEvaluate {
+    jar.archiveClassifier = ""
     tasks.withType(org.gradle.jvm.tasks.Jar).configureEach {
         destinationDirectory = file('build/libs/')
         manifest.attributes([

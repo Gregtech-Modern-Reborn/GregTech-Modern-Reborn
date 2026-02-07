@@ -208,7 +208,7 @@ public class FirstDegreeMaterials {
                 .buildAndRegister();
 
         Diamond = new Material.Builder(GTCEu.id("diamond"))
-                .gem(3).ore()
+                .gem(3, 1024000).ore()
                 .color(0xC8FFFF).iconSet(DIAMOND)
                 .flags(GENERATE_BOLT_SCREW, GENERATE_LENS, GENERATE_GEAR, NO_SMASHING, NO_SMELTING,
                         HIGH_SIFTER_OUTPUT, DISABLE_DECOMPOSITION, EXCLUDE_BLOCK_CRAFTING_BY_HAND_RECIPES,

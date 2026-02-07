@@ -995,15 +995,15 @@ public class GTMachines {
                             Component.translatable("gtceu.machine.dual_hatch.import.tooltip"),
                             Component.translatable(
                                     "gtceu.universal.tooltip.item_storage_capacity",
-                                    (int) Math.pow((tier - 4), 2)),
+                                    (int) Math.pow((tier + 1), 2)),
                             Component.translatable(
                                     "gtceu.universal.tooltip.fluid_storage_capacity_mult",
-                                    (tier - 4),
+                                    (int) Math.sqrt(Math.pow(tier + 1, 2)),
                                     DualHatchPartMachine.getTankCapacity(DualHatchPartMachine.INITIAL_TANK_CAPACITY,
                                             tier)),
                             Component.translatable("gtceu.part_sharing.enabled"))
                     .register(),
-            DUAL_HATCH_TIERS);
+            ALL_TIERS);
 
     public static final MachineDefinition[] DUAL_EXPORT_HATCH = registerTieredMachines(
             "dual_output_hatch",
@@ -1018,15 +1018,15 @@ public class GTMachines {
                             Component.translatable("gtceu.machine.dual_hatch.export.tooltip"),
                             Component.translatable(
                                     "gtceu.universal.tooltip.item_storage_capacity",
-                                    (int) Math.pow((tier - 4), 2)),
+                                    (int) Math.pow((tier + 1), 2)),
                             Component.translatable(
                                     "gtceu.universal.tooltip.fluid_storage_capacity_mult",
-                                    (tier - 4),
+                                    (int) Math.sqrt(Math.pow(tier + 1, 2)),
                                     DualHatchPartMachine.getTankCapacity(
                                             DualHatchPartMachine.INITIAL_TANK_CAPACITY, tier)),
                             Component.translatable("gtceu.part_sharing.enabled"))
                     .register(),
-            DUAL_HATCH_TIERS);
+            ALL_TIERS);
 
     public static final MachineDefinition[] DIODE = registerTieredMachines("diode",
             DiodePartMachine::new,
