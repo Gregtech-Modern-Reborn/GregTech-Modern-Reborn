@@ -2,7 +2,7 @@ package com.gregtechceu.gtceu.api.recipe;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
 import com.gregtechceu.gtceu.gametest.util.TestUtils;
@@ -15,32 +15,33 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.LARGE_CHEMICAL_RECIPES;
 import static com.gregtechceu.gtceu.gametest.util.TestUtils.getMetaMachine;
 
 @PrefixGameTestTemplate(false)
 @GameTestHolder(GTCEu.MOD_ID)
 public class InputSeparationTest {
 
-    private static GTRecipeType LCR_RECIPE_TYPE;
-
     @BeforeBatch(batch = "InputSeparation")
     public static void prepare(ServerLevel level) {
-        LCR_RECIPE_TYPE = TestUtils.createRecipeType("input_separation_tests", 3, 3, 3, 3);
+        // LARGE_CHEMICAL_RECIPES = TestUtils.createRecipeType("input_separation_tests", 3, 3, 3, 3);
         // Force insert the recipe into the manager.
-        LCR_RECIPE_TYPE.getLookup().addRecipe(LCR_RECIPE_TYPE
-                .recipeBuilder(GTCEu.id("test_multiblock_input_separation"))
+        LARGE_CHEMICAL_RECIPES.getLookup().removeAllRecipes();
+        LARGE_CHEMICAL_RECIPES.getLookup().addRecipe(LARGE_CHEMICAL_RECIPES
+                .recipeBuilder(GTCEu.id("test-multiblock-input-separation"))
+                .id(GTCEu.id("test-multiblock-input-separation"))
                 .inputItems(new ItemStack(Blocks.COBBLESTONE), new ItemStack(Blocks.ACACIA_WOOD))
                 .outputItems(new ItemStack(Blocks.STONE))
                 .EUt(GTValues.VA[GTValues.HV]).duration(1)
                 // NBT has a schematic in it with an HV energy input hatch
-                .buildRawRecipe());
+                .build());
     }
 
     private record BusHolder(ItemBusPartMachine inputBus1, ItemBusPartMachine inputBus2, ItemBusPartMachine outputBus1,
-                             FluidHatchPartMachine outputHatch1, WorkableMultiblockMachine controller) {}
+                             FluidHatchPartMachine outputHatch1) {}
 
     /**
      * Retrieves the busses for this specific template and force a multiblock structure check
@@ -49,10 +50,9 @@ public class InputSeparationTest {
      * @return the busses, in the BusHolder record.
      */
     private static BusHolder getBussesAndForm(GameTestHelper helper) {
-        WorkableMultiblockMachine controller = (WorkableMultiblockMachine) getMetaMachine(
+        MultiblockControllerMachine controller = (MultiblockControllerMachine) getMetaMachine(
                 helper.getBlockEntity(new BlockPos(1, 2, 0)));
         TestUtils.formMultiblock(controller);
-        controller.setRecipeType(LCR_RECIPE_TYPE);
         ItemBusPartMachine inputBus1 = (ItemBusPartMachine) getMetaMachine(
                 helper.getBlockEntity(new BlockPos(2, 1, 0)));
         ItemBusPartMachine inputBus2 = (ItemBusPartMachine) getMetaMachine(
@@ -61,7 +61,7 @@ public class InputSeparationTest {
                 helper.getBlockEntity(new BlockPos(0, 1, 0)));
         FluidHatchPartMachine outputHatch1 = (FluidHatchPartMachine) getMetaMachine(
                 helper.getBlockEntity(new BlockPos(0, 2, 0)));
-        return new BusHolder(inputBus1, inputBus2, outputBus1, outputHatch1, controller);
+        return new BusHolder(inputBus1, inputBus2, outputBus1, outputHatch1);
     }
 
     // Test for putting both ingredients in the same bus.

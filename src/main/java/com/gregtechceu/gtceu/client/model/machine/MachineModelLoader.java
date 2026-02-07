@@ -19,11 +19,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.model.ExtendedBlockModelDeserializer;
-import net.minecraftforge.client.model.geometry.IGeometryLoader;
-import net.minecraftforge.common.util.TransformationHelper;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.client.model.ExtendedBlockModelDeserializer;
+import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
+import net.neoforged.neoforge.common.util.TransformationHelper;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -40,7 +38,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-@Mod.EventBusSubscriber(modid = GTCEu.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class MachineModelLoader implements IGeometryLoader<UnbakedMachineModel> {
 
     public static final MachineModelLoader INSTANCE = new MachineModelLoader();
@@ -67,10 +64,11 @@ public class MachineModelLoader implements IGeometryLoader<UnbakedMachineModel> 
 
     private MachineModelLoader() {}
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public @Nullable UnbakedMachineModel read(JsonObject json,
                                               JsonDeserializationContext context) throws JsonParseException {
-        ResourceLocation machineId = new ResourceLocation(GsonHelper.getAsString(json, "machine"));
+        ResourceLocation machineId = ResourceLocation.parse(GsonHelper.getAsString(json, "machine"));
         MachineDefinition definition = GTRegistries.MACHINES.get(machineId);
         if (definition == null) return null;
 
@@ -143,7 +141,7 @@ public class MachineModelLoader implements IGeometryLoader<UnbakedMachineModel> 
         if (array != null) {
             for (JsonElement entry : array) {
                 var render = DynamicRender.CODEC.parse(JsonOps.INSTANCE, entry)
-                        .getOrThrow(true, LOGGER::error);
+                        .getOrThrow();
                 dynamicRenders.add(render);
             }
         }
@@ -162,7 +160,7 @@ public class MachineModelLoader implements IGeometryLoader<UnbakedMachineModel> 
         if (overrideJson != null) {
             for (var entry : overrideJson.asMap().entrySet()) {
                 String value = GsonHelper.convertToString(entry.getValue(), entry.getKey());
-                textureOverrides.put(entry.getKey(), new ResourceLocation(value));
+                textureOverrides.put(entry.getKey(), ResourceLocation.parse(value));
             }
         }
 
@@ -241,7 +239,7 @@ public class MachineModelLoader implements IGeometryLoader<UnbakedMachineModel> 
                                                                       JsonDeserializationContext context) throws JsonParseException {
         if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
             String modelName = value.getAsString();
-            return Either.left(new ResourceLocation(modelName));
+            return Either.left(ResourceLocation.parse(modelName));
         } else {
             return Either.right(context.deserialize(value, BlockModel.class));
         }

@@ -2,13 +2,12 @@ package com.gregtechceu.gtceu.utils;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
-import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
+import com.gregtechceu.gtceu.api.fluid.store.FluidStorageKeys;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
@@ -16,10 +15,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -29,7 +24,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -42,15 +38,13 @@ import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import org.jetbrains.annotations.NotNull;
@@ -62,7 +56,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 
-import static com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey.HAZARD;
+import static com.gregtechceu.gtceu.api.material.material.properties.PropertyKey.HAZARD;
 
 public class GTUtil {
 
@@ -93,7 +87,7 @@ public class GTUtil {
 
     /**
      * Convenience method to get from VN -> Tier
-     * 
+     *
      * @return the voltage tier by name, -1 if the tier name isn't valid
      */
     public static int getTierByName(String name) {
@@ -190,7 +184,7 @@ public class GTUtil {
      * @return Index of the nearest value lesser or equal than {@code value},
      *         or {@code -1} if there's no entry matching the condition
      */
-    public static int nearestLesserOrEqual(@NotNull long[] array, long value) {
+    public static int nearestLesserOrEqual(long @NotNull [] array, long value) {
         int low = 0, high = array.length - 1;
         while (true) {
             int median = (low + high) / 2;
@@ -210,7 +204,7 @@ public class GTUtil {
      * @return Index of the nearest value lesser than {@code value},
      *         or {@code -1} if there's no entry matching the condition
      */
-    public static int nearestLesser(@NotNull long[] array, long value) {
+    public static int nearestLesser(long @NotNull [] array, long value) {
         int low = 0, high = array.length - 1;
         while (true) {
             int median = (low + high) / 2;
@@ -372,7 +366,7 @@ public class GTUtil {
     }
 
     public static int getItemBurnTime(Item item) {
-        return ForgeHooks.getBurnTime(item.getDefaultInstance(), RecipeType.SMELTING);
+        return item.getDefaultInstance().getBurnTime(RecipeType.SMELTING);
     }
 
     public static int getPumpBiomeModifier(Holder<Biome> biome) {
@@ -383,17 +377,17 @@ public class GTUtil {
         if (biome.is(BiomeTags.IS_DEEP_OCEAN) || biome.is(BiomeTags.IS_OCEAN) || biome.is(BiomeTags.IS_BEACH) ||
                 biome.is(BiomeTags.IS_RIVER)) {
             return FluidType.BUCKET_VOLUME;
-        } else if (biome.is(Tags.Biomes.IS_SWAMP) || biome.is(Tags.Biomes.IS_WET)) {
-            return FluidType.BUCKET_VOLUME * 4 / 5;
         } else if (biome.is(BiomeTags.IS_JUNGLE)) {
             return FluidType.BUCKET_VOLUME * 35 / 100;
+        } else if (biome.is(Tags.Biomes.IS_SWAMP) || biome.is(Tags.Biomes.IS_WET)) {
+            return FluidType.BUCKET_VOLUME * 4 / 5;
         } else if (biome.is(Tags.Biomes.IS_SNOWY)) {
             return FluidType.BUCKET_VOLUME * 3 / 10;
         } else if (biome.is(Tags.Biomes.IS_PLAINS) || biome.is(BiomeTags.IS_FOREST)) {
             return FluidType.BUCKET_VOLUME / 4;
         } else if (biome.is(Tags.Biomes.IS_COLD)) {
             return FluidType.BUCKET_VOLUME * 175 / 1000;
-        } else if (biome.is(CustomTags.IS_SANDY)) {
+        } else if (biome.is(Tags.Biomes.IS_SANDY)) {
             return FluidType.BUCKET_VOLUME * 170 / 1000;
         }
         return FluidType.BUCKET_VOLUME / 10;
@@ -464,9 +458,9 @@ public class GTUtil {
             return false;
         }
 
-        Biome biome = world.getBiome(blockPos.above()).value();
+        Holder<Biome> biome = world.getBiome(blockPos.above());
         if (world.isRaining()) {
-            if (biome.warmEnoughToRain(blockPos.above()) || biome.coldEnoughToSnow(blockPos.above())) {
+            if (biome.value().warmEnoughToRain(blockPos.above()) || biome.value().coldEnoughToSnow(blockPos.above())) {
                 return false;
             }
         }
@@ -475,9 +469,8 @@ public class GTUtil {
             return false;
         }
 
-        ResourceLocation javdVoidBiome = new ResourceLocation("javd", "void");
-        if (GTCEu.Mods.isJAVDLoaded() &&
-                world.registryAccess().registryOrThrow(Registries.BIOME).getKey(biome).equals(javdVoidBiome)) {
+        ResourceLocation javdVoidBiome = ResourceLocation.fromNamespaceAndPath(GTValues.MODID_JAVD, "void");
+        if (GTCEu.isModLoaded(GTValues.MODID_JAVD) && biome.is(javdVoidBiome)) {
             return !world.isDay();
         } else return world.isDay();
     }
@@ -536,39 +529,6 @@ public class GTUtil {
         tooltipComponents.add(Component.translatable("gtceu.medical_condition.description"));
     }
 
-    public static CompoundTag saveItemStack(ItemStack itemStack, CompoundTag compoundTag) {
-        ResourceLocation resourceLocation = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
-        compoundTag.putString("id", resourceLocation.toString());
-        compoundTag.putInt("Count", itemStack.getCount());
-        if (itemStack.getTag() != null) {
-            compoundTag.put("tag", itemStack.getTag().copy());
-        }
-
-        return compoundTag;
-    }
-
-    public static ItemStack loadItemStack(CompoundTag compoundTag) {
-        try {
-            Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(compoundTag.getString("id")));
-            int count = compoundTag.getInt("Count");
-            ItemStack stack = new ItemStack(item, count);
-            if (compoundTag.contains("tag", Tag.TAG_COMPOUND)) {
-                stack.setTag(compoundTag.getCompound("tag"));
-                if (stack.getTag() != null) {
-                    stack.getItem().verifyTagAfterLoad(stack.getTag());
-                }
-            }
-
-            if (stack.isDamageableItem()) {
-                stack.setDamageValue(stack.getDamageValue());
-            }
-            return stack;
-        } catch (RuntimeException var2) {
-            GTCEu.LOGGER.debug("Tried to load invalid item: {}", compoundTag, var2);
-            return ItemStack.EMPTY;
-        }
-    }
-
     public static Tuple<ItemStack, MutableComponent> getMaintenanceText(byte flag) {
         return switch (flag) {
             case 0 -> new Tuple<>(ToolItemHelper.getToolItem(GTToolType.WRENCH),
@@ -586,13 +546,13 @@ public class GTUtil {
         };
     }
 
-    public static void addPotionTooltip(List<Pair<MobEffectInstance, Float>> effects, List<Component> list) {
+    public static void addPotionTooltip(List<FoodProperties.PossibleEffect> effects, List<Component> list) {
         if (!effects.isEmpty()) {
             list.add(Component.translatable("gtceu.tooltip.potion.header"));
         }
-        effects.forEach(pair -> {
-            var effect = pair.getFirst();
-            float probability = pair.getSecond();
+        effects.forEach(eff -> {
+            var effect = eff.effect();
+            float probability = eff.probability();
             list.add(Component.translatable("gtceu.tooltip.potion.each",
                     Component.translatable(effect.getDescriptionId())
                             .setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
@@ -603,6 +563,23 @@ public class GTUtil {
                     Component.literal(String.valueOf(100 * probability))
                             .setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN))));
         });
+    }
+
+    /**
+     * Returns the slot type based on the slot group and the index inside that group.
+     */
+    public static EquipmentSlot equipmentSlotByTypeAndIndex(EquipmentSlot.Type slotType, int slotIndex) {
+        for (EquipmentSlot equipmentslot : EquipmentSlot.values()) {
+            if (equipmentslot.getType() == slotType && equipmentslot.getIndex() == slotIndex) {
+                return equipmentslot;
+            }
+        }
+
+        throw new IllegalArgumentException("Invalid slot '" + slotType + "': " + slotIndex);
+    }
+
+    public static boolean isSameItemSameTags(ItemStack s1, ItemStack s2) {
+        return ItemStack.isSameItemSameComponents(s1, s2);
     }
 
     public static <T> T getLast(List<T> list) {

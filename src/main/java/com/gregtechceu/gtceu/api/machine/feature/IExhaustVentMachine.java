@@ -2,9 +2,9 @@ package com.gregtechceu.gtceu.api.machine.feature;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
-import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
-import com.gregtechceu.gtceu.common.data.GTDamageTypes;
+import com.gregtechceu.gtceu.api.multiblock.util.RelativeDirection;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.damagesource.GTDamageTypes;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.core.BlockPos;
@@ -126,7 +126,7 @@ public interface IExhaustVentMachine extends IMachineFeature {
         for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class,
                 new AABB(pos.relative(getVentingDirection())),
                 entity -> !(entity instanceof Player player) || !player.isSpectator() && !player.isCreative())) {
-            entity.hurt(GTDamageTypes.HEAT.source(level), getVentingDamage());
+            entity.hurt(level.damageSources().source(GTDamageTypes.HEAT), getVentingDamage());
             // TODO ADVANCEMENT
             // if (entity instanceof ServerPlayer) {
             // AdvancementTriggers.STEAM_VENT_DEATH.trigger((ServerPlayer) entity);

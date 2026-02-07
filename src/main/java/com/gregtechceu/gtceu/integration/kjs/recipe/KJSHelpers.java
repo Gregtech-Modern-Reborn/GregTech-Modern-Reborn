@@ -3,13 +3,11 @@ package com.gregtechceu.gtceu.integration.kjs.recipe;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
 
-import dev.latvian.mods.kubejs.util.MapJS;
-import dev.latvian.mods.kubejs.util.UtilsJS;
+import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.Wrapper;
 import it.unimi.dsi.fastutil.longs.LongLongPair;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +28,7 @@ public class KJSHelpers {
     private static final long DEFAULT_VOLTAGE = 0;
     private static final long DEFAULT_AMPERAGE = 1;
 
-    public static EnergyStack.WithIO parseIOEnergyStack(Object o) {
+    public static EnergyStack.WithIO parseIOEnergyStack(Context cx, Object o) {
         if (o instanceof Wrapper w) {
             o = w.unwrap();
         }
@@ -43,7 +41,7 @@ public class KJSHelpers {
             long value = n.longValue();
             return EnergyStack.WithIO.fromVoltage(value);
         } else {
-            LongLongPair pair = parseEnergyStackValues(o);
+            LongLongPair pair = parseEnergyStackValues(cx, o);
             if (pair == null) {
                 return EnergyStack.WithIO.EMPTY;
             }
@@ -51,7 +49,7 @@ public class KJSHelpers {
         }
     }
 
-    public static EnergyStack parseEnergyStack(Object o) {
+    public static EnergyStack parseEnergyStack(Context cx, Object o) {
         if (o instanceof Wrapper w) {
             o = w.unwrap();
         }
@@ -63,7 +61,7 @@ public class KJSHelpers {
         } else if (o instanceof Number n) {
             return new EnergyStack(n.longValue());
         } else {
-            LongLongPair pair = parseEnergyStackValues(o);
+            LongLongPair pair = parseEnergyStackValues(cx, o);
             if (pair == null) {
                 return EnergyStack.EMPTY;
             }
@@ -71,7 +69,7 @@ public class KJSHelpers {
         }
     }
 
-    private static @Nullable LongLongPair parseEnergyStackValues(Object o) {
+    private static @Nullable LongLongPair parseEnergyStackValues(Context cx, Object o) {
         long voltage = DEFAULT_VOLTAGE;
         long amperage = DEFAULT_AMPERAGE;
 
@@ -87,18 +85,24 @@ public class KJSHelpers {
                 amperage = Long.parseLong(match.group("a"));
             }
         } else {
-            Map<?, ?> map = MapJS.of(o);
+            var map = cx.optionalMapOf(o);
             if (map == null) {
                 return null;
             }
             for (String key : VOLTAGE_KEYS) {
                 if (!map.containsKey(key)) continue;
-                voltage = UtilsJS.parseLong(map.get(key), DEFAULT_VOLTAGE);
+                double val = cx.toNumber(map.get(key));
+                if (!Double.isNaN(val)) {
+                    voltage = (long) val;
+                }
                 if (voltage != DEFAULT_VOLTAGE) break;
             }
             for (String key : AMPERAGE_KEYS) {
                 if (!map.containsKey(key)) continue;
-                amperage = UtilsJS.parseLong(map.get(key), DEFAULT_AMPERAGE);
+                double val = cx.toNumber(map.get(key));
+                if (!Double.isNaN(val)) {
+                    amperage = (long) val;
+                }
                 if (amperage != DEFAULT_AMPERAGE) break;
             }
         }

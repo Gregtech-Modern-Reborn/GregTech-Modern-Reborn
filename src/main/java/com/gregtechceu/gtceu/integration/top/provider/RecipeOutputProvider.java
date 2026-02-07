@@ -6,9 +6,9 @@ import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderFluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredientExtensions;
 import com.gregtechceu.gtceu.integration.top.element.FluidStackElement;
 import com.gregtechceu.gtceu.integration.top.element.FluidStyle;
 
@@ -18,11 +18,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
+import lombok.experimental.ExtensionMethod;
 import mcjty.theoneprobe.api.CompoundText;
 import mcjty.theoneprobe.api.ElementAlignment;
 import mcjty.theoneprobe.api.IProbeHitData;
@@ -33,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+@ExtensionMethod(SizedIngredientExtensions.class)
 public class RecipeOutputProvider extends CapabilityInfoProvider<RecipeLogic> {
 
     @Override
@@ -58,15 +61,15 @@ public class RecipeOutputProvider extends CapabilityInfoProvider<RecipeLogic> {
                 var itemContents = recipe.getOutputContents(ItemRecipeCapability.CAP);
                 var fluidContents = recipe.getOutputContents(FluidRecipeCapability.CAP);
 
-                List<Ingredient> itemOutputs = new ArrayList<>();
+                List<SizedIngredient> itemOutputs = new ArrayList<>();
                 for (var item : itemContents) {
                     ItemStack[] stacks;
-                    Ingredient content = ItemRecipeCapability.CAP.of(item.content);
-                    if (content instanceof IntProviderIngredient provider) {
-                        stacks = provider.getInner().getItems();
-                    } else {
-                        stacks = content.getItems();
-                    }
+                    SizedIngredient content = ItemRecipeCapability.CAP.of(item.content);
+                    // if (content instanceof IntProviderIngredient provider) {
+                    // stacks = provider.getInner().getItems();
+                    // } else {
+                    stacks = content.getItems();
+                    // }
                     if (stacks.length == 0) continue;
                     if (stacks[0].isEmpty()) continue;
                     var stack = stacks[0].copy();
@@ -78,18 +81,12 @@ public class RecipeOutputProvider extends CapabilityInfoProvider<RecipeLogic> {
                         count = Math.max(1, (int) Math.round(countD));
                         stack.setCount(count);
                     }
-                    itemOutputs.add(Ingredient.of(stack));
+                    itemOutputs.add(RecipeHelper.makeSizedIngredient(stack));
                 }
 
-                List<FluidIngredient> fluidOutputs = new ArrayList<>();
+                List<SizedFluidIngredient> fluidOutputs = new ArrayList<>();
                 for (var fluid : fluidContents) {
-                    FluidStack[] stacks;
-                    FluidIngredient content = FluidRecipeCapability.CAP.of(fluid.content);
-                    if (content instanceof IntProviderFluidIngredient provider) {
-                        stacks = provider.getInner().getStacks();
-                    } else {
-                        stacks = content.getStacks();
-                    }
+                    var stacks = FluidRecipeCapability.CAP.of(fluid.content).getFluids();
                     if (stacks.length == 0) continue;
                     if (stacks[0].isEmpty()) continue;
                     var stack = stacks[0].copy();
@@ -101,7 +98,7 @@ public class RecipeOutputProvider extends CapabilityInfoProvider<RecipeLogic> {
                         amount = Math.max(1, (int) Math.round(amountD));
                         stack.setAmount(amount);
                     }
-                    fluidOutputs.add(FluidIngredient.of(stack));
+                    fluidOutputs.add(RecipeHelper.makeSizedFluidIngredient(stack));
                 }
 
                 if (!itemOutputs.isEmpty() || !fluidOutputs.isEmpty()) {
@@ -115,45 +112,49 @@ public class RecipeOutputProvider extends CapabilityInfoProvider<RecipeLogic> {
         }
     }
 
-    private void addItemInfo(IProbeInfo verticalPane, List<Ingredient> outputItems) {
-        IProbeInfo horizontalPane;
-        for (Ingredient itemOutput : outputItems) {
-            if (itemOutput != null && !itemOutput.isEmpty()) {
-                horizontalPane = verticalPane
+    private void addItemInfo(IProbeInfo verticalPane, List<SizedIngredient> outputItems) {
+        for (SizedIngredient itemOutput : outputItems) {
+            if (itemOutput != null && !itemOutput.ingredient().hasNoItems()) {
+                ItemStack stack = itemOutput.getItems()[0];
+
+                IProbeInfo horizontalPane = verticalPane
                         .horizontal(verticalPane.defaultLayoutStyle().alignment(ElementAlignment.ALIGN_CENTER));
                 String spacer = " ";
-                if (itemOutput instanceof IntProviderIngredient provider) {
+
+                if (itemOutput.getContainedCustom() instanceof IntProviderIngredient provider) {
                     spacer += (Component.translatable("gtceu.gui.content.range",
                             String.valueOf(provider.getCountProvider().getMinValue()),
                             String.valueOf(provider.getCountProvider().getMaxValue()))) + " ";
                     provider.setItemStacks(null); // no roll
                     provider.setSampledCount(1);
                 }
-                horizontalPane.item(itemOutput.getItems()[0],
+                horizontalPane.item(stack,
                         new ItemStyle().width(16).height(16))
                         .text(spacer)
-                        .itemLabel(itemOutput.getItems()[0]);
+                        .itemLabel(stack);
             }
         }
     }
 
-    private void addFluidInfo(IProbeInfo verticalPane, List<FluidIngredient> outputFluids) {
-        IProbeInfo horizontalPane;
-        for (FluidIngredient fluidOutput : outputFluids) {
-            if (fluidOutput != null && !fluidOutput.isEmpty()) {
-                horizontalPane = verticalPane
+    private void addFluidInfo(IProbeInfo verticalPane, List<SizedFluidIngredient> outputFluids) {
+        for (SizedFluidIngredient fluidOutput : outputFluids) {
+            if (fluidOutput != null && !fluidOutput.ingredient().hasNoFluids()) {
+                FluidStack stack = fluidOutput.getFluids()[0];
+
+                IProbeInfo horizontalPane = verticalPane
                         .horizontal(verticalPane.defaultLayoutStyle().alignment(ElementAlignment.ALIGN_CENTER));
                 String spacer = " ";
-                if (fluidOutput instanceof IntProviderFluidIngredient provider) {
+                if (fluidOutput.ingredient() instanceof IntProviderFluidIngredient provider) {
                     spacer += (Component.translatable("gtceu.gui.content.range",
                             String.valueOf(provider.getCountProvider().getMinValue()),
                             String.valueOf(provider.getCountProvider().getMaxValue()))) + " ";
-                    fluidOutput.setAmount(provider.getCountProvider().getMaxValue()); // no roll
+                    provider.setFluidStacks(null); // no roll
+                    provider.setSampledCount(1);
+                    stack.setAmount(provider.getCountProvider().getMaxValue()); // no roll
                 }
-                horizontalPane.element(new FluidStackElement(fluidOutput.getStacks()[0],
-                        new FluidStyle()))
+                horizontalPane.element(new FluidStackElement(stack, new FluidStyle()))
                         .text(spacer)
-                        .text(fluidOutput.getStacks()[0].getDisplayName());
+                        .text(stack.getHoverName());
             }
         }
     }

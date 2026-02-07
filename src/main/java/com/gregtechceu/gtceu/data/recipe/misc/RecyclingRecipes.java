@@ -2,22 +2,22 @@ package com.gregtechceu.gtceu.data.recipe.misc;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.BlastProperty;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.ItemMaterialInfo;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialStack;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
-import com.gregtechceu.gtceu.common.data.GTRecipeCategories;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.BlastProperty;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.material.material.stack.ItemMaterialInfo;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialStack;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeCategories;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -30,19 +30,18 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.gregtechceu.gtceu.api.GTValues.L;
 import static com.gregtechceu.gtceu.api.GTValues.M;
-import static com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags.*;
+import static com.gregtechceu.gtceu.api.material.material.info.MaterialFlags.*;
 
 public class RecyclingRecipes {
 
     // TODO - Work on durations and EUt's
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         for (var entry : ChemicalHelper.getAllItemInfos()) {
             ItemStack itemStack = entry.getFirst();
             ItemMaterialInfo materialInfo = entry.getSecond();
@@ -51,7 +50,7 @@ public class RecyclingRecipes {
         }
     }
 
-    public static void registerRecyclingRecipes(Consumer<FinishedRecipe> provider, ItemStack input,
+    public static void registerRecyclingRecipes(RecipeOutput provider, ItemStack input,
                                                 List<MaterialStack> components, boolean ignoreArcSmelting,
                                                 @Nullable TagPrefix prefix) {
         // Gather the valid Materials for use in recycling recipes.
@@ -79,7 +78,7 @@ public class RecyclingRecipes {
         if (ignoreArcSmelting) return;
 
         if (components.size() == 1) {
-            Material m = components.get(0).material();
+            Material m = components.getFirst().material();
 
             // skip non-ingot materials
             if (!m.hasProperty(PropertyKey.INGOT)) {
@@ -103,7 +102,7 @@ public class RecyclingRecipes {
         }
     }
 
-    private static void registerMaceratorRecycling(Consumer<FinishedRecipe> provider, ItemStack input,
+    private static void registerMaceratorRecycling(RecipeOutput provider, ItemStack input,
                                                    List<MaterialStack> materials, int multiplier) {
         // Finalize the output list.
         final float maceratorYield = ConfigHolder.INSTANCE.recipes.maceratorRecyclingYield;
@@ -135,11 +134,7 @@ public class RecyclingRecipes {
             builder.inputItems(inputTag);
         }
 
-        boolean recycle = true;
-        if (!entry.isEmpty() && entry.tagPrefix() == TagPrefix.ingot) {
-            recycle = false;
-        }
-
+        boolean recycle = entry.isEmpty() || entry.tagPrefix() != TagPrefix.ingot;
         if (recycle) {
             builder.category(GTRecipeCategories.MACERATOR_RECYCLING);
         }
@@ -147,7 +142,7 @@ public class RecyclingRecipes {
         builder.save(provider);
     }
 
-    private static void registerExtractorRecycling(Consumer<FinishedRecipe> provider, ItemStack input,
+    private static void registerExtractorRecycling(RecipeOutput provider, ItemStack input,
                                                    List<MaterialStack> materials, int multiplier,
                                                    @Nullable TagPrefix prefix) {
         MaterialEntry entry = ChemicalHelper.getMaterialEntry(input.getItem());
@@ -234,7 +229,7 @@ public class RecyclingRecipes {
         extractorBuilder.save(provider);
     }
 
-    private static void registerArcRecycling(Consumer<FinishedRecipe> provider, ItemStack input,
+    private static void registerArcRecycling(RecipeOutput provider, ItemStack input,
                                              List<MaterialStack> materials, @Nullable TagPrefix prefix) {
         MaterialEntry entry = ChemicalHelper.getMaterialEntry(input.getItem());
         TagKey<Item> inputTag = null;
@@ -312,7 +307,7 @@ public class RecyclingRecipes {
                                                   @NotNull List<ItemStack> outputs) {
         if (prefix == TagPrefix.nugget || prefix == TagPrefix.ingot || prefix == TagPrefix.block) {
             if (outputs.size() == 1) {
-                MaterialEntry entry = ChemicalHelper.getMaterialEntry(outputs.get(0).getItem());
+                MaterialEntry entry = ChemicalHelper.getMaterialEntry(outputs.getFirst().getItem());
                 if (!entry.isEmpty()) {
                     Material mat = inputStack.material();
                     if (!mat.hasFlag(IS_MAGNETIC) && mat.hasProperty(PropertyKey.INGOT)) {
@@ -408,7 +403,7 @@ public class RecyclingRecipes {
         // No blast temperature in the list means no multiplier
         if (highestTemp == 0) return 1;
 
-        // If less then 2000K, multiplier of 4
+        // If less than 2000K, multiplier of 4
         if (highestTemp < 2000) return 4; // todo make this a better value?
 
         // If above 2000K, multiplier of 16
@@ -471,7 +466,7 @@ public class RecyclingRecipes {
                         splitStacks(split, stack, entry);
                         shrinkStacks(shrink, stack, entry);
 
-                        if (split.get(0).getSecond().amount() > shrink.get(0).getSecond().amount()) {
+                        if (split.getFirst().getSecond().amount() > shrink.getFirst().getSecond().amount()) {
                             outputs.addAll(split);
                         } else outputs.addAll(shrink);
                     }

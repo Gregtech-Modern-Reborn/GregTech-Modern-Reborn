@@ -1,8 +1,8 @@
 package com.gregtechceu.gtceu.common.item.armor;
 
-import net.minecraft.world.entity.player.Player;
+import com.gregtechceu.gtceu.GTCEu;
 
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
  * Logic from
@@ -11,15 +11,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface IStepAssist {
 
-    float MAGIC_STEP_HEIGHT = 1.0023f;
+    AttributeModifier STEP_ASSIST_MODIFIER = new AttributeModifier(GTCEu.id("step_assist"), 0.4023,
+            AttributeModifier.Operation.ADD_VALUE);
 
-    default void updateStepHeight(@NotNull Player player) {
-        if (!player.isShiftKeyDown()) {
-            if (player.maxUpStep() < MAGIC_STEP_HEIGHT) {
-                player.setMaxUpStep(MAGIC_STEP_HEIGHT);
-            }
-        } else if (player.getStepHeight() == MAGIC_STEP_HEIGHT) {
-            player.setMaxUpStep(0.6F);
-        }
-    }
+    float MAGIC_STEP_HEIGHT = 1.0023f;
 }

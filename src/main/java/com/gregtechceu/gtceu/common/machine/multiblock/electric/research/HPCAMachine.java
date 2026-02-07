@@ -17,7 +17,7 @@ import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockDisplayText;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
-import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
+import com.gregtechceu.gtceu.api.multiblock.util.RelativeDirection;
 import com.gregtechceu.gtceu.api.transfer.fluid.FluidHandlerList;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
@@ -47,8 +47,8 @@ import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
@@ -63,7 +63,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static com.gregtechceu.gtceu.data.recipe.CustomTags.HPCA_COOLANTS;
+import static com.gregtechceu.gtceu.data.tag.CustomTags.HPCA_COOLANTS;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
@@ -492,7 +492,7 @@ public class HPCAMachine extends WorkableElectricMultiblockMachine
                 int remainingCoolant = maxCoolantDrain;
                 for (var fluid : BuiltInRegistries.FLUID.getTagOrEmpty(HPCA_COOLANTS)) {
                     FluidStack drained = GTTransferUtils.drainFluidAccountNotifiableList(coolantTank,
-                            new FluidStack(fluid.get(), remainingCoolant), IFluidHandler.FluidAction.EXECUTE);
+                            new FluidStack(fluid, remainingCoolant), IFluidHandler.FluidAction.EXECUTE);
                     remainingCoolant -= drained.getAmount();
                     if (remainingCoolant <= 0) break;
                 }
@@ -512,7 +512,7 @@ public class HPCAMachine extends WorkableElectricMultiblockMachine
                 int remainingCoolant = coolantToDrain;
                 for (var fluid : BuiltInRegistries.FLUID.getTagOrEmpty(HPCA_COOLANTS)) {
                     FluidStack drained = GTTransferUtils.drainFluidAccountNotifiableList(coolantTank,
-                            new FluidStack(fluid.get(), remainingCoolant), IFluidHandler.FluidAction.EXECUTE);
+                            new FluidStack(fluid, remainingCoolant), IFluidHandler.FluidAction.EXECUTE);
                     remainingCoolant -= drained.getAmount();
                     if (remainingCoolant <= 0) break;
                 }

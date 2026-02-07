@@ -1,9 +1,9 @@
 package com.gregtechceu.gtceu.utils;
 
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import it.unimi.dsi.fastutil.objects.*;
 import org.jetbrains.annotations.NotNull;
@@ -98,8 +98,9 @@ public final class GTHashMaps {
      * @param fluidInputs The {@link IFluidHandler} to query from
      * @return a map of FluidStack -> amount
      */
-    public static Map<FluidStack, Integer> fromFluidHandler(IFluidHandler fluidInputs) {
-        Object2IntLinkedOpenHashMap<FluidStack> map = new Object2IntLinkedOpenHashMap<>();
+    public static Object2IntMap<FluidStack> fromFluidHandler(IFluidHandler fluidInputs) {
+        Object2IntLinkedOpenCustomHashMap<FluidStack> map = new Object2IntLinkedOpenCustomHashMap<>(
+                FluidStackHashStrategy.comparingAllButAmount());
         // Create a single stack of the combined count for each item
         for (int i = 0; i < fluidInputs.getTanks(); i++) {
             FluidStack fluidStack = fluidInputs.getFluidInTank(i);
@@ -117,8 +118,9 @@ public final class GTHashMaps {
      * @param fluidInputs an iterable set of FluidStacks
      * @return a map of FluidStack -> amount
      */
-    public static Map<FluidStack, Integer> fromFluidCollection(Iterable<FluidStack> fluidInputs) {
-        Object2IntLinkedOpenHashMap<FluidStack> map = new Object2IntLinkedOpenHashMap<>();
+    public static Object2IntMap<FluidStack> fromFluidCollection(Iterable<FluidStack> fluidInputs) {
+        Object2IntLinkedOpenCustomHashMap<FluidStack> map = new Object2IntLinkedOpenCustomHashMap<>(
+                FluidStackHashStrategy.comparingAllButAmount());
         // Create a single stack of the combined count for each item
         for (FluidStack fluidStack : fluidInputs) {
             if (fluidStack != null && !fluidStack.isEmpty()) {

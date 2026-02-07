@@ -7,6 +7,8 @@ import com.gregtechceu.gtceu.api.cover.IIOCover;
 import com.gregtechceu.gtceu.client.util.ModelUtils;
 import com.gregtechceu.gtceu.client.util.StaticFaceBakery;
 
+import com.lowdragmc.lowdraglib.client.bakedpipeline.FaceQuad;
+
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -17,9 +19,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -80,10 +82,10 @@ public class IOCoverRenderer implements ICoverRenderer {
                         overlaySprite));
             }
             if (isInverted && invertedEmissiveOverlaySprite != null) {
-                quads.add(StaticFaceBakery.bakeFace(StaticFaceBakery.COVER_OVERLAY, coverBehavior.attachedSide,
+                quads.add(FaceQuad.bakeFace(StaticFaceBakery.COVER_OVERLAY, coverBehavior.attachedSide,
                         invertedEmissiveOverlaySprite, BlockModelRotation.X0_Y0, -101, 15, true, false));
             } else if (emissiveOverlaySprite != null) {
-                quads.add(StaticFaceBakery.bakeFace(StaticFaceBakery.COVER_OVERLAY, coverBehavior.attachedSide,
+                quads.add(FaceQuad.bakeFace(StaticFaceBakery.COVER_OVERLAY, coverBehavior.attachedSide,
                         emissiveOverlaySprite, BlockModelRotation.X0_Y0, -101, 15, true, false));
             }
         }

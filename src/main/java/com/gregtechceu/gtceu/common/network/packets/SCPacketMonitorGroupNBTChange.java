@@ -1,22 +1,32 @@
 package com.gregtechceu.gtceu.common.network.packets;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.CentralMonitorMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.monitor.MonitorGroup;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.LogicalSidedProvider;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.common.util.LogicalSidedProvider;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
-public class SCPacketMonitorGroupNBTChange implements GTNetwork.INetPacket {
+public class SCPacketMonitorGroupNBTChange implements CustomPacketPayload {
+
+    public static final ResourceLocation ID = GTCEu.id("spacket_monitor_group_nbt_change");
+    public static final Type<SCPacketMonitorGroupNBTChange> TYPE = new Type<>(ID);
+    public static final StreamCodec<RegistryFriendlyByteBuf, SCPacketMonitorGroupNBTChange> CODEC = StreamCodec
+            .ofMember(SCPacketMonitorGroupNBTChange::encode, SCPacketMonitorGroupNBTChange::new);
 
     private final ItemStack stack;
     private final int monitorGroupId;
@@ -28,23 +38,27 @@ public class SCPacketMonitorGroupNBTChange implements GTNetwork.INetPacket {
         this.pos = machine.getPos();
     }
 
-    public SCPacketMonitorGroupNBTChange(FriendlyByteBuf buf) {
-        this.stack = buf.readItem();
+    public SCPacketMonitorGroupNBTChange(RegistryFriendlyByteBuf buf) {
+        this.stack = ItemStack.STREAM_CODEC.decode(buf);
         this.monitorGroupId = buf.readVarInt();
         this.pos = buf.readBlockPos();
     }
 
-    @Override
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeItemStack(stack, false);
+    public void encode(RegistryFriendlyByteBuf buffer) {
+        ItemStack.STREAM_CODEC.encode(buffer, stack);
+        // buffer.writeItemStack(stack, false);
         buffer.writeVarInt(monitorGroupId);
         buffer.writeBlockPos(pos);
     }
 
-    @Override
-    public void execute(NetworkEvent.Context context) {
-        Level level = LogicalSidedProvider.CLIENTWORLD.get(context.getDirection().getReceptionSide())
-                .or(() -> Optional.ofNullable(context.getSender()).map(ServerPlayer::level))
+    public void execute(IPayloadContext context) {
+        Level level = LogicalSidedProvider.CLIENTWORLD.get(context.flow().getReceptionSide())
+                .or(() -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        return Optional.ofNullable(player).map(ServerPlayer::level);
+                    }
+                    return Optional.empty();
+                })
                 .orElse(null);
         if (level == null) return;
 
@@ -60,5 +74,10 @@ public class SCPacketMonitorGroupNBTChange implements GTNetwork.INetPacket {
         private static Level getClientLevel() {
             return Minecraft.getInstance().level;
         }
+    }
+
+    @Override
+    public @NotNull Type<SCPacketMonitorGroupNBTChange> type() {
+        return TYPE;
     }
 }

@@ -4,9 +4,9 @@ import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.util.ClickData;
 import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
 
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -34,7 +34,7 @@ public class PredicatedButtonWidget extends ButtonWidget {
     }
 
     @Override
-    public void writeInitialData(FriendlyByteBuf buffer) {
+    public void writeInitialData(RegistryFriendlyByteBuf buffer) {
         super.writeInitialData(buffer);
         var result = predicate == null || predicate.getAsBoolean();
         setVisible(result);
@@ -42,7 +42,7 @@ public class PredicatedButtonWidget extends ButtonWidget {
     }
 
     @Override
-    public void readInitialData(FriendlyByteBuf buffer) {
+    public void readInitialData(RegistryFriendlyByteBuf buffer) {
         super.readInitialData(buffer);
         setVisible(buffer.readBoolean());
     }
@@ -60,7 +60,7 @@ public class PredicatedButtonWidget extends ButtonWidget {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void readUpdateInfo(int id, FriendlyByteBuf buffer) {
+    public void readUpdateInfo(int id, RegistryFriendlyByteBuf buffer) {
         if (id == 1) {
             setVisible(buffer.readBoolean());
         } else {

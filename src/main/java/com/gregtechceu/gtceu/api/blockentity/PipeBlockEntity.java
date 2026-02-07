@@ -5,16 +5,16 @@ import com.gregtechceu.gtceu.api.block.MaterialPipeBlock;
 import com.gregtechceu.gtceu.api.capability.ICoverable;
 import com.gregtechceu.gtceu.api.capability.IToolable;
 import com.gregtechceu.gtceu.api.cover.CoverBehavior;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
-import com.gregtechceu.gtceu.api.item.tool.IToolGridHighlight;
+import com.gregtechceu.gtceu.api.item.tool.IToolGridHighLight;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
+import com.gregtechceu.gtceu.api.material.material.Material;
 import com.gregtechceu.gtceu.api.pipenet.*;
-import com.gregtechceu.gtceu.common.data.GTMaterialBlocks;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
-import com.gregtechceu.gtceu.common.datafixers.TagFixer;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.data.block.GTMaterialBlocks;
+import com.gregtechceu.gtceu.data.item.GTItemAbilities;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
@@ -28,13 +28,11 @@ import com.lowdragmc.lowdraglib.syncdata.blockentity.IAutoPersistBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -55,13 +53,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeType<NodeDataType>, NodeDataType>
                                      extends BlockEntity implements IPipeNode<PipeType, NodeDataType>, IEnhancedManaged,
-                                     IAsyncAutoSyncBlockEntity, IAutoPersistBlockEntity, IToolGridHighlight, IToolable {
+                                     IAsyncAutoSyncBlockEntity, IAutoPersistBlockEntity, IToolGridHighLight, IToolable {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(PipeBlockEntity.class);
     @Getter
@@ -96,6 +90,7 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
     @RequireRerender
     @DescSynced
     @Persisted
+    @Getter
     @Setter
     @NotNull
     private Material frameMaterial = GTMaterials.NULL;
@@ -136,7 +131,7 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
 
     @Override
     public long getOffsetTimer() {
-        return level == null ? offset : (level.getServer().getTickCount() + offset);
+        return level == null ? offset : (level.getGameTime() + offset);
     }
 
     @Override
@@ -160,16 +155,6 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
             connections = connections & (connections - 1);
         }
         return count;
-    }
-
-    @Override
-    public @NotNull Material getFrameMaterial() {
-        // backwards compat
-        // noinspection ConstantValue
-        if (frameMaterial == null) {
-            frameMaterial = GTMaterials.NULL;
-        }
-        return frameMaterial;
     }
 
     @Override
@@ -335,7 +320,7 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
     @Override
     public boolean shouldRenderGrid(Player player, BlockPos pos, BlockState state, ItemStack held,
                                     Set<GTToolType> toolTypes) {
-        if (toolTypes.contains(getPipeTuneTool())) return true;
+        if (toolTypes.contains(getPipeTuneTool()) || hasCorrectAction(held)) return true;
         for (CoverBehavior cover : coverContainer.getCovers()) {
             if (cover.shouldRenderGrid(player, pos, state, held, toolTypes)) return true;
         }
@@ -348,8 +333,8 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
 
     @Override
     public @Nullable ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
-                                              Direction side) {
-        if (toolTypes.contains(getPipeTuneTool())) {
+                                              ItemStack held, Direction side) {
+        if (toolTypes.contains(getPipeTuneTool()) || hasCorrectAction(held)) {
             if (player.isShiftKeyDown() && this.canHaveBlockedFaces()) {
                 return getPipeTexture(isBlocked(side));
             } else {
@@ -358,17 +343,17 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
         }
         var cover = coverContainer.getCoverAtSide(side);
         if (cover != null) {
-            return cover.sideTips(player, pos, state, toolTypes, side);
+            return cover.sideTips(player, pos, state, toolTypes, held, side);
         }
         return null;
     }
 
     @Override
-    public Pair<GTToolType, InteractionResult> onToolClick(Set<GTToolType> toolTypes, ItemStack itemStack,
-                                                           UseOnContext context) {
+    public Pair<GTToolType, ItemInteractionResult> onToolClick(Set<GTToolType> toolTypes, ItemStack held,
+                                                               UseOnContext context) {
         // the side hit from the machine grid
         var playerIn = context.getPlayer();
-        if (playerIn == null) return Pair.of(null, InteractionResult.PASS);
+        if (playerIn == null) return Pair.of(null, ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION);
 
         var hand = context.getHand();
         var hitResult = new BlockHitResult(context.getClickLocation(), context.getClickedFace(),
@@ -380,18 +365,21 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
         // Prioritize covers where they apply (Screwdriver, Soft Mallet)
         if (toolTypes.isEmpty() && playerIn.isShiftKeyDown()) {
             if (coverBehavior != null) {
-                return Pair.of(null, coverBehavior.onScrewdriverClick(playerIn, hand, hitResult));
+                return Pair.of(null, coverBehavior.onScrewdriverClick(playerIn, hand, held, hitResult));
             }
         }
-        if (toolTypes.contains(GTToolType.SCREWDRIVER)) {
+        if (toolTypes.contains(GTToolType.SCREWDRIVER) ||
+                held.canPerformAction(GTItemAbilities.SCREWDRIVER_CONFIGURE)) {
             if (coverBehavior != null) {
-                return Pair.of(GTToolType.SCREWDRIVER, coverBehavior.onScrewdriverClick(playerIn, hand, hitResult));
+                return Pair.of(GTToolType.SCREWDRIVER,
+                        coverBehavior.onScrewdriverClick(playerIn, hand, held, hitResult));
             }
-        } else if (toolTypes.contains(GTToolType.SOFT_MALLET)) {
+        } else if (toolTypes.contains(GTToolType.SOFT_MALLET) || held.canPerformAction(GTItemAbilities.MALLET_PAUSE)) {
             if (coverBehavior != null) {
-                return Pair.of(GTToolType.SOFT_MALLET, coverBehavior.onSoftMalletClick(playerIn, hand, hitResult));
+                return Pair.of(GTToolType.SOFT_MALLET,
+                        coverBehavior.onSoftMalletClick(playerIn, hand, held, hitResult));
             }
-        } else if (toolTypes.contains(getPipeTuneTool())) {
+        } else if (toolTypes.contains(getPipeTuneTool()) || hasCorrectAction(held)) {
             if (playerIn.isShiftKeyDown() && this.canHaveBlockedFaces()) {
                 boolean isBlocked = this.isBlocked(gridSide);
                 this.setBlocked(gridSide, !isBlocked);
@@ -399,28 +387,34 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
                 boolean isOpen = this.isConnected(gridSide);
                 this.setConnection(gridSide, !isOpen, false);
             }
-            return Pair.of(getPipeTuneTool(), InteractionResult.sidedSuccess(playerIn.level().isClientSide));
-        } else if (toolTypes.contains(GTToolType.CROWBAR)) {
+            return Pair.of(getPipeTuneTool(), ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide));
+        // spotless:off
+        } else if (toolTypes.contains(GTToolType.CROWBAR) || held.canPerformAction(GTItemAbilities.CROWBAR_REMOVE_COVER)) {
             if (coverBehavior != null) {
                 if (!isRemote()) {
                     getCoverContainer().removeCover(gridSide, playerIn);
-                    return Pair.of(GTToolType.CROWBAR, InteractionResult.sidedSuccess(playerIn.level().isClientSide));
+                    return Pair.of(GTToolType.CROWBAR, ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide));
                 }
             } else {
                 if (!frameMaterial.isNull()) {
                     Block.popResource(getLevel(), getPipePos(),
                             GTMaterialBlocks.MATERIAL_BLOCKS.get(TagPrefix.frameGt, frameMaterial).asStack());
                     frameMaterial = GTMaterials.NULL;
-                    return Pair.of(GTToolType.CROWBAR, InteractionResult.sidedSuccess(playerIn.level().isClientSide));
+                    return Pair.of(GTToolType.CROWBAR, ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide));
                 }
             }
         }
+        // spotless:on
 
-        return Pair.of(null, InteractionResult.PASS);
+        return Pair.of(null, ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION);
     }
 
     public GTToolType getPipeTuneTool() {
         return GTToolType.WRENCH;
+    }
+
+    public boolean hasCorrectAction(ItemStack stack) {
+        return stack.canPerformAction(GTItemAbilities.WRENCH_CONNECT);
     }
 
     @Override
@@ -446,11 +440,5 @@ public abstract class PipeBlockEntity<PipeType extends Enum<PipeType> & IPipeTyp
 
     public static boolean isConnected(int connections, Direction side) {
         return (connections & (1 << side.ordinal())) > 0;
-    }
-
-    @Override
-    public void load(CompoundTag tag) {
-        TagFixer.fixFluidTags(tag);
-        super.load(tag);
     }
 }

@@ -3,10 +3,11 @@ package com.gregtechceu.gtceu.api.gui.widget;
 import com.gregtechceu.gtceu.api.transfer.fluid.IFluidHandlerModifiable;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -25,12 +26,12 @@ public class ScrollablePhantomFluidWidget extends PhantomFluidWidget {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public boolean mouseWheelMove(double mouseX, double mouseY, double wheelDelta) {
+    public boolean mouseWheelMove(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (!isMouseOverElement(mouseX, mouseY))
             return false;
 
-        var delta = getModifiedChangeAmount((wheelDelta > 0) ? 1 : -1);
-        writeClientAction(SCROLL_ACTION_ID, buf -> buf.writeInt(delta));
+        int delta = getModifiedChangeAmount((scrollY > 0) ? 1 : -1);
+        writeClientAction(SCROLL_ACTION_ID, buf -> buf.writeVarInt(delta));
 
         return true;
     }
@@ -49,9 +50,9 @@ public class ScrollablePhantomFluidWidget extends PhantomFluidWidget {
     }
 
     @Override
-    public void handleClientAction(int id, FriendlyByteBuf buffer) {
+    public void handleClientAction(int id, RegistryFriendlyByteBuf buffer) {
         switch (id) {
-            case SCROLL_ACTION_ID -> handleScrollAction(buffer.readInt());
+            case SCROLL_ACTION_ID -> handleScrollAction(buffer.readVarInt());
             default -> super.handleClientAction(id, buffer);
         }
 
@@ -66,13 +67,9 @@ public class ScrollablePhantomFluidWidget extends PhantomFluidWidget {
         FluidStack fluid = fluidTank.getFluidInTank(tank);
         if (fluid.isEmpty())
             return;
-
-        if (fluid.isEmpty())
-            return;
-
         fluid.setAmount(Math.min(Math.max(fluid.getAmount() + delta, 0), fluidTank.getTankCapacity(tank)));
         if (fluid.getAmount() <= 0L) {
-            fluidTank.setFluidInTank(tank, FluidStack.EMPTY);
+            fluidTank.drain(fluid.getAmount(), IFluidHandler.FluidAction.EXECUTE);
         }
     }
 }

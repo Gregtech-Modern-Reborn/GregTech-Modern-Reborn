@@ -5,8 +5,9 @@ import com.gregtechceu.gtceu.GTCEu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
@@ -27,14 +28,14 @@ public class ProgressElement implements IElement {
         this.style = style;
     }
 
-    public ProgressElement(FriendlyByteBuf buf) {
+    public ProgressElement(RegistryFriendlyByteBuf buf) {
         this.progress = buf.readFloat();
-        this.text = buf.readComponent();
+        this.text = ComponentSerialization.STREAM_CODEC.decode(buf);
         this.style = (new ProgressStyle())
                 .width(buf.readInt())
                 .height(buf.readInt())
-                .prefix(buf.readComponent())
-                .suffix(buf.readComponent())
+                .prefix(ComponentSerialization.STREAM_CODEC.decode(buf))
+                .suffix(ComponentSerialization.STREAM_CODEC.decode(buf))
                 .borderColor(buf.readInt())
                 .filledColor(buf.readInt())
                 .alternateFilledColor(buf.readInt())
@@ -96,13 +97,13 @@ public class ProgressElement implements IElement {
     }
 
     @Override
-    public void toBytes(FriendlyByteBuf buf) {
+    public void toBytes(RegistryFriendlyByteBuf buf) {
         buf.writeFloat(progress);
-        buf.writeComponent(text);
+        ComponentSerialization.STREAM_CODEC.encode(buf, text);
         buf.writeInt(this.style.getWidth());
         buf.writeInt(this.style.getHeight());
-        buf.writeComponent(this.style.getPrefixComp());
-        buf.writeComponent(this.style.getSuffixComp());
+        ComponentSerialization.STREAM_CODEC.encode(buf, this.style.getPrefixComp());
+        ComponentSerialization.STREAM_CODEC.encode(buf, this.style.getSuffixComp());
         buf.writeInt(this.style.getBorderColor());
         buf.writeInt(this.style.getFilledColor());
         buf.writeInt(this.style.getAlternatefilledColor());
@@ -122,7 +123,7 @@ public class ProgressElement implements IElement {
     public static class Factory implements IElementFactory {
 
         @Override
-        public IElement createElement(FriendlyByteBuf friendlyByteBuf) {
+        public IElement createElement(RegistryFriendlyByteBuf friendlyByteBuf) {
             return new ProgressElement(friendlyByteBuf);
         }
 

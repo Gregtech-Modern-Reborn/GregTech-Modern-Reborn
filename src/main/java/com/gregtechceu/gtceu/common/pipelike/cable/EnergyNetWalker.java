@@ -1,11 +1,10 @@
 package com.gregtechceu.gtceu.common.pipelike.cable;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.WireProperties;
+import com.gregtechceu.gtceu.api.material.material.properties.WireProperties;
 import com.gregtechceu.gtceu.api.pipenet.PipeNetWalker;
 import com.gregtechceu.gtceu.common.blockentity.CableBlockEntity;
+import com.gregtechceu.gtceu.utils.GTTransferUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -63,16 +62,13 @@ public class EnergyNetWalker extends PipeNetWalker<CableBlockEntity, WirePropert
     protected void checkNeighbour(CableBlockEntity pipeTile, BlockPos pipePos, Direction faceToNeighbour,
                                   @Nullable BlockEntity neighbourTile) {
         // assert that the last added pipe is the current pipe
-        if (pipeTile != pipes[pipes.length - 1])
+        if (pipeTile != pipes[pipes.length - 1]) {
             throw new IllegalStateException(
                     "The current pipe is not the last added pipe. Something went seriously wrong!");
-        if (neighbourTile != null) {
-            IEnergyContainer container = neighbourTile
-                    .getCapability(GTCapability.CAPABILITY_ENERGY_CONTAINER, faceToNeighbour.getOpposite()).resolve()
-                    .orElse(null);
-            if (container != null) {
-                routes.add(new EnergyRoutePath(pipePos.immutable(), faceToNeighbour, pipes, getWalkedBlocks(), loss));
-            }
+        }
+        var container = GTTransferUtils.getAdjacentEnergyContainer(pipeTile.getPipeLevel(), pipePos, faceToNeighbour);
+        if (container.isPresent()) {
+            routes.add(new EnergyRoutePath(pipePos.immutable(), faceToNeighbour, pipes, getWalkedBlocks(), loss));
         }
     }
 

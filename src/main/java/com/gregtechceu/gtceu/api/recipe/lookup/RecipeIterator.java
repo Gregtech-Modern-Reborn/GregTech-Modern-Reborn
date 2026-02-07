@@ -1,7 +1,7 @@
 package com.gregtechceu.gtceu.api.recipe.lookup;
 
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.AbstractMapIngredient;
 
 import org.jetbrains.annotations.NotNull;
@@ -19,14 +19,12 @@ public class RecipeIterator implements Iterator<GTRecipe> {
     GTRecipeType recipeMap;
     @NotNull
     Predicate<GTRecipe> canHandle;
-    private final boolean isMultiParallelLogic;
 
     RecipeIterator(@NotNull GTRecipeType recipeMap, List<List<AbstractMapIngredient>> ingredients,
-                   @NotNull Predicate<GTRecipe> canHandle, @NotNull boolean isMultiParallelLogic) {
+                   @NotNull Predicate<GTRecipe> canHandle) {
         this.ingredients = ingredients;
         this.recipeMap = recipeMap;
         this.canHandle = canHandle;
-        this.isMultiParallelLogic = isMultiParallelLogic;
     }
 
     // does not guarantee a next recipe, just the possibility of one

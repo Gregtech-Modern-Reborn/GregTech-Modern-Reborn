@@ -2,9 +2,9 @@ package com.gregtechceu.gtceu.integration.emi.oreprocessing;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.info.MaterialFlags;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 
@@ -18,8 +18,8 @@ import dev.emi.emi.api.stack.EmiStack;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey.ORE;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.gregtechceu.gtceu.api.material.material.properties.PropertyKey.ORE;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 import static com.gregtechceu.gtceu.integration.emi.recipe.GTRecipeEMICategory.sortDefinition;
 
 public class GTOreProcessingEmiCategory extends EmiRecipeCategory {
@@ -31,7 +31,7 @@ public class GTOreProcessingEmiCategory extends EmiRecipeCategory {
     }
 
     public static void registerDisplays(EmiRegistry registry) {
-        for (Material mat : GTCEuAPI.materialManager.getRegisteredMaterials()) {
+        for (Material mat : GTCEuAPI.materialManager) {
             if (mat.hasProperty(ORE) && !mat.hasFlag(MaterialFlags.NO_ORE_PROCESSING_TAB)) {
                 registry.addRecipe(new GTEmiOreProcessing(mat));
             }
@@ -44,7 +44,7 @@ public class GTOreProcessingEmiCategory extends EmiRecipeCategory {
                 MACERATOR_RECIPES, ORE_WASHER_RECIPES, THERMAL_CENTRIFUGE_RECIPES, CENTRIFUGE_RECIPES,
                 CHEMICAL_BATH_RECIPES, ELECTROMAGNETIC_SEPARATOR_RECIPES, SIFTER_RECIPES
         };
-        for (MachineDefinition machine : GTRegistries.MACHINES.values()
+        for (MachineDefinition machine : GTRegistries.MACHINES
                 .stream()
                 .sorted(sortDefinition)
                 .toList()) {

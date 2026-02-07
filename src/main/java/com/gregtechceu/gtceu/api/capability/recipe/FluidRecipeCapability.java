@@ -4,17 +4,18 @@ import com.gregtechceu.gtceu.api.gui.widget.TankWidget;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerGroup;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerGroupDistinctness;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.content.SerializerFluidIngredient;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.IntProviderFluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredientExtensions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.AbstractMapIngredient;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.fluid.*;
 import com.gregtechceu.gtceu.api.recipe.modifier.ParallelLogic;
 import com.gregtechceu.gtceu.api.recipe.ui.GTRecipeTypeUI;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.client.TooltipsHandler;
 import com.gregtechceu.gtceu.common.valueprovider.*;
 import com.gregtechceu.gtceu.integration.xei.entry.fluid.FluidEntryList;
@@ -29,14 +30,17 @@ import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.jei.IngredientIO;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.valueproviders.IntProvider;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.crafting.*;
 
 import it.unimi.dsi.fastutil.objects.*;
+import lombok.experimental.ExtensionMethod;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
@@ -46,7 +50,8 @@ import java.util.stream.Collectors;
 
 import static com.gregtechceu.gtceu.api.recipe.RecipeHelper.addToRecipeHandlerMap;
 
-public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
+@ExtensionMethod(SizedIngredientExtensions.class)
+public class FluidRecipeCapability extends RecipeCapability<SizedFluidIngredient> {
 
     public final static FluidRecipeCapability CAP = new FluidRecipeCapability();
 
@@ -55,36 +60,41 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
     }
 
     @Override
-    public FluidIngredient copyInner(FluidIngredient content) {
+    public SizedFluidIngredient copyInner(SizedFluidIngredient content) {
         return content.copy();
     }
 
     @Override
-    public FluidIngredient copyWithModifier(FluidIngredient content, ContentModifier modifier) {
-        if (content.isEmpty()) return content.copy();
-        if (content instanceof IntProviderFluidIngredient provider) {
-            return IntProviderFluidIngredient.of(provider.getInner(),
+    public SizedFluidIngredient copyWithModifier(SizedFluidIngredient content, ContentModifier modifier) {
+        if (content.ingredient().hasNoFluids()) return content.copy();
+        if (content.ingredient() instanceof IntProviderFluidIngredient provider) {
+            IntProviderFluidIngredient copy = IntProviderFluidIngredient.of(provider.getInner(),
                     ModifiedIntProvider.of(provider.getCountProvider(), modifier));
+            return new SizedFluidIngredient(copy, 1);
         }
-        FluidIngredient copy = content.copy();
-        copy.setAmount(modifier.apply(copy.getAmount()));
-        return copy;
+        return content.copyWithAmount(modifier.apply(content.amount()));
+    }
+
+    public IntProviderFluidIngredient copyWithModifier(IntProviderFluidIngredient content, ContentModifier modifier) {
+        if (content.hasNoFluids()) return content.copy();
+        return IntProviderFluidIngredient.of(content.getInner(),
+                ModifiedIntProvider.of(content.getCountProvider(), modifier));
     }
 
     @Override
     public List<Object> compressIngredients(Collection<Object> ingredients) {
         List<Object> list = new ObjectArrayList<>(ingredients.size());
         for (Object item : ingredients) {
-            if (item instanceof FluidIngredient fluid) {
+            if (item instanceof SizedFluidIngredient fluid) {
                 boolean isEqual = false;
                 for (Object obj : list) {
-                    if (obj instanceof FluidIngredient fluidIngredient) {
-                        if (fluid.equals(fluidIngredient)) {
+                    if (obj instanceof SizedFluidIngredient SizedFluidIngredient) {
+                        if (fluid.equals(SizedFluidIngredient)) {
                             isEqual = true;
                             break;
                         }
                     } else if (obj instanceof FluidStack fluidStack) {
-                        if (fluid.test(fluidStack)) {
+                        if (fluid.ingredient().test(fluidStack)) {
                             isEqual = true;
                             break;
                         }
@@ -95,13 +105,13 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
             } else if (item instanceof FluidStack fluidStack) {
                 boolean isEqual = false;
                 for (Object obj : list) {
-                    if (obj instanceof FluidIngredient fluidIngredient) {
-                        if (fluidIngredient.test(fluidStack)) {
+                    if (obj instanceof SizedFluidIngredient fluidIngredient) {
+                        if (fluidIngredient.ingredient().test(fluidStack)) {
                             isEqual = true;
                             break;
                         }
                     } else if (obj instanceof FluidStack stack) {
-                        if (fluidStack.isFluidEqual(stack)) {
+                        if (FluidStack.isSameFluidSameComponents(fluidStack, stack)) {
                             isEqual = true;
                             break;
                         }
@@ -116,8 +126,10 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
 
     @Override
     public @Nullable List<AbstractMapIngredient> getDefaultMapIngredient(Object object) {
-        if (object instanceof FluidIngredient ingredient) {
-            return FluidStackMapIngredient.from(ingredient);
+        if (object instanceof FluidIngredient fluidIngredient) {
+            return CustomFluidMapIngredient.from(fluidIngredient);
+        } else if (object instanceof SizedFluidIngredient ingredient) {
+            return getDefaultMapIngredient(ingredient.ingredient());
         } else {
             return Collections.emptyList();
         }
@@ -143,10 +155,10 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
         int maxMultiplier = multiplier;
 
         int maxAmount = 0;
-        List<FluidIngredient> ingredients = new ArrayList<>(outputContents.size());
+        List<SizedFluidIngredient> ingredients = new ArrayList<>(outputContents.size());
         for (var content : outputContents) {
             var ing = this.of(content.content);
-            maxAmount = Math.max(maxAmount, ing.getAmount());
+            maxAmount = Math.max(maxAmount, ing.amount());
             ingredients.add(ing);
         }
         if (maxAmount == 0) return multiplier;
@@ -155,14 +167,14 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
         }
 
         while (minMultiplier != maxMultiplier) {
-            List<FluidIngredient> copied = new ArrayList<>();
+            List<SizedFluidIngredient> copied = new ArrayList<>();
             for (final var ing : ingredients) {
                 copied.add(this.copyWithModifier(ing, ContentModifier.multiplier(multiplier)));
             }
 
             for (var handler : handlers) {
                 // noinspection unchecked
-                copied = (List<FluidIngredient>) handler.handleRecipe(IO.OUT, recipe, copied, true);
+                copied = (List<SizedFluidIngredient>) handler.handleRecipe(IO.OUT, recipe, copied, true);
                 if (copied == null) break;
             }
             int[] bin = ParallelLogic.adjustMultiplier(copied == null, minMultiplier, multiplier, maxMultiplier);
@@ -187,22 +199,26 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
 
         // map the recipe ingredients to account for duplicated and notConsumable ingredients.
         // notConsumable ingredients are not counted towards the max ratio
-        var nonConsumables = new Object2LongOpenHashMap<FluidIngredient>();
-        var consumables = new Object2LongOpenHashMap<FluidIngredient>();
+
+        var nonConsumables = new Object2LongOpenHashMap<SizedFluidIngredient>();
+        var consumables = new Object2LongOpenHashMap<SizedFluidIngredient>();
         for (Content content : inputs) {
-            FluidIngredient ing = of(content.content);
+            SizedFluidIngredient ing = of(content.content);
 
             int amount;
-            if (ing instanceof IntProviderFluidIngredient provider) amount = provider.getCountProvider().getMaxValue();
-            else amount = ing.getAmount();
+            if (ing.ingredient() instanceof IntProviderFluidIngredient provider) {
+                amount = provider.getCountProvider().getMaxValue();
+            } else {
+                amount = ing.amount();
+            }
 
             if (content.chance == 0) {
                 nonConsumables.addTo(ing, amount);
             } else {
                 boolean has = false;
                 for (var recipeIng : consumables.object2LongEntrySet()) {
-                    var stack = ing.getStacks()[0];
-                    if (recipeIng.getKey().test(stack)) {
+                    var stack = ing.getFluids()[0];
+                    if (recipeIng.getKey().ingredient().test(stack)) {
                         recipeIng.setValue(recipeIng.getLongValue() + stack.getAmount());
                         has = true;
                         break;
@@ -223,7 +239,7 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
             // Check for enough NC in inventory group
             boolean satisfied = true;
             for (var ncEntry : Object2LongMaps.fastIterable(nonConsumables)) {
-                FluidIngredient ingredient = ncEntry.getKey();
+                SizedFluidIngredient ingredient = ncEntry.getKey();
                 long needed = ncEntry.getLongValue();
                 for (var stackEntry : Object2LongMaps.fastIterable(group)) {
                     if (ingredient.test(stackEntry.getKey())) {
@@ -247,8 +263,9 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
 
             int invMultiplier = Integer.MAX_VALUE;
             // Loop over all consumables
+
             for (var cEntry : Object2LongMaps.fastIterable(consumables)) {
-                FluidIngredient ingredient = cEntry.getKey();
+                SizedFluidIngredient ingredient = cEntry.getKey();
                 final long needed = cEntry.getLongValue();
                 final long maxNeeded = needed * limit;
                 long available = 0;
@@ -381,12 +398,13 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
                         .getBoostedChance(content, recipeTier, chanceTier) / content.maxChance;
                 tank.setXEIChance(chance);
                 tank.setOnAddedTooltips((w, tooltips) -> {
-                    FluidIngredient ingredient = FluidRecipeCapability.CAP.of(content.content);
-                    if (!isXEI && ingredient.getStacks().length > 0) {
-                        FluidStack stack = ingredient.getStacks()[0];
-                        TooltipsHandler.appendFluidTooltips(stack, tooltips::add, TooltipFlag.NORMAL);
+                    SizedFluidIngredient ingredient = FluidRecipeCapability.CAP.of(content.content);
+                    if (!isXEI && ingredient.getFluids().length > 0) {
+                        FluidStack stack = ingredient.getFluids()[0];
+                        TooltipsHandler.appendFluidTooltips(stack, tooltips::add,
+                                TooltipFlag.NORMAL, Item.TooltipContext.of(GTRegistries.builtinRegistry()));
                     }
-                    if (ingredient instanceof IntProviderFluidIngredient provider) {
+                    if (ingredient.ingredient() instanceof IntProviderFluidIngredient provider) {
                         IntProvider countProvider = provider.getCountProvider();
                         tooltips.add(Component.translatable("gtceu.gui.content.fluid_range",
                                 countProvider.getMinValue(), countProvider.getMaxValue())
@@ -406,35 +424,42 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
         }
     }
 
-    // Maps fluids to a FluidEntryList for XEI: either a FluidTagList or a FluidStackList
-    public static FluidEntryList mapFluid(FluidIngredient ingredient) {
+    // Maps ingredients to an FluidEntryList for XEI: either an FluidTagList or a FluidStackList
+    private static FluidEntryList mapFluid(final SizedFluidIngredient ingredient) {
         int amount;
-        if (ingredient instanceof IntProviderFluidIngredient) {
+        if (ingredient.ingredient() instanceof IntProviderFluidIngredient) {
             amount = 1;
         } else {
-            amount = ingredient.getAmount();
+            amount = ingredient.amount();
         }
-        CompoundTag tag = ingredient.getNbt();
 
-        FluidTagList tags = new FluidTagList();
-        FluidStackList fluids = new FluidStackList();
-        for (FluidIngredient.Value value : ingredient.values) {
-            if (value instanceof FluidIngredient.TagValue tagValue) {
-                tags.add(tagValue.tag(), amount, ingredient.getNbt());
-            } else {
-                fluids.addAll(value.getFluids().stream().map(fluid -> new FluidStack(fluid, amount, tag)).toList());
+        if (ingredient.ingredient() instanceof IntersectionFluidIngredient intersection) {
+            return mapIntersection(intersection, amount);
+        } else if (ingredient.ingredient() instanceof TagFluidIngredient tag) {
+            return FluidTagList.of(tag.tag(), amount, DataComponentPatch.EMPTY);
+        } else if (ingredient.ingredient() instanceof DataComponentFluidIngredient component) {
+            var key = component.fluids().unwrapKey();
+            if (key.isPresent()) {
+                return FluidTagList.of(key.get(), amount, component.components().asPatch());
             }
         }
-        if (!tags.isEmpty()) {
-            return tags;
-        } else {
-            return fluids;
-        }
+        return FluidStackList.of(Arrays.asList(ingredient.getFluids()));
     }
 
-    @Override
-    public Object2IntMap<FluidIngredient> makeChanceCache() {
-        return super.makeChanceCache();
+    // Map intersection ingredients to the items inside, as recipe viewers don't support them.
+    private static FluidEntryList mapIntersection(final IntersectionFluidIngredient intersection, int amount) {
+        List<FluidIngredient> children = intersection.children();
+        if (children.isEmpty()) return new FluidStackList();
+
+        var childList = mapFluid(new SizedFluidIngredient(children.getFirst(), amount));
+        FluidStackList stackList = new FluidStackList();
+        for (var stack : childList.getStacks()) {
+            if (children.stream().skip(1).allMatch(child -> child.test(stack))) {
+                if (amount > 0) stackList.add(stack.copyWithAmount(amount));
+                else stackList.add(stack.copy());
+            }
+        }
+        return stackList;
     }
 
     public interface ICustomParallel {

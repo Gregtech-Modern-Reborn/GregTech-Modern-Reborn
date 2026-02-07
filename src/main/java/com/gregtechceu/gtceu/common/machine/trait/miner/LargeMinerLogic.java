@@ -1,8 +1,8 @@
 package com.gregtechceu.gtceu.common.machine.trait.miner;
 
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -10,6 +10,7 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -28,14 +29,13 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Optional;
 
 public class LargeMinerLogic extends MinerLogic {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(LargeMinerLogic.class,
             MinerLogic.MANAGED_FIELD_HOLDER);
     private static final int CHUNK_LENGTH = 16;
-    private static final LootItemFunction DROP_MULTIPLIER = ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE)
-            .build();
 
     @Setter
     @Getter
@@ -50,6 +50,8 @@ public class LargeMinerLogic extends MinerLogic {
     @Getter
     @Persisted
     private boolean isSilkTouchMode;
+
+    private LootItemFunction dropMultiplier;
 
     /**
      * Creates the logic for multiblock ore block miners
@@ -140,14 +142,19 @@ public class LargeMinerLogic extends MinerLogic {
             return;
         }
         ItemStack fortunePick = this.pickaxeTool.copy();
-        fortunePick.enchant(Enchantments.BLOCK_FORTUNE, getDropCountMultiplier());
+        var registry = builder.getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+        var fortuneHolder = registry.getHolderOrThrow(Enchantments.FORTUNE);
+        if (dropMultiplier == null) {
+            dropMultiplier = ApplyBonusCount.addOreBonusCount(fortuneHolder).build();
+        }
+        fortunePick.enchant(fortuneHolder, getDropCountMultiplier());
         LootParams params = builder.withParameter(LootContextParams.TOOL, fortunePick)
                 .create(LootContextParamSets.BLOCK);
-        LootContext context = new LootContext.Builder(params).create(null);
+        LootContext context = new LootContext.Builder(params).create(Optional.empty());
 
         for (ItemStack outputStack : outputs) {
             if (ChemicalHelper.getPrefix(outputStack.getItem()) == TagPrefix.crushed) {
-                outputStack = DROP_MULTIPLIER.apply(outputStack, context);
+                outputStack = dropMultiplier.apply(outputStack, context);
             }
             blockDrops.add(outputStack);
         }

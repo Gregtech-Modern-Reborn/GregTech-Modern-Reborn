@@ -7,6 +7,7 @@ import com.gregtechceu.gtceu.core.IFireImmuneEntity;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -47,9 +48,11 @@ public abstract class EntityMixin implements IFireImmuneEntity {
         if (!gtceu$isEntityInit) return original;
         if (!ConfigHolder.INSTANCE.gameplay.hazardsEnabled) return original;
 
-        IMedicalConditionTracker tracker = GTCapabilityHelper.getMedicalConditionTracker((Entity) (Object) this);
-        if (tracker != null && tracker.getMaxAirSupply() != -1) {
-            return tracker.getMaxAirSupply();
+        if (((Entity) (Object) this) instanceof Player player) {
+            IMedicalConditionTracker tracker = GTCapabilityHelper.getMedicalConditionTracker(player);
+            if (tracker.getMaxAirSupply() != -1) {
+                return tracker.getMaxAirSupply();
+            }
         }
         return original;
     }

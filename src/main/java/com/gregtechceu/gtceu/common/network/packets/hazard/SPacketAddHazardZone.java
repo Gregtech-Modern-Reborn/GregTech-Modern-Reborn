@@ -1,20 +1,27 @@
 package com.gregtechceu.gtceu.common.network.packets.hazard;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.client.EnvironmentalHazardClientHandler;
 import com.gregtechceu.gtceu.common.capability.EnvironmentalHazardSavedData;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 
-@NoArgsConstructor
 @AllArgsConstructor
-public class SPacketAddHazardZone implements GTNetwork.INetPacket {
+public class SPacketAddHazardZone implements CustomPacketPayload {
+
+    public static final ResourceLocation ID = GTCEu.id("add_hazard_zone");
+    public static final Type<SPacketAddHazardZone> TYPE = new Type<>(ID);
+    public static final StreamCodec<FriendlyByteBuf, SPacketAddHazardZone> CODEC = StreamCodec
+            .ofMember(SPacketAddHazardZone::encode, SPacketAddHazardZone::new);
 
     private ChunkPos pos;
     private EnvironmentalHazardSavedData.HazardZone zone;
@@ -24,16 +31,19 @@ public class SPacketAddHazardZone implements GTNetwork.INetPacket {
         zone = EnvironmentalHazardSavedData.HazardZone.fromNetwork(buf);
     }
 
-    @Override
     public void encode(FriendlyByteBuf buf) {
         buf.writeChunkPos(pos);
         zone.toNetwork(buf);
     }
 
-    @Override
-    public void execute(NetworkEvent.Context context) {
-        if (context.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
-            EnvironmentalHazardClientHandler.INSTANCE.addHazardZone(pos, zone);
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
+            EnvironmentalHazardClientHandler.INSTANCE.addHazardZone(this.pos, this.zone);
         }
+    }
+
+    @Override
+    public @NotNull Type<SPacketAddHazardZone> type() {
+        return TYPE;
     }
 }

@@ -1,22 +1,23 @@
 package com.gregtechceu.gtceu.common.recipe.condition;
 
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
-import com.gregtechceu.gtceu.common.data.GTRecipeConditions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeConditions;
 
 import net.minecraft.network.chat.Component;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
-public class PositionYCondition extends RecipeCondition {
+public class PositionYCondition extends RecipeCondition<PositionYCondition> {
 
-    public static final Codec<PositionYCondition> CODEC = RecordCodecBuilder.create(instance -> RecipeCondition
+    public static final MapCodec<PositionYCondition> CODEC = RecordCodecBuilder.mapCodec(instance -> RecipeCondition
             .isReverse(instance)
             .and(instance.group(
                     Codec.INT.fieldOf("min").forGetter(val -> val.min),
@@ -39,7 +40,7 @@ public class PositionYCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeConditionType<?> getType() {
+    public RecipeConditionType<PositionYCondition> getType() {
         return GTRecipeConditions.POSITION_Y;
     }
 
@@ -63,7 +64,7 @@ public class PositionYCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeCondition createTemplate() {
+    public PositionYCondition createTemplate() {
         return new PositionYCondition();
     }
 }

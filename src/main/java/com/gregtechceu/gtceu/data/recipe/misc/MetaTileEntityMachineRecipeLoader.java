@@ -3,16 +3,16 @@ package com.gregtechceu.gtceu.data.recipe.misc;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
-import com.gregtechceu.gtceu.common.data.machines.GTAEMachines;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.data.machine.GTAEMachines;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
 import com.gregtechceu.gtceu.data.recipe.GTCraftingComponents;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.ItemStack;
 
 import appeng.core.definitions.AEBlocks;
@@ -20,21 +20,20 @@ import appeng.core.definitions.AEItems;
 import appeng.core.definitions.AEParts;
 
 import java.util.Locale;
-import java.util.function.Consumer;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.LD_FLUID_PIPE;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.LD_ITEM_PIPE;
-import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTMachines.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLER_RECIPES;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ASSEMBLY_LINE_RECIPES;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.block.GTBlocks.LD_FLUID_PIPE;
+import static com.gregtechceu.gtceu.data.block.GTBlocks.LD_ITEM_PIPE;
+import static com.gregtechceu.gtceu.data.item.GTItems.*;
+import static com.gregtechceu.gtceu.data.machine.GTMachines.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.ASSEMBLER_RECIPES;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.ASSEMBLY_LINE_RECIPES;
 
 public class MetaTileEntityMachineRecipeLoader {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         // Reservoir Hatch
         ASSEMBLER_RECIPES.recipeBuilder("reservoir_hatch")
                 .inputItems(COVER_INFINITE_WATER)
@@ -731,7 +730,7 @@ public class MetaTileEntityMachineRecipeLoader {
         }
     }
 
-    private static void registerLaserRecipes(Consumer<FinishedRecipe> provider) {
+    private static void registerLaserRecipes(RecipeOutput provider) {
         // 256A Laser Target Hatches
         for (int tier = 0; tier < LASER_INPUT_HATCH_256.length; tier++) {
             var hatch = LASER_INPUT_HATCH_256[tier];

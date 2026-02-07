@@ -159,6 +159,12 @@ public class ConfigHolder {
     public static class CompatibilityConfigs {
 
         @Configurable
+        @Configurable.Comment({ "Whether to run datafixers on world load.",
+                "Do note that mods like ModernFix will interfere with this.",
+                "Default: true" })
+        public boolean doDatafixers = true;
+
+        @Configurable
         @Configurable.Comment("Config options regarding GTEU compatibility with other energy systems")
         public EnergyCompatConfig energy = new EnergyCompatConfig();
 
@@ -195,6 +201,10 @@ public class ConfigHolder {
         @Configurable
         @Configurable.Comment({ "Whether dimension markers should show the dimension tier value.", "Default: false" })
         public boolean showDimensionTier = false;
+
+        @Configurable
+        @Configurable.Comment({ "Whether Create compatibility will be available.", "Default: true" })
+        public boolean createCompat = true;
 
         public static class EnergyCompatConfig {
 
@@ -358,11 +368,6 @@ public class ConfigHolder {
         public float rubberTreeSpawnChance = 0.5f;
 
         @Configurable
-        @Configurable.Comment({ "Should all Stone Types drop unique Ore Item Blocks?",
-                "Default: false (meaning only Stone, Netherrack, and Endstone)" })
-        public boolean allUniqueStoneTypes = false;
-
-        @Configurable
         @Configurable.Comment({ "Should Sand-like ores fall?", "This includes gravel, sand, and red sand ores.",
                 "Default: false (no falling ores)" })
         public boolean sandOresFall = false;
@@ -476,6 +481,11 @@ public class ConfigHolder {
                 "This does nothing if enableCleanroom is false.", "Default: false" })
         public boolean cleanMultiblocks = false;
         @Configurable
+        @Configurable.Comment({
+                "Whether the miner should attempt to replace the block mined with a cobbled version of the ore",
+                "Default: true" })
+        public boolean replaceWithCobbleVersion = true;
+        @Configurable
         @Configurable.Comment({ "Block to replace mined ores with in the miner and multiblock miner.",
                 "Default: minecraft:cobblestone" })
         public String replaceMinedBlocksWith = "minecraft:cobblestone";
@@ -548,9 +558,7 @@ public class ConfigHolder {
         @Configurable.Comment({ "Minimum op level to bypass the ownership checks", "Default: 2" })
         @Configurable.Range(min = Commands.LEVEL_ALL, max = Commands.LEVEL_OWNERS)
         public int ownerOPBypass = Commands.LEVEL_GAMEMASTERS;
-        @Configurable
-        @Configurable.Comment({ "MultiParallel Hatch Settings" })
-        public boolean multiParallelHatchSettings = true;
+
         /**
          * <strong>Addons mods should not reference this config directly.</strong>
          * Use {@link GTCEuAPI#isHighTier()} instead.
@@ -560,8 +568,8 @@ public class ConfigHolder {
                 "Items and Machines enabled with this config will have missing recipes by default.",
                 "This is intended for modpack developers only, and is not playable without custom tweaks or addons.",
                 "Other mods can override this to true, regardless of the config file.",
-                "Default: true" })
-        public boolean highTierContent = true;
+                "Default: false" })
+        public boolean highTierContent = false;
 
         @Configurable
         @Configurable.Comment({ "Whether the Assembly Line should require the item inputs to be in order.",
@@ -569,7 +577,7 @@ public class ConfigHolder {
         public boolean orderedAssemblyLineItems = true;
         @Configurable
         @Configurable.Comment({ "Whether the Assembly Line should require the fluid inputs to be in order.",
-                "(Requires Ordered Assembly Line Item Inputs to be enabled.)", "Default: false" })
+                "(Requires Ordered Assembly Line Item Inputs to be enabled.)", "Default: true" })
         public boolean orderedAssemblyLineFluids = false;
 
         @Configurable
@@ -687,7 +695,7 @@ public class ConfigHolder {
         @Configurable.Range(min = 0, max = 14)
         public int voltageTierQuarkTech = 5;
         @Configurable
-        @Configurable.Comment({ "Advanced QuarkTech Suit Chestplate Voltage Tier.", "Default: 5 (LuV)" })
+        @Configurable.Comment({ "Advanced QuarkTech Suit Chestplate Voltage Tier.", "Default: 6 (LuV)" })
         @Configurable.Range(min = 0, max = 14)
         public int voltageTierAdvQuarkTech = 6;
         @Configurable

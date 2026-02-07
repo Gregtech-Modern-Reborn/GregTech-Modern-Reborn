@@ -1,19 +1,19 @@
 package com.gregtechceu.gtceu.common.valueprovider;
 
-import com.gregtechceu.gtceu.common.data.GTValueProviderTypes;
+import com.gregtechceu.gtceu.data.misc.GTValueProviderTypes;
 
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.ConstantFloat;
 import net.minecraft.util.valueproviders.FloatProvider;
 import net.minecraft.util.valueproviders.FloatProviderType;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import org.jetbrains.annotations.NotNull;
 
 public class AddedFloat extends FloatProvider {
 
-    public static final Codec<AddedFloat> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    public static final MapCodec<AddedFloat> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             FloatProvider.CODEC.fieldOf("source").forGetter(provider -> provider.source),
             FloatProvider.CODEC.fieldOf("modifier").forGetter(provider -> provider.modifier))
             .apply(instance, AddedFloat::new));

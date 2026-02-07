@@ -1,39 +1,40 @@
 package com.gregtechceu.gtceu.integration.jei.subtype;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.neoforged.neoforge.fluids.FluidStack;
 
-import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
-
-import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /* From JEI's Potion item subtype interpreter */
-public class PotionFluidSubtypeInterpreter implements IIngredientSubtypeInterpreter<FluidStack> {
+public class PotionFluidSubtypeInterpreter implements ISubtypeInterpreter<FluidStack> {
+
+    public static final PotionFluidSubtypeInterpreter INSTANCE = new PotionFluidSubtypeInterpreter();
+
+    private PotionFluidSubtypeInterpreter() {}
 
     @Override
-    public String apply(FluidStack ingredient, UidContext context) {
-        if (!ingredient.hasTag())
-            return IIngredientSubtypeInterpreter.NONE;
-
-        CompoundTag tag = ingredient.getOrCreateTag();
-        Potion potionType = PotionUtils.getPotion(tag);
-        String potionTypeString = potionType.getName("");
-
-        StringBuilder stringBuilder = new StringBuilder(potionTypeString);
-        List<MobEffectInstance> effects = PotionUtils.getCustomEffects(tag);
-
-        for (MobEffectInstance effect : potionType.getEffects()) {
-            stringBuilder.append(";")
-                    .append(effect);
+    public @Nullable Object getSubtypeData(@NotNull FluidStack ingredient, @NotNull UidContext context) {
+        PotionContents contents = ingredient.get(DataComponents.POTION_CONTENTS);
+        if (contents == null) {
+            return null;
         }
-        for (MobEffectInstance effect : effects) {
-            stringBuilder.append(";")
-                    .append(effect);
+        return contents.potion()
+                .orElse(null);
+    }
+
+    @Override
+    public @NotNull String getLegacyStringSubtypeInfo(FluidStack ingredient, @NotNull UidContext context) {
+        if (ingredient.getComponentsPatch().isEmpty()) {
+            return "";
         }
-        return stringBuilder.toString();
+        PotionContents contents = ingredient.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+        String itemDescriptionId = ingredient.getFluidType().getDescriptionId();
+        String potionEffectId = contents.potion().map(Holder::getRegisteredName).orElse("none");
+        return itemDescriptionId + ".effect_id." + potionEffectId;
     }
 }

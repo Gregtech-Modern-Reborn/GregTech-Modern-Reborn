@@ -1,16 +1,13 @@
 package com.gregtechceu.gtceu.api.machine.trait;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.capability.IOpticalComputationHatch;
-import com.gregtechceu.gtceu.api.capability.IOpticalComputationProvider;
-import com.gregtechceu.gtceu.api.capability.IOpticalComputationReceiver;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
+import com.gregtechceu.gtceu.api.capability.*;
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.common.blockentity.OpticalPipeBlockEntity;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
@@ -254,13 +251,8 @@ public class NotifiableComputationContainer extends NotifiableRecipeHandlerTrait
             }
         }
         for (Direction direction : GTUtil.DIRECTIONS) {
-            BlockEntity blockEntity = machine.getLevel().getBlockEntity(machine.getPos().relative(direction));
-            if (blockEntity == null) continue;
-
-            // noinspection DataFlowIssue can be null just fine.
-            IOpticalComputationProvider provider = blockEntity
-                    .getCapability(GTCapability.CAPABILITY_COMPUTATION_PROVIDER, direction.getOpposite()).orElse(null);
-            // noinspection ConstantValue can be null because above.
+            IOpticalComputationProvider provider = GTCapabilityHelper.getOpticalComputationProvider(
+                    machine.getLevel(), machine.getPos().relative(direction), direction.getOpposite());
             if (provider != null && provider != this) {
                 return provider;
             }
@@ -273,8 +265,8 @@ public class NotifiableComputationContainer extends NotifiableRecipeHandlerTrait
         for (Direction direction : GTUtil.DIRECTIONS) {
             BlockEntity blockEntity = machine.getLevel().getBlockEntity(machine.getPos().relative(direction));
             if (blockEntity instanceof OpticalPipeBlockEntity) {
-                return blockEntity.getCapability(GTCapability.CAPABILITY_COMPUTATION_PROVIDER, direction.getOpposite())
-                        .orElse(null);
+                return machine.getLevel().getCapability(GTCapability.CAPABILITY_COMPUTATION_PROVIDER,
+                        blockEntity.getBlockPos(), blockEntity.getBlockState(), blockEntity, direction.getOpposite());
             }
         }
         return null;

@@ -15,8 +15,9 @@ import com.gregtechceu.gtceu.client.model.machine.multipart.MultiPartBakedModel;
 import com.gregtechceu.gtceu.client.renderer.cover.ICoverableRenderer;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRender;
 import com.gregtechceu.gtceu.client.util.StaticFaceBakery;
-import com.gregtechceu.gtceu.common.data.models.GTModels;
+import com.gregtechceu.gtceu.data.model.GTModels;
 
+import com.lowdragmc.lowdraglib.client.bakedpipeline.FaceQuad;
 import com.lowdragmc.lowdraglib.client.model.custommodel.CustomBakedModel;
 
 import net.minecraft.Util;
@@ -42,10 +43,10 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.model.QuadTransformers;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
-import net.minecraftforge.client.model.geometry.UnbakedGeometryHelper;
+import net.neoforged.neoforge.client.model.QuadTransformers;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+import net.neoforged.neoforge.client.model.geometry.UnbakedGeometryHelper;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Transformation;
@@ -235,8 +236,8 @@ public final class MachineModel extends BaseBakedModel implements ICoverableRend
             if (itemFace != null && side == itemFace) {
                 quads.add(StaticFaceBakery.bakeFace(StaticFaceBakery.OUTPUT_OVERLAY, side, pipeOverlaySprite));
                 if (autoOutputItem.isAutoOutputItems()) {
-                    quads.add(StaticFaceBakery.bakeFace(StaticFaceBakery.AUTO_OUTPUT_OVERLAY, side,
-                            itemOutputOverlaySprite));
+                    quads.add(FaceQuad.bakeFace(StaticFaceBakery.AUTO_OUTPUT_OVERLAY, side,
+                            itemOutputOverlaySprite, BlockModelRotation.X0_Y0, -101, 15, true, true));
                 }
             }
         }
@@ -245,8 +246,8 @@ public final class MachineModel extends BaseBakedModel implements ICoverableRend
             if (fluidFace != null && side == fluidFace) {
                 quads.add(StaticFaceBakery.bakeFace(StaticFaceBakery.OUTPUT_OVERLAY, side, pipeOverlaySprite));
                 if (autoOutputFluid.isAutoOutputFluids()) {
-                    quads.add(StaticFaceBakery.bakeFace(StaticFaceBakery.AUTO_OUTPUT_OVERLAY, side,
-                            fluidOutputOverlaySprite));
+                    quads.add(FaceQuad.bakeFace(StaticFaceBakery.AUTO_OUTPUT_OVERLAY, side,
+                            fluidOutputOverlaySprite, BlockModelRotation.X0_Y0, -101, 15, true, true));
                 }
             }
         }

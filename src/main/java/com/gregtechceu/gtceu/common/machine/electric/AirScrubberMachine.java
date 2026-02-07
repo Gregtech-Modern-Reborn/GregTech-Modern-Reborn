@@ -1,19 +1,18 @@
 package com.gregtechceu.gtceu.common.machine.electric;
 
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
-import com.gregtechceu.gtceu.api.data.medicalcondition.MedicalCondition;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IEnvironmentalHazardCleaner;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.medicalcondition.MedicalCondition;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.common.blockentity.DuctPipeBlockEntity;
 import com.gregtechceu.gtceu.common.capability.EnvironmentalHazardSavedData;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
-import com.gregtechceu.gtceu.common.data.machines.GTMachineUtils;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 import com.gregtechceu.gtceu.common.network.packets.hazard.SPacketRemoveHazardZone;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.data.machine.GTMachineUtils;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.core.BlockPos;
@@ -21,7 +20,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.chunk.LevelChunk;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
@@ -59,7 +58,7 @@ public class AirScrubberMachine extends SimpleTieredMachine implements IEnvironm
         GTRecipeBuilder builder = GTRecipeTypes.AIR_SCRUBBER_RECIPES.recipeBuilder(condition.name + "_autogen")
                 .duration(200).EUt(VHA[LV]);
         condition.recipeModifier.accept(builder);
-        this.recipeLogic.checkMatchedRecipeAvailable(builder.buildRawRecipe());
+        this.recipeLogic.checkMatchedRecipeAvailable(builder.build());
     }
 
     @Override
@@ -126,8 +125,8 @@ public class AirScrubberMachine extends SimpleTieredMachine implements IEnvironm
                     zone.removeStrength(toClean);
                     if (zone.strength() <= 0) {
                         if (serverLevel.hasChunk(chunkPos.x, chunkPos.z)) {
-                            LevelChunk chunk = serverLevel.getChunk(chunkPos.x, chunkPos.z);
-                            GTNetwork.sendToAllPlayersTrackingChunk(chunk, new SPacketRemoveHazardZone(chunkPos));
+                            PacketDistributor.sendToPlayersTrackingChunk(serverLevel, chunkPos,
+                                    new SPacketRemoveHazardZone(chunkPos));
                         }
                         return null;
                     } else return zone;

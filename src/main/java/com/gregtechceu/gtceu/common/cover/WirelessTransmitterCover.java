@@ -5,12 +5,13 @@ import com.gregtechceu.gtceu.api.cover.CoverBehavior;
 import com.gregtechceu.gtceu.api.cover.CoverDefinition;
 import com.gregtechceu.gtceu.api.machine.feature.IDataStickInteractable;
 import com.gregtechceu.gtceu.api.placeholder.IPlaceholderInfoProviderCover;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.ComponentContents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -33,19 +34,22 @@ public class WirelessTransmitterCover extends CoverBehavior
 
     @Getter
     private final List<MutableComponent> createDisplayTargetBuffer = new ArrayList<>();
+    @Getter
+    private final List<MutableComponent> computerCraftTextBuffer = new ArrayList<>();
 
     public WirelessTransmitterCover(CoverDefinition definition, ICoverable coverHolder, Direction attachedSide) {
         super(definition, coverHolder, attachedSide);
-        for (int i = 0; i < 100; i++) createDisplayTargetBuffer.add(MutableComponent.create(ComponentContents.EMPTY));
+        for (int i = 0; i < 100; i++) {
+            createDisplayTargetBuffer.add(Component.empty());
+            computerCraftTextBuffer.add(Component.empty());
+        }
     }
 
     @Override
     public InteractionResult onDataStickUse(Player player, ItemStack dataStick) {
-        dataStick.getOrCreateTag().putInt("targetX", coverHolder.getPos().getX());
-        dataStick.getOrCreateTag().putInt("targetY", coverHolder.getPos().getY());
-        dataStick.getOrCreateTag().putInt("targetZ", coverHolder.getPos().getZ());
-        dataStick.getOrCreateTag().putString("face", attachedSide.getName());
-        dataStick.getOrCreateTag().putString("dim", coverHolder.getLevel().dimension().location().toString());
+        dataStick.set(GTDataComponents.MONITOR_TARGET, coverHolder.getPos());
+        dataStick.set(GTDataComponents.MONITOR_TARGET_FACE, attachedSide);
+        dataStick.set(GTDataComponents.MONITOR_TARGET_DIMENSION, coverHolder.getLevel().dimension());
         return InteractionResult.SUCCESS;
     }
 
@@ -57,6 +61,11 @@ public class WirelessTransmitterCover extends CoverBehavior
     @Override
     public void setDisplayTargetBufferLine(int line, MutableComponent component) {
         createDisplayTargetBuffer.set(line, component);
+    }
+
+    @Override
+    public void setComputerCraftTextBufferLine(int line, MutableComponent component) {
+        computerCraftTextBuffer.set(line, component);
     }
 
     @Override

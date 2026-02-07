@@ -2,24 +2,21 @@ package com.gregtechceu.gtceu.data.recipe.misc;
 
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
-import com.gregtechceu.gtceu.api.cover.filter.ItemFilter;
-import com.gregtechceu.gtceu.api.cover.filter.SimpleItemFilter;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.item.tool.ToolHelper;
-import com.gregtechceu.gtceu.api.recipe.ToolHeadReplaceRecipe;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
-import com.gregtechceu.gtceu.common.item.ItemMagnetBehavior;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.recipe.kind.ToolHeadReplaceRecipe;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 import com.gregtechceu.gtceu.utils.ToolItemHelper;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.SpecialRecipeBuilder;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
@@ -34,11 +31,10 @@ import it.unimi.dsi.fastutil.ints.Int2ReferenceMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
 import static com.gregtechceu.gtceu.api.GTValues.LuV;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
 import static com.gregtechceu.gtceu.data.recipe.generated.ToolRecipeHandler.*;
 
 public final class CustomToolRecipes {
@@ -49,7 +45,7 @@ public final class CustomToolRecipes {
 
     private CustomToolRecipes() {}
 
-    public static void init(@NotNull Consumer<FinishedRecipe> provider) {
+    public static void init(@NotNull RecipeOutput provider) {
         initializeGTItems();
         registerPowerUnitRecipes(provider);
         registerCustomToolRecipes(provider);
@@ -91,14 +87,14 @@ public final class CustomToolRecipes {
         ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadWrench, GTToolType.WRENCH_LV);
         ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadWrench, GTToolType.WRENCH_HV);
         ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadWrench, GTToolType.WRENCH_IV);
-        ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadBuzzSaw, GTToolType.BUZZSAW);
+        ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadBuzzSaw, GTToolType.BUZZSAW_LV);
         ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadScrewdriver, GTToolType.SCREWDRIVER_LV);
         ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadWireCutter, GTToolType.WIRE_CUTTER_LV);
         ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadWireCutter, GTToolType.WIRE_CUTTER_HV);
         ToolHeadReplaceRecipe.setToolHeadForTool(toolHeadWireCutter, GTToolType.WIRE_CUTTER_IV);
     }
 
-    private static void registerPowerUnitRecipes(@NotNull Consumer<FinishedRecipe> provider) {
+    private static void registerPowerUnitRecipes(@NotNull RecipeOutput provider) {
         for (int tier : powerUnitItems.keySet()) {
             List<ItemEntry<? extends Item>> tieredBatteryItems = batteryItems.get(tier);
             for (ItemEntry<? extends Item> batteryItem : tieredBatteryItems) {
@@ -124,17 +120,16 @@ public final class CustomToolRecipes {
         }
     }
 
-    private static void registerCustomToolRecipes(@NotNull Consumer<FinishedRecipe> provider) {
+    private static void registerCustomToolRecipes(@NotNull RecipeOutput provider) {
         registerFlintToolRecipes(provider);
         registerMortarRecipes(provider);
         registerSoftToolRecipes(provider);
         registerElectricRecipes(provider);
 
-        SpecialRecipeBuilder.special(ToolHeadReplaceRecipe.SERIALIZER).save(provider,
-                "gtceu:crafting/replace_tool_head");
+        SpecialRecipeBuilder.special(ToolHeadReplaceRecipe::new).save(provider, "gtceu:crafting/replace_tool_head");
     }
 
-    private static void registerFlintToolRecipes(@NotNull Consumer<FinishedRecipe> provider) {
+    private static void registerFlintToolRecipes(@NotNull RecipeOutput provider) {
         final MaterialEntry flint = new MaterialEntry(TagPrefix.gem, GTMaterials.Flint);
         final ItemStack stick = new ItemStack(Items.STICK);
 
@@ -174,7 +169,7 @@ public final class CustomToolRecipes {
                 'S', stick);
     }
 
-    private static void registerMortarRecipes(@NotNull Consumer<FinishedRecipe> provider) {
+    private static void registerMortarRecipes(@NotNull RecipeOutput provider) {
         for (Material material : new Material[] {
                 GTMaterials.Bronze, GTMaterials.Iron, GTMaterials.Invar, GTMaterials.Steel,
                 GTMaterials.DamascusSteel, GTMaterials.CobaltBrass, GTMaterials.WroughtIron }) {
@@ -188,7 +183,7 @@ public final class CustomToolRecipes {
         }
     }
 
-    private static void registerSoftToolRecipes(@NotNull Consumer<FinishedRecipe> provider) {
+    private static void registerSoftToolRecipes(@NotNull RecipeOutput provider) {
         final ItemStack stick = new ItemStack(Items.STICK);
 
         for (int i = 0; i < softMaterials.length; i++) {
@@ -217,7 +212,7 @@ public final class CustomToolRecipes {
         }
     }
 
-    private static void registerElectricRecipes(@NotNull Consumer<FinishedRecipe> provider) {
+    private static void registerElectricRecipes(@NotNull RecipeOutput provider) {
         for (ItemEntry<? extends Item> batteryItem : batteryItems.get(LV)) {
             VanillaRecipeHelper.addShapedEnergyTransferRecipe(provider, true, false, true,
                     "prospector_lv_" + batteryItem.getId().getPath(),
@@ -230,22 +225,14 @@ public final class CustomToolRecipes {
                     'C', CustomTags.LV_CIRCUITS,
                     'B', batteryItem.asStack());
 
-            {
-                var magnetStack = GTItems.ITEM_MAGNET_LV.asStack();
-                var tag = magnetStack.getOrCreateTag();
-                var filter = (SimpleItemFilter) ItemFilter
-                        .loadFilter(ItemMagnetBehavior.Filter.SIMPLE.getFilter(magnetStack));
-                filter.setBlackList(true);
-                tag.put(ItemMagnetBehavior.FILTER_TAG, filter.saveFilter());
-                VanillaRecipeHelper.addShapedEnergyTransferRecipe(provider, true, false, true,
-                        "lv_magnet_" + batteryItem.getId().getPath(),
-                        Ingredient.of(batteryItem), magnetStack,
-                        "MwM", "MBM", "CPC",
-                        'M', new MaterialEntry(rod, GTMaterials.SteelMagnetic),
-                        'P', new MaterialEntry(plate, GTMaterials.Steel),
-                        'C', new MaterialEntry(cableGtSingle, GTMaterials.Tin),
-                        'B', batteryItem.asStack());
-            }
+            VanillaRecipeHelper.addShapedEnergyTransferRecipe(provider, true, false, true,
+                    "lv_magnet_" + batteryItem.getId().getPath(),
+                    Ingredient.of(batteryItem), GTItems.ITEM_MAGNET_LV.asStack(),
+                    "MwM", "MBM", "CPC",
+                    'M', new MaterialEntry(rod, GTMaterials.SteelMagnetic),
+                    'P', new MaterialEntry(plate, GTMaterials.Steel),
+                    'C', new MaterialEntry(cableGtSingle, GTMaterials.Tin),
+                    'B', batteryItem.asStack());
         }
 
         for (ItemEntry<? extends Item> batteryItem : batteryItems.get(MV)) {
@@ -273,22 +260,14 @@ public final class CustomToolRecipes {
                     'C', CustomTags.HV_CIRCUITS,
                     'B', batteryItem.asStack());
 
-            {
-                var magnetStack = GTItems.ITEM_MAGNET_HV.asStack();
-                var tag = magnetStack.getOrCreateTag();
-                var filter = (SimpleItemFilter) ItemFilter
-                        .loadFilter(ItemMagnetBehavior.Filter.SIMPLE.getFilter(magnetStack));
-                filter.setBlackList(true);
-                tag.put(ItemMagnetBehavior.FILTER_TAG, filter.saveFilter());
-                VanillaRecipeHelper.addShapedEnergyTransferRecipe(provider, true, false, true,
-                        "hv_magnet_" + batteryItem.getId().getPath(),
-                        Ingredient.of(batteryItem), magnetStack,
-                        "MwM", "MBM", "CPC",
-                        'M', new MaterialEntry(rod, GTMaterials.NeodymiumMagnetic),
-                        'P', new MaterialEntry(plate, GTMaterials.StainlessSteel),
-                        'C', new MaterialEntry(cableGtSingle, GTMaterials.Gold),
-                        'B', batteryItem.asStack());
-            }
+            VanillaRecipeHelper.addShapedEnergyTransferRecipe(provider, true, false, true,
+                    "hv_magnet_" + batteryItem.getId().getPath(),
+                    Ingredient.of(batteryItem), GTItems.ITEM_MAGNET_HV.asStack(),
+                    "MwM", "MBM", "CPC",
+                    'M', new MaterialEntry(rod, GTMaterials.NeodymiumMagnetic),
+                    'P', new MaterialEntry(plate, GTMaterials.StainlessSteel),
+                    'C', new MaterialEntry(cableGtSingle, GTMaterials.Gold),
+                    'B', batteryItem.asStack());
         }
 
         for (ItemEntry<? extends Item> batteryItem : batteryItems.get(LuV)) {

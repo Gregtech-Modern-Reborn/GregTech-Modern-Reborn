@@ -3,35 +3,35 @@ package com.gregtechceu.gtceu.common.block;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.block.PipeBlock;
 import com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
+import com.gregtechceu.gtceu.api.capability.GTCapability;
+import com.gregtechceu.gtceu.api.capability.IToolable;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
 import com.gregtechceu.gtceu.client.model.PipeModel;
 import com.gregtechceu.gtceu.client.renderer.block.PipeBlockRenderer;
 import com.gregtechceu.gtceu.common.blockentity.OpticalPipeBlockEntity;
-import com.gregtechceu.gtceu.common.data.GTBlockEntities;
 import com.gregtechceu.gtceu.common.pipelike.optical.LevelOpticalPipeNet;
 import com.gregtechceu.gtceu.common.pipelike.optical.OpticalPipeProperties;
 import com.gregtechceu.gtceu.common.pipelike.optical.OpticalPipeType;
+import com.gregtechceu.gtceu.data.blockentity.GTBlockEntities;
 
 import net.minecraft.client.color.block.BlockColor;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
 public class OpticalPipeBlock extends PipeBlock<OpticalPipeType, OpticalPipeProperties, LevelOpticalPipeNet> {
 
     public final PipeBlockRenderer renderer;
@@ -48,6 +48,49 @@ public class OpticalPipeBlock extends PipeBlock<OpticalPipeType, OpticalPipeProp
         this.pipeModel = new PipeModel(pipeType.getThickness(), () -> GTCEu.id("block/pipe/pipe_optical_side"),
                 () -> GTCEu.id("block/pipe/pipe_optical_in"), null, null);
         this.renderer = new PipeBlockRenderer(this.pipeModel);
+    }
+
+    public void attachCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlock(GTCapability.CAPABILITY_DATA_ACCESS, (level, pos, state, blockEntity, side) -> {
+            if (blockEntity instanceof OpticalPipeBlockEntity opticalPipeBlockEntity) {
+                if (level.isClientSide) {
+                    return opticalPipeBlockEntity.getClientDataHandler();
+                }
+                if (opticalPipeBlockEntity.getHandlers().isEmpty()) {
+                    opticalPipeBlockEntity.initHandlers();
+                }
+                opticalPipeBlockEntity.checkNetwork();
+                return opticalPipeBlockEntity.getHandlers().getOrDefault(side,
+                        opticalPipeBlockEntity.getDefaultHandler());
+            }
+            return null;
+        }, this);
+        event.registerBlock(GTCapability.CAPABILITY_COMPUTATION_PROVIDER, (level, pos, state, blockEntity, side) -> {
+            if (blockEntity instanceof OpticalPipeBlockEntity opticalPipeBlockEntity) {
+                if (level.isClientSide) {
+                    return opticalPipeBlockEntity.getClientComputationHandler();
+                }
+                if (opticalPipeBlockEntity.getHandlers().isEmpty()) {
+                    opticalPipeBlockEntity.initHandlers();
+                }
+                opticalPipeBlockEntity.checkNetwork();
+                return opticalPipeBlockEntity.getHandlers().getOrDefault(side,
+                        opticalPipeBlockEntity.getDefaultHandler());
+            }
+            return null;
+        }, this);
+        event.registerBlock(GTCapability.CAPABILITY_COVERABLE, (level, pos, state, blockEntity, side) -> {
+            if (blockEntity instanceof PipeBlockEntity<?, ?> pipe) {
+                return pipe.getCoverContainer();
+            }
+            return null;
+        }, this);
+        event.registerBlock(GTCapability.CAPABILITY_TOOLABLE, (level, pos, state, blockEntity, side) -> {
+            if (blockEntity instanceof IToolable toolable) {
+                return toolable;
+            }
+            return null;
+        }, this);
     }
 
     @Override
@@ -110,10 +153,9 @@ public class OpticalPipeBlock extends PipeBlock<OpticalPipeType, OpticalPipeProp
 
     @Override
     public boolean canPipeConnectToBlock(IPipeNode<OpticalPipeType, OpticalPipeProperties> selfTile, Direction side,
-                                         @Nullable BlockEntity tile) {
-        if (tile == null) return false;
-        if (tile.getCapability(GTCapability.CAPABILITY_DATA_ACCESS, side.getOpposite()).isPresent()) return true;
-        return tile.getCapability(GTCapability.CAPABILITY_COMPUTATION_PROVIDER, side.getOpposite()).isPresent();
+                                         Level level, BlockPos pos) {
+        if (level.getCapability(GTCapability.CAPABILITY_DATA_ACCESS, pos, side.getOpposite()) != null) return true;
+        return level.getCapability(GTCapability.CAPABILITY_COMPUTATION_PROVIDER, pos, side.getOpposite()) != null;
     }
 
     @Override

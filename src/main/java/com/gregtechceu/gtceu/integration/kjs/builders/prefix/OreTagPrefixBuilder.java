@@ -1,10 +1,11 @@
 package com.gregtechceu.gtceu.integration.kjs.builders.prefix;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
-import com.gregtechceu.gtceu.core.mixins.BlockBehaviourAccessor;
-import com.gregtechceu.gtceu.integration.kjs.built.KJSTagPrefix;
+import com.gregtechceu.gtceu.api.block.OreBlock;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.info.MaterialIconType;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.integration.kjs.helpers.GTResourceLocation;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -15,6 +16,7 @@ import lombok.experimental.Accessors;
 
 import java.util.function.Supplier;
 
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.Conditions.hasOreProperty;
 import static com.gregtechceu.gtceu.integration.kjs.Validator.*;
 
 @Accessors(fluent = true, chain = true)
@@ -36,26 +38,32 @@ public class OreTagPrefixBuilder extends TagPrefixBuilder {
     public transient boolean shouldDropAsItem = false;
 
     public OreTagPrefixBuilder(ResourceLocation id) {
-        super(id);
+        super(GTResourceLocation.implicitAsGtceu(id));
     }
 
     @Override
-    public KJSTagPrefix create(String id) {
-        return KJSTagPrefix.oreTagPrefix(id);
+    public TagPrefix create(String id) {
+        return new TagPrefix(id)
+                .defaultTagPath("ores/%s")
+                .prefixOnlyTagPath("ores_in_ground/%s")
+                .unformattedTagPath("ores")
+                .materialIconType(MaterialIconType.ore)
+                .unificationEnabled(true)
+                .blockConstructor(OreBlock::new)
+                .generationCondition(hasOreProperty);
     }
 
     @Override
-    public TagPrefix register() {
+    public TagPrefix createObject() {
         validate(this.id,
                 errorIfNull(stateSupplier, "stateSupplier"),
                 onlySetDefault(templateProperties, () -> {
-                    templateProperties = () -> GTBlocks.copy(
-                            ((BlockBehaviourAccessor) stateSupplier.get().getBlock()).getBlockProperties(),
+                    templateProperties = () -> GTBlocks.copy(stateSupplier.get().getBlock().properties(),
                             BlockBehaviour.Properties.of());
                 }),
                 errorIfNull(baseModelLocation, "baseModelLocation"));
 
-        return value = base.registerOre(stateSupplier, materialSupplier, templateProperties, baseModelLocation,
+        return base.registerOre(stateSupplier, materialSupplier, templateProperties, baseModelLocation,
                 doubleDrops, isSand, shouldDropAsItem);
     }
 }

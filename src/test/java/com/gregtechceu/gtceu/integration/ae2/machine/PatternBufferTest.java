@@ -6,6 +6,7 @@ import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
@@ -17,8 +18,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.CalculationStrategy;
@@ -43,7 +44,8 @@ public class PatternBufferTest {
 
     @BeforeBatch(batch = "PatternBuffer")
     public static void prepare(ServerLevel level) {
-        LCR_RECIPE_TYPE = TestUtils.createRecipeTypeAndInsertRecipe("pattern_buffer_tests");
+        LCR_RECIPE_TYPE = TestUtils.createRecipeTypeAndInsertRecipe("pattern_buffer_tests",
+                GTRecipeTypes.LARGE_CHEMICAL_RECIPES);
 
         LCR_RECIPE_TYPE.getLookup().addRecipe(LCR_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_recipe_pattern_buffer"))
@@ -51,7 +53,7 @@ public class PatternBufferTest {
                 .inputItems(new ItemStack(Items.RED_BED))
                 .outputItems(new ItemStack(Blocks.BROWN_BED))
                 .EUt(GTValues.V[GTValues.EV])
-                .duration(1).buildRawRecipe());
+                .duration(1).build());
     }
 
     private record BusHolder(ItemBusPartMachine inputBus1, ItemBusPartMachine inputBus2, ItemBusPartMachine outputBus1,
@@ -79,6 +81,8 @@ public class PatternBufferTest {
                 helper.getBlockEntity(new BlockPos(0, 2, 0)));
         MEPatternBufferPartMachine patternBuffer = (MEPatternBufferPartMachine) getMetaMachine(
                 helper.getBlockEntity(new BlockPos(2, 2, 1)));
+        patternBuffer.getTerminalPatternInventory().setItemDirect(0,
+                patternBuffer.getTerminalPatternInventory().getStackInSlot(0));
         return new BusHolder(inputBus1, inputBus2, outputBus1, outputHatch1, patternBuffer, controller);
     }
 
@@ -86,6 +90,7 @@ public class PatternBufferTest {
     @GameTest(template = "patternbuffertest", batch = "PatternBuffer", setupTicks = 40, timeoutTicks = 200)
     public static void patternBufferNormalInputBusTest(GameTestHelper helper) {
         BusHolder busHolder = getBussesAndForm(helper);
+        busHolder.patternBuffer.getPatternInventory().onContentsChanged(0);
         busHolder.inputBus1.getInventory().setStackInSlot(0, new ItemStack(Blocks.COBBLESTONE));
         helper.succeedWhen(() -> {
             helper.assertTrue(
@@ -100,6 +105,7 @@ public class PatternBufferTest {
     @GameTest(template = "patternbuffertest", batch = "PatternBuffer", setupTicks = 40, timeoutTicks = 200)
     public static void patternBufferBasicRequestTest(GameTestHelper helper) {
         BusHolder busHolder = getBussesAndForm(helper);
+        busHolder.patternBuffer.getPatternInventory().onContentsChanged(0);
 
         IGrid grid = busHolder.patternBuffer.getGrid();
 
@@ -167,7 +173,8 @@ public class PatternBufferTest {
                 helper.fail("Job didn't get queued in 40 ticks");
                 throw new RuntimeException("Oopsie, could not get job to start craft");
             }
-            ICraftingSubmitResult result = craftingService.submitJob(job, null, null, true, IActionSource.empty());
+            ICraftingSubmitResult result = craftingService.submitJob(job, null, null, true,
+                    IActionSource.ofMachine(terminal));
 
             helper.assertTrue(result.successful(), "Could not queue crafting job");
 

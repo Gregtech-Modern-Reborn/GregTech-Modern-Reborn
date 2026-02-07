@@ -5,12 +5,6 @@ import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 
 import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class HPCAEmptyPartMachine extends HPCAComponentPartMachine {
 
     public HPCAEmptyPartMachine(IMachineBlockEntity holder) {

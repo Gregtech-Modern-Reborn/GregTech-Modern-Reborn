@@ -1,7 +1,7 @@
 package com.gregtechceu.gtceu.integration.map.xaeros.worldmap.ore;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.worldgen.ores.GeneratedVeinMetadata;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.worldgen.ores.GeneratedVeinMetadata;
 import com.gregtechceu.gtceu.integration.map.WaypointManager;
 
 import net.minecraft.client.Minecraft;
@@ -26,9 +26,7 @@ public class OreVeinElement {
     }
 
     public void onMouseSelect() {
-        Material firstMaterial = vein.definition().veinGenerator().getAllMaterials().get(0);
-        int color = firstMaterial.getMaterialARGB();
-
+        int color = getFirstMaterial().getMaterialARGB();
         // TODO generalize to all possible layer types
         BlockPos center = vein.center();
         WaypointManager.toggleWaypoint("ore_veins", name, color,
@@ -40,6 +38,6 @@ public class OreVeinElement {
     }
 
     public Material getFirstMaterial() {
-        return vein.definition().veinGenerator().getAllMaterials().get(0);
+        return vein.definition().value().veinGenerator().getAllMaterials().getFirst();
     }
 }

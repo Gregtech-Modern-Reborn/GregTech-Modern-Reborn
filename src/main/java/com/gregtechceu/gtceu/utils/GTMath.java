@@ -1,9 +1,8 @@
 package com.gregtechceu.gtceu.utils;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -15,10 +14,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class GTMath {
 
     public static long clamp(long value, long min, long max) {
@@ -38,7 +33,7 @@ public class GTMath {
         return stacks;
     }
 
-    public static List<FluidStack> splitFluidStacks(FluidStack stack, long amount) {
+    public static List<FluidStack> splitFluidStacks(net.neoforged.neoforge.fluids.FluidStack stack, long amount) {
         int fullStacks = (int) (amount / Integer.MAX_VALUE);
         int rem = (int) (amount % Integer.MAX_VALUE);
         List<FluidStack> stacks = new ObjectArrayList<>(fullStacks + 1);

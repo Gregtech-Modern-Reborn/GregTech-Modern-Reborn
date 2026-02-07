@@ -4,28 +4,29 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
 import com.gregtechceu.gtceu.api.item.IGTTool;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.data.GTMaterialItems;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
-import com.gregtechceu.gtceu.common.item.TurbineRotorBehaviour;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.common.item.behavior.TurbineRotorBehaviour;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.item.GTMaterialItems;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.ingot;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.nugget;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.turbineBlade;
-import static com.gregtechceu.gtceu.common.data.GTRecipeCategories.ARC_FURNACE_RECYCLING;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ARC_FURNACE_RECIPES;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.ingot;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.nugget;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.turbineBlade;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeCategories.ARC_FURNACE_RECYCLING;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.ARC_FURNACE_RECIPES;
 
 public enum ArcFurnaceLogic implements GTRecipeType.ICustomRecipeLogic {
 
@@ -92,13 +93,13 @@ public enum ArcFurnaceLogic implements GTRecipeType.ICustomRecipeLogic {
             builder.outputItems(nugget, materialArc, leftover);
         }
 
-        return builder.buildRawRecipe();
+        return builder.build();
     }
 
     @Override
     public void buildRepresentativeRecipes() {
         ItemStack stack = GTItems.TURBINE_ROTOR.asStack();
-        stack.setHoverName(Component.translatable("gtceu.auto_decomp.rotor"));
+        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("gtceu.auto_decomp.rotor"));
         GTRecipe rotorRecipe;
         GTRecipe pickaxeRecipe;
         float durability = 0.69f;
@@ -114,7 +115,7 @@ public enum ArcFurnaceLogic implements GTRecipeType.ICustomRecipeLogic {
 
         // noinspection DataFlowIssue
         stack = GTMaterialItems.TOOL_ITEMS.get(GTMaterials.Iron, GTToolType.PICKAXE).asStack();
-        stack.setHoverName(Component.translatable("gtceu.auto_decomp.tool"));
+        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("gtceu.auto_decomp.tool"));
         stack.setDamageValue(79);
         pickaxeRecipe = applyDurabilityRecipe("tool_decomp", stack, GTMaterials.Iron,
                 (float) (GTToolType.PICKAXE.materialAmount / GTValues.M), durability,

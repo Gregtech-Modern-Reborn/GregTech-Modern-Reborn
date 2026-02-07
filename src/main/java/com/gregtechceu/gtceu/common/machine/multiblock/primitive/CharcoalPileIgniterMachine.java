@@ -6,14 +6,14 @@ import com.gregtechceu.gtceu.api.item.ComponentItem;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.pattern.BlockPattern;
-import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
-import com.gregtechceu.gtceu.api.pattern.Predicates;
-import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
-import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
-import com.gregtechceu.gtceu.common.item.tool.behavior.LighterBehavior;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.api.multiblock.BlockPattern;
+import com.gregtechceu.gtceu.api.multiblock.FactoryBlockPattern;
+import com.gregtechceu.gtceu.api.multiblock.Predicates;
+import com.gregtechceu.gtceu.api.multiblock.TraceabilityPredicate;
+import com.gregtechceu.gtceu.api.multiblock.util.RelativeDirection;
+import com.gregtechceu.gtceu.common.item.behavior.LighterBehavior;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
@@ -29,7 +29,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -37,8 +38,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.ItemAbilities;
 
 import it.unimi.dsi.fastutil.longs.Long2BooleanMap;
 import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
@@ -47,7 +49,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static com.gregtechceu.gtceu.api.pattern.util.RelativeDirection.*;
+import static com.gregtechceu.gtceu.api.multiblock.util.RelativeDirection.*;
 
 public class CharcoalPileIgniterMachine extends WorkableMultiblockMachine implements IWorkable {
 
@@ -57,7 +59,7 @@ public class CharcoalPileIgniterMachine extends WorkableMultiblockMachine implem
 
     private static final int MIN_RADIUS = 1;
     private static final int MIN_DEPTH = 2;
-
+    private static final int MAX_HEIGHT = 5;
     private final Collection<BlockPos> logPos = new ObjectOpenHashSet<>();
 
     @DescSynced
@@ -230,8 +232,8 @@ public class CharcoalPileIgniterMachine extends WorkableMultiblockMachine implem
         if (level == null) return;
         Direction front = getFrontFacing();
         Direction back = front.getOpposite();
-        Direction left = RelativeDirection.LEFT.getRelativeFacing(front, getUpwardsFacing(), false);
-        Direction right = RelativeDirection.RIGHT.getRelativeFacing(front, getUpwardsFacing(), false);
+        Direction left = RelativeDirection.LEFT.getRelative(front, getUpwardsFacing(), false);
+        Direction right = RelativeDirection.RIGHT.getRelative(front, getUpwardsFacing(), false);
 
         BlockPos down = getPos().relative(Direction.DOWN);
 
@@ -247,7 +249,7 @@ public class CharcoalPileIgniterMachine extends WorkableMultiblockMachine implem
         int fDist = 0;
         int hDist = 0;
 
-        for (int i = 1; i < 6; i++) {
+        for (int i = 1; i <= MAX_HEIGHT; i++) {
             if (lDist != 0 && rDist != 0 && hDist != 0) break;
             if (lDist == 0 && isBlockWall(level, lPos, left)) lDist = i;
             if (rDist == 0 && isBlockWall(level, rPos, right)) rDist = i;
@@ -319,18 +321,17 @@ public class CharcoalPileIgniterMachine extends WorkableMultiblockMachine implem
     }
 
     @Override
-    public InteractionResult onUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
-                                   BlockHitResult hit) {
+    public ItemInteractionResult onUseWithItem(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                               Player player, InteractionHand hand, BlockHitResult hit) {
         if (!isFormed() || hasAir) {
-            return super.onUse(state, level, pos, player, hand, hit);
+            return super.onUseWithItem(stack, state, level, pos, player, hand, hit);
         }
-        ItemStack stack = player.getItemInHand(hand);
-        if (!stack.is(CustomTags.TOOLS_IGNITER)) {
-            return InteractionResult.PASS;
+        if (!stack.canPerformAction(ItemAbilities.FIRESTARTER_LIGHT)) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
         if (level.isClientSide && !isActive()) {
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         } else if (!isActive()) {
             boolean shouldActivate = false;
             if (stack.getItem() instanceof ComponentItem compItem) {
@@ -341,7 +342,7 @@ public class CharcoalPileIgniterMachine extends WorkableMultiblockMachine implem
                     }
                 }
             } else if (stack.isDamageableItem()) {
-                stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
+                stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
                 shouldActivate = true;
             } else {
                 stack.shrink(1);
@@ -354,10 +355,10 @@ public class CharcoalPileIgniterMachine extends WorkableMultiblockMachine implem
                 level.playSound(null, pos,
                         stack.is(Items.FIRE_CHARGE) ? SoundEvents.FIRECHARGE_USE : SoundEvents.FLINTANDSTEEL_USE,
                         SoundSource.BLOCKS, 1.0f, 1.0f);
-                return InteractionResult.CONSUME;
+                return ItemInteractionResult.CONSUME;
             }
         }
-        return super.onUse(state, level, pos, player, hand, hit);
+        return super.onUseWithItem(stack, state, level, pos, player, hand, hit);
     }
 
     public static class CharcoalRecipeLogic extends RecipeLogic {

@@ -8,13 +8,15 @@ import com.gregtechceu.gtceu.integration.jade.GTElementHelper;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
@@ -33,7 +35,7 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
                 CompoundTag serverData = blockAccessor.getServerData();
                 if (!serverData.getBoolean("formed")) return;
 
-                iTooltip.add(Component.translatable("gtecore.top.proxies_bound", serverData.getInt("proxies"))
+                iTooltip.add(Component.translatable("gtceu.top.proxies_bound", serverData.getInt("proxies"))
                         .withStyle(TooltipHelper.RAINBOW_HSL_SLOW));
                 readBufferTag(iTooltip, serverData);
             }
@@ -65,9 +67,10 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
         var items = merged.items();
         var fluids = merged.fluids();
 
+        HolderLookup.Provider provider = buffer.getLevel().registryAccess();
         ListTag itemsTag = new ListTag();
         for (var entry : items.object2LongEntrySet()) {
-            var ct = entry.getKey().serializeNBT();
+            var ct = (CompoundTag) entry.getKey().save(provider);
             ct.putLong("real", entry.getLongValue());
             itemsTag.add(ct);
         }
@@ -75,7 +78,7 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
 
         ListTag fluidsTag = new ListTag();
         for (var entry : fluids.object2LongEntrySet()) {
-            var ct = entry.getKey().writeToNBT(new CompoundTag());
+            var ct = (CompoundTag) entry.getKey().save(provider);
             ct.putLong("real", entry.getLongValue());
             fluidsTag.add(ct);
         }
@@ -83,34 +86,36 @@ public class MEPatternBufferProvider implements IBlockComponentProvider, IServer
     }
 
     public static void readBufferTag(ITooltip iTooltip, CompoundTag serverData) {
-        IElementHelper helper = iTooltip.getElementHelper();
+        IElementHelper helper = IElementHelper.get();
 
+        HolderLookup.Provider provider = Minecraft.getInstance().level.registryAccess();
         ListTag itemsTag = serverData.getList("items", Tag.TAG_COMPOUND);
         for (Tag t : itemsTag) {
             if (!(t instanceof CompoundTag ct)) continue;
-            var stack = ItemStack.of(ct);
+            var stack = ItemStack.parse(provider, ct);
             var count = ct.getLong("real");
-            if (!stack.isEmpty() && count > 0) {
-                iTooltip.add(helper.smallItem(stack));
+            if (stack.isPresent() && !stack.get().isEmpty() && count > 0) {
+                iTooltip.add(helper.smallItem(stack.get()));
                 Component text = Component.literal(" ")
-                        .append(Component.literal(String.valueOf(count)).withStyle(ChatFormatting.DARK_PURPLE))
+                        .append(Component.literal(FormattingUtil.formatNumbers(count))
+                                .withStyle(ChatFormatting.DARK_PURPLE))
                         .append(Component.literal("× ").withStyle(ChatFormatting.WHITE))
-                        .append(stack.getHoverName().copy().withStyle(ChatFormatting.GOLD));
+                        .append(stack.get().getHoverName().copy().withStyle(ChatFormatting.GOLD));
                 iTooltip.append(text);
             }
         }
         ListTag fluidsTag = serverData.getList("fluids", Tag.TAG_COMPOUND);
         for (Tag t : fluidsTag) {
             if (!(t instanceof CompoundTag ct)) continue;
-            var stack = FluidStack.loadFluidStackFromNBT(ct);
+            var stack = FluidStack.parse(provider, ct);
             var amount = ct.getLong("real");
-            if (!stack.isEmpty() && amount > 0) {
-                iTooltip.add(GTElementHelper.smallFluid(JadeFluidObject.of(stack.getFluid())));
+            if (stack.isPresent() && !stack.get().isEmpty() && amount > 0) {
+                iTooltip.add(GTElementHelper.smallFluid(JadeFluidObject.of(stack.get().getFluid())));
                 Component text = Component.literal(" ")
                         .append(Component.literal(FormattingUtil.formatBuckets(amount)))
                         .withStyle(ChatFormatting.DARK_PURPLE)
                         .append(Component.literal(" ").withStyle(ChatFormatting.WHITE))
-                        .append(stack.getDisplayName().copy().withStyle(ChatFormatting.DARK_AQUA));
+                        .append(stack.get().getHoverName().copy().withStyle(ChatFormatting.DARK_AQUA));
                 iTooltip.append(text);
             }
         }

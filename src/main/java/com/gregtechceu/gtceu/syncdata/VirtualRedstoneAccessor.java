@@ -7,6 +7,7 @@ import com.lowdragmc.lowdraglib.syncdata.accessor.CustomObjectAccessor;
 import com.lowdragmc.lowdraglib.syncdata.payload.ITypedPayload;
 import com.lowdragmc.lowdraglib.syncdata.payload.NbtTagPayload;
 
+import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 
 public class VirtualRedstoneAccessor extends CustomObjectAccessor<VirtualRedstone> {
@@ -18,14 +19,14 @@ public class VirtualRedstoneAccessor extends CustomObjectAccessor<VirtualRedston
     }
 
     @Override
-    public ITypedPayload<?> serialize(AccessorOp op, VirtualRedstone value) {
-        return NbtTagPayload.of(value.serializeNBT());
+    public ITypedPayload<?> serialize(AccessorOp op, VirtualRedstone value, Provider provider) {
+        return NbtTagPayload.of(value.serializeNBT(provider));
     }
 
     @Override
-    public VirtualRedstone deserialize(AccessorOp op, ITypedPayload<?> payload) {
+    public VirtualRedstone deserialize(AccessorOp op, ITypedPayload<?> payload, Provider provider) {
         var tank = new VirtualRedstone();
-        tank.deserializeNBT((CompoundTag) payload.getPayload());
+        tank.deserializeNBT(provider, (CompoundTag) payload.getPayload());
         return tank;
     }
 }

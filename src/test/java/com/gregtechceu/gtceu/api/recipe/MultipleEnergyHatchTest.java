@@ -7,6 +7,7 @@ import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMa
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
@@ -16,8 +17,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +43,8 @@ public class MultipleEnergyHatchTest {
 
     @BeforeBatch(batch = "MultipleEnergyHatch")
     public static void prepare(ServerLevel level) {
-        LCR_RECIPE_TYPE = TestUtils.createRecipeType("multiple_energy_hatch_lcr_tests");
+        LCR_RECIPE_TYPE = TestUtils.createRecipeType("multiple_energy_hatch_lcr_tests",
+                GTRecipeTypes.LARGE_CHEMICAL_RECIPES);
 
         LCR_RECIPE_TYPE.getLookup().addRecipe(LCR_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_multiple_energy_hatch_ev"))
@@ -50,7 +52,7 @@ public class MultipleEnergyHatchTest {
                 .outputItems(new ItemStack(Items.CYAN_BED))
                 .EUt(GTValues.V[EV])
                 .duration(16)
-                .buildRawRecipe());
+                .build());
 
         LCR_RECIPE_TYPE.getLookup().addRecipe(LCR_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_multiple_energy_hatch_iv"))
@@ -58,7 +60,7 @@ public class MultipleEnergyHatchTest {
                 .outputItems(new ItemStack(Items.BROWN_BED))
                 .EUt(GTValues.V[GTValues.IV])
                 .duration(16)
-                .buildRawRecipe());
+                .build());
 
         LCR_RECIPE_TYPE.getLookup().addRecipe(LCR_RECIPE_TYPE
                 .recipeBuilder(GTCEu.id("test_multiple_energy_hatch_iv"))
@@ -66,7 +68,7 @@ public class MultipleEnergyHatchTest {
                 .outputItems(new ItemStack(Items.GREEN_BED))
                 .EUt(GTValues.V[GTValues.LuV])
                 .duration(16)
-                .buildRawRecipe());
+                .build());
     }
 
     private record BusHolder(ItemBusPartMachine inputBus, ItemBusPartMachine outputBus,

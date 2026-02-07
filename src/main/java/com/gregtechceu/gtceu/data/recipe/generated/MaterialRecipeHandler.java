@@ -1,44 +1,46 @@
 package com.gregtechceu.gtceu.data.recipe.generated;
 
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.MarkerMaterials;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.*;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
-import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
-import com.gregtechceu.gtceu.common.data.*;
+import com.gregtechceu.gtceu.api.fluid.store.FluidStorageKeys;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.MarkerMaterials;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.*;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.data.block.GTMaterialBlocks;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeCategories;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.function.Consumer;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.gregtechceu.gtceu.api.material.material.info.MaterialFlags.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public final class MaterialRecipeHandler {
 
     private MaterialRecipeHandler() {}
 
-    public static void run(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    public static void run(@NotNull RecipeOutput provider, @NotNull Material material) {
         processIngot(provider, material);
         processNugget(provider, material);
         processBlock(provider, material);
@@ -59,7 +61,7 @@ public final class MaterialRecipeHandler {
         generateSurfaceRockRecipe(provider, material);
     }
 
-    private static void processDust(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    private static void processDust(@NotNull RecipeOutput provider, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(dust) || !material.hasProperty(PropertyKey.DUST)) {
             return;
         }
@@ -74,7 +76,7 @@ public final class MaterialRecipeHandler {
                 AUTOCLAVE_RECIPES.recipeBuilder("autoclave_" + id + "_water")
                         .inputItems(dustStack)
                         .inputFluids(Water.getFluid(250))
-                        .chancedOutput(gemStack, 7500, 500)
+                        .chancedOutput(gemStack, 7500, 0)
                         .duration(1200).EUt(24)
                         .save(provider);
 
@@ -90,28 +92,28 @@ public final class MaterialRecipeHandler {
                 IMPLOSION_RECIPES.recipeBuilder("implode_" + id + "_powderbarrel")
                         .inputItems(dustStack.copyWithCount(4))
                         .outputItems(gemStack.copyWithCount(3))
-                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 500)
+                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 0)
                         .explosivesType(new ItemStack(GTBlocks.POWDERBARREL, 8))
                         .save(provider);
 
                 IMPLOSION_RECIPES.recipeBuilder("implode_" + id + "_tnt")
                         .inputItems(dustStack.copyWithCount(4))
                         .outputItems(gemStack.copyWithCount(3))
-                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 500)
+                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 0)
                         .explosivesAmount(4)
                         .save(provider);
 
                 IMPLOSION_RECIPES.recipeBuilder("implode_" + id + "_dynamite")
                         .inputItems(dustStack.copyWithCount(4))
                         .outputItems(gemStack.copyWithCount(3))
-                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 500)
+                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 0)
                         .explosivesType(GTItems.DYNAMITE.asStack(2))
                         .save(provider);
 
                 IMPLOSION_RECIPES.recipeBuilder("implode_" + id + "_itnt")
                         .inputItems(dustStack.copyWithCount(4))
                         .outputItems(gemStack.copyWithCount(3))
-                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 500)
+                        .chancedOutput(dust, GTMaterials.DarkAsh, 2500, 0)
                         .explosivesType(new ItemStack(GTBlocks.INDUSTRIAL_TNT))
                         .save(provider);
             }
@@ -178,7 +180,7 @@ public final class MaterialRecipeHandler {
     }
 
     private static void processEBFRecipe(Material material, BlastProperty property, ItemStack output,
-                                         Consumer<FinishedRecipe> provider) {
+                                         RecipeOutput provider) {
         int blastTemp = property.getBlastTemperature();
         BlastProperty.GasTier gasTier = property.getGasTier();
         int duration = property.getDurationOverride();
@@ -195,7 +197,7 @@ public final class MaterialRecipeHandler {
                 .EUt(EUt);
 
         if (gasTier != null) {
-            FluidIngredient gas = gasTier.getFluid();
+            SizedFluidIngredient gas = gasTier.getFluid();
 
             blastBuilder.copy("blast_" + material.getName())
                     .circuitMeta(1)
@@ -245,7 +247,7 @@ public final class MaterialRecipeHandler {
         }
     }
 
-    private static void processSmallDust(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    private static void processSmallDust(@NotNull RecipeOutput provider, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(dustSmall) || !material.hasProperty(PropertyKey.DUST)) {
             return;
         }
@@ -273,7 +275,7 @@ public final class MaterialRecipeHandler {
                 .save(provider);
     }
 
-    private static void processTinyDust(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    private static void processTinyDust(@NotNull RecipeOutput provider, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(dustTiny) || !material.hasProperty(PropertyKey.DUST)) {
             return;
         }
@@ -301,7 +303,7 @@ public final class MaterialRecipeHandler {
                 .save(provider);
     }
 
-    private static void processIngot(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    private static void processIngot(@NotNull RecipeOutput provider, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(ingot) || !material.hasProperty(PropertyKey.INGOT)) {
             return;
         }
@@ -422,7 +424,7 @@ public final class MaterialRecipeHandler {
         }
     }
 
-    private static void processGemConversion(@NotNull Consumer<FinishedRecipe> provider, @NotNull TagPrefix prefix,
+    private static void processGemConversion(@NotNull RecipeOutput provider, @NotNull TagPrefix prefix,
                                              @Nullable TagPrefix lowerPrefix, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(prefix) || !material.hasProperty(PropertyKey.GEM)) {
             return;
@@ -475,7 +477,7 @@ public final class MaterialRecipeHandler {
                 .save(provider);
     }
 
-    private static void processNugget(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    private static void processNugget(@NotNull RecipeOutput provider, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(nugget) || !material.hasProperty(PropertyKey.DUST)) {
             return;
         }
@@ -541,7 +543,7 @@ public final class MaterialRecipeHandler {
         }
     }
 
-    private static void processFrame(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    private static void processFrame(@NotNull RecipeOutput provider, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(frameGt) || !material.hasProperty(PropertyKey.DUST)) {
             return;
         }
@@ -562,7 +564,7 @@ public final class MaterialRecipeHandler {
         }
     }
 
-    private static void processBlock(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material) {
+    private static void processBlock(@NotNull RecipeOutput provider, @NotNull Material material) {
         if (!material.shouldGenerateRecipesFor(block) || !material.hasProperty(PropertyKey.DUST)) {
             return;
         }
@@ -667,7 +669,7 @@ public final class MaterialRecipeHandler {
         }
     }
 
-    private static void generateSurfaceRockRecipe(@NotNull Consumer<FinishedRecipe> provider,
+    private static void generateSurfaceRockRecipe(@NotNull RecipeOutput provider,
                                                   @NotNull Material material) {
         if (material.hasProperty(PropertyKey.ORE)) {
             VanillaRecipeHelper.addShapedRecipe(provider, "%s_surface_indicator".formatted(material.getName()),

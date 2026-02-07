@@ -1,32 +1,48 @@
 package com.gregtechceu.gtceu.api.placeholder;
 
-import com.gregtechceu.gtceu.utils.GTUtil;
-
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.*;
 
+import com.mojang.serialization.Codec;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public class MultiLineComponent extends ArrayList<MutableComponent> {
 
+    public static final Codec<MultiLineComponent> CODEC = ComponentSerialization.CODEC.listOf()
+            .xmap(list -> {
+                if (((List<? extends Component>) list) instanceof MultiLineComponent multiLine) {
+                    return multiLine;
+                }
+                MultiLineComponent multiLine = new MultiLineComponent();
+                for (Component c : list) {
+                    multiLine.add(c.copy());
+                }
+                return multiLine;
+            }, MultiLineComponent::toImmutable);
+
+    public MultiLineComponent() {}
+
     @Getter
     private boolean ignoreSpaces = false;
 
     public MultiLineComponent(List<MutableComponent> components) {
-        super();
-        this.addAll(components);
+        super(components);
     }
 
     public static MultiLineComponent of(Component c) {
         return new MultiLineComponent(List.of(c.copy()));
+    }
+
+    public static MultiLineComponent literal(char c) {
+        return MultiLineComponent.of(Component.literal(String.valueOf(c)));
     }
 
     public static MultiLineComponent literal(String s) {
@@ -79,8 +95,9 @@ public class MultiLineComponent extends ArrayList<MutableComponent> {
     }
 
     public void append(@Nullable String s) {
-        if (s != null)
-            GTUtil.getLast(this).append(s);
+        if (s != null) {
+            this.getLast().append(s);
+        }
     }
 
     public void append(char c) {
@@ -91,15 +108,20 @@ public class MultiLineComponent extends ArrayList<MutableComponent> {
         if (lines == null) return this;
         if (lines.isEmpty()) return this;
         for (Component line : lines) {
-            GTUtil.getLast(this).append(line);
-            this.add(MutableComponent.create(ComponentContents.EMPTY));
+            this.getLast().append(line);
+            this.add(Component.empty());
         }
-        this.remove(this.size() - 1);
+        this.removeLast();
+        return this;
+    }
+
+    public MultiLineComponent append(@NotNull Component line) {
+        this.getLast().append(line);
         return this;
     }
 
     public void appendNewline() {
-        this.add(MutableComponent.create(ComponentContents.EMPTY));
+        this.add(Component.empty());
     }
 
     public MultiLineComponent withStyle(Style style) {
@@ -115,38 +137,15 @@ public class MultiLineComponent extends ArrayList<MutableComponent> {
     public MultiLineComponent withStyle(ChatFormatting... style) {
         MultiLineComponent out = MultiLineComponent.empty();
         for (MutableComponent c : this) {
-            out.append(MultiLineComponent.of(c.withStyle(style)));
+            out.append(c.withStyle(style));
             out.appendNewline();
         }
         if (!out.isEmpty()) out.remove(out.size() - 1);
         return out;
     }
 
-    public List<Component> toImmutable() {
-        return new ArrayList<>(this);
-    }
-
-    public Tag toTag() {
-        ListTag tag = new ListTag();
-        for (MutableComponent component : this) {
-            tag.add(StringTag.valueOf(Component.Serializer.toJson(component)));
-        }
-        return tag;
-    }
-
-    public static MultiLineComponent fromTag(ListTag tag) {
-        MultiLineComponent out = MultiLineComponent.empty();
-        out.clear();
-        for (Tag i : tag) {
-            out.add(Component.Serializer.fromJson(i.getAsString()));
-        }
-        return out;
-    }
-
-    public long toLong() {
-        if (this.isEmpty()) return 0;
-        if (this.size() > 1) throw new NumberFormatException(this.toString());
-        return Long.parseLong(this.get(0).getString());
+    public @UnmodifiableView List<Component> toImmutable() {
+        return Collections.unmodifiableList(this);
     }
 
     public MultiLineComponent setIgnoreSpaces(boolean ignoreSpaces) {

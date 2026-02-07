@@ -1,15 +1,12 @@
 package com.gregtechceu.gtceu.common.pipelike.duct;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.capability.IHazardParticleContainer;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
 import com.gregtechceu.gtceu.api.pipenet.PipeNetWalker;
 import com.gregtechceu.gtceu.common.blockentity.DuctPipeBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.util.LazyOptional;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,14 +78,7 @@ public class DuctNetWalker extends PipeNetWalker<DuctPipeBlockEntity, DuctPipePr
         if ((pipePos.equals(sourcePipe) && faceToNeighbour == facingToHandler)) {
             return;
         }
-        if (neighbourTile != null) {
-            LazyOptional<IHazardParticleContainer> handler = neighbourTile.getCapability(
-                    GTCapability.CAPABILITY_HAZARD_CONTAINER,
-                    faceToNeighbour.getOpposite());
-            if (handler.isPresent()) {
-                inventories.add(new DuctRoutePath(pipeTile, faceToNeighbour, getWalkedBlocks(), minProperties));
-            }
-        } else if (pipeTile.isConnected(faceToNeighbour)) {
+        if (pipeTile.isConnected(faceToNeighbour)) {
             inventories.add(new DuctRoutePath(pipeTile, faceToNeighbour, getWalkedBlocks(), minProperties));
         }
     }

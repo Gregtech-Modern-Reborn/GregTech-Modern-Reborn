@@ -4,15 +4,16 @@ import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRender;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRenderType;
 import com.gregtechceu.gtceu.client.util.RenderUtil;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.core.mixins.GrowingPlantBlockAccessor;
 import com.gregtechceu.gtceu.core.mixins.IntegerPropertyAccessor;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.core.mixins.StemBlockAccessor;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 import com.gregtechceu.gtceu.utils.GTMath;
 import com.gregtechceu.gtceu.utils.memoization.GTMemoizer;
 
@@ -25,7 +26,6 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
@@ -33,10 +33,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 import org.apache.commons.lang3.function.TriFunction;
@@ -53,7 +55,7 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
 
     // spotless:off
     @SuppressWarnings("deprecation")
-    public static final Codec<GrowingPlantRender> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    public static final MapCodec<GrowingPlantRender> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ExtraCodecs.VECTOR3F.listOf().fieldOf("offsets").forGetter(GrowingPlantRender::getOffsets),
             BuiltInRegistries.BLOCK.byNameCodec().optionalFieldOf("growing_block").forGetter(GrowingPlantRender::getGrowingBlock),
             GrowthMode.CODEC.optionalFieldOf("growth_mode").forGetter(GrowingPlantRender::getGrowthMode)
@@ -128,7 +130,14 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
             if (mode == GrowthMode.AGE_4 && GrowthMode.PICKLES.predicate().test(growing)) {
                 // special case the pickles property to work if using age_4
                 mode = GrowthMode.PICKLES;
+            } else if (mode == GrowthMode.AGE_4 && GrowthMode.FLOWER_AMOUNT.predicate().test(growing)) {
+                // special case the flower amount property to work if using age_4
+                mode = GrowthMode.FLOWER_AMOUNT;
+            } else if (mode == GrowthMode.AGE_7 && GrowthMode.STEM.predicate().test(growing)) {
+                // special case stem plants to show stems
+                mode = GrowthMode.STEM;
             } else {
+                // generic incompatibility, use default mode
                 mode = GrowthMode.SCALE;
             }
         }
@@ -200,7 +209,7 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
                 allItemContents.addAll(recipe.getTickOutputContents(ItemRecipeCapability.CAP));
                 return allItemContents.stream()
                         .map(Content::getContent).map(ItemRecipeCapability.CAP::of)
-                        .map(Ingredient::getItems).flatMap(Arrays::stream)
+                        .map(SizedIngredient::getItems).flatMap(Arrays::stream)
                         .map(ItemStack::getItem)
                         .filter(BlockItem.class::isInstance)
                         .findFirst()
@@ -212,7 +221,17 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
         if (block instanceof GrowingPlantBlock) {
             return GrowthMode.GROWING_PLANT;
         }
+        if (block instanceof StemBlock) {
+            return GrowthMode.STEM;
+        }
+
         BlockState state = block.defaultBlockState();
+        IntegerProperty ageProp = findAgeProperty(state.getProperties());
+        if (ageProp != null) {
+            GrowthMode mode = GrowthMode.MODE_BY_PROPERTY.get(ageProp);
+            if (mode != null) return mode;
+        }
+
         if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF) ||
                 state.hasProperty(BlockStateProperties.HALF) ||
                 state.is(CustomTags.TALL_PLANTS)) {
@@ -220,19 +239,14 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
         } else if (state.is(BlockTags.FLOWERS)) {
             return GrowthMode.TRANSLATE;
         }
-
-        IntegerProperty ageProp = findAgeProperty(state.getProperties());
-        if (ageProp != null) {
-            GrowthMode mode = GrowthMode.MODE_BY_PROPERTY.get(ageProp);
-            if (mode != null) return mode;
-        }
         // default to SCALE
         return GrowthMode.SCALE;
     }
 
     public static @Nullable IntegerProperty findAgeProperty(Collection<Property<?>> properties) {
         for (Property<?> prop : properties) {
-            if ((prop.getName().equals("age") || prop.getName().equals("pickles")) &&
+            if ((prop.getName().equals("age") || prop.getName().equals("pickles") ||
+                    prop.getName().equals("flower_amount")) &&
                     prop instanceof IntegerProperty intProp) {
                 return intProp;
             }
@@ -256,6 +270,9 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
         public static final GrowthMode GROWING_PLANT = new GrowthMode("growing_plant",
                 block -> block instanceof GrowingPlantBlock, RenderFunction.GROWING_PLANT);
 
+        public static final GrowthMode STEM = new GrowthMode("stem", block -> block instanceof StemBlock,
+                RenderFunction.STEM);
+
         // all the different age properties. not going to add extras, though.
         public static final GrowthMode AGE_1 = ofIntegerProperty("age_1", BlockStateProperties.AGE_1);
         public static final GrowthMode AGE_2 = ofIntegerProperty("age_2", BlockStateProperties.AGE_2);
@@ -267,6 +284,8 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
         public static final GrowthMode AGE_25 = ofIntegerProperty("age_25", BlockStateProperties.AGE_25);
 
         public static final GrowthMode PICKLES = ofIntegerProperty("pickles", BlockStateProperties.PICKLES, 0, 4);
+        public static final GrowthMode FLOWER_AMOUNT = ofIntegerProperty("flower_amount",
+                BlockStateProperties.FLOWER_AMOUNT, 0, 4);
 
         private static final Codec<GrowthMode> CODEC = Codec.STRING.comapFlatMap(name -> {
             GrowthMode mode = VALUES.get(name);
@@ -287,13 +306,15 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
         }
 
         public static GrowthMode ofIntegerProperty(String name, IntegerProperty property) {
-            IntegerPropertyAccessor accessor = (IntegerPropertyAccessor) property;
-            final int min = accessor.gtceu$getMin();
-            final int max = accessor.gtceu$getMax();
-            return ofIntegerProperty(name, property, min, max);
+            return ofIntegerProperty(name, property, OptionalInt.empty(), OptionalInt.empty());
         }
 
         public static GrowthMode ofIntegerProperty(String name, IntegerProperty property, int min, int max) {
+            return ofIntegerProperty(name, property, OptionalInt.of(min), OptionalInt.of(max));
+        }
+
+        public static GrowthMode ofIntegerProperty(String name, IntegerProperty property, OptionalInt min,
+                                                   OptionalInt max) {
             GrowthMode mode = new GrowthMode(name,
                     block -> block.getStateDefinition().getProperties().contains(property),
                     RenderFunction.byIntegerProperty(property, min, max));
@@ -410,23 +431,52 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
             }
         };
 
-        TriFunction<IntegerProperty, Integer, Integer, ConfigureOnly> PROPERTY_FUNCTION_CACHE = GTMemoizer
-                .memoize((property, min, max) -> {
+        RenderFunction.ConfigureOnly STEM = (level, state, progress) -> {
+            final StemBlock block = (StemBlock) state.getBlock();
+            final int growthStage = GTMath.lerpInt(progress, 0, StemBlock.MAX_AGE + 2);
+            if (growthStage > StemBlock.MAX_AGE)
+                return List.of(new StateWithOffset(((StemBlockAccessor) block).gtceu$getFruit().defaultBlockState()));
+            state = state.trySetValue(StemBlock.AGE, growthStage);
+            return List.of(new StateWithOffset(state));
+        };
+
+        TriFunction<IntegerProperty, OptionalInt, OptionalInt, ConfigureOnly> PROPERTY_FUNCTION_CACHE = GTMemoizer
+                .memoize((property, setMin, setMax) -> {
                     IntegerPropertyAccessor accessor = (IntegerPropertyAccessor) property;
-                    final int minValue = accessor.gtceu$getMin();
-                    final int maxValue = accessor.gtceu$getMax();
+                    final int presumedMinValue = accessor.gtceu$getMin();
+                    final int presumedMaxValue = accessor.gtceu$getMax();
                     return (level, state, progress) -> {
+                        final int min = setMin.orElse(presumedMinValue);
+                        final int betterMaxValue = state.getBlock() instanceof CropBlock crop ?
+                                Math.max(presumedMaxValue, crop.getMaxAge()) : presumedMaxValue;
+                        final int max = setMax.orElse(betterMaxValue);
                         int growthStage = GTMath.lerpInt(progress, min, max + 1);
-                        if (growthStage < minValue) {
+                        if (growthStage < presumedMinValue) {
                             return Collections.emptySet();
                         }
-                        state = state.trySetValue(property, Math.min(growthStage, maxValue));
+                        if (state.getBlock() instanceof CropBlock crop) {
+                            state = crop.getStateForAge(Math.min(growthStage, betterMaxValue));
+                        } else {
+                            state = state.trySetValue(property, Math.min(growthStage, betterMaxValue));
+                        }
+                        if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+                            final var topState = state.trySetValue(BlockStateProperties.DOUBLE_BLOCK_HALF,
+                                    DoubleBlockHalf.UPPER);
+                            return List.of(new StateWithOffset(state),
+                                    new StateWithOffset(topState, new Vector3f(0, 1, 0)));
+                        }
+                        if (state.hasProperty(BlockStateProperties.HALF)) {
+                            final var topState = state.trySetValue(BlockStateProperties.HALF, Half.TOP);
+                            return List.of(new StateWithOffset(state),
+                                    new StateWithOffset(topState, new Vector3f(0, 1, 0)));
+                        }
 
                         return List.of(new StateWithOffset(state));
                     };
                 });
 
-        static RenderFunction.ConfigureOnly byIntegerProperty(IntegerProperty property, int min, int max) {
+        static RenderFunction.ConfigureOnly byIntegerProperty(IntegerProperty property, OptionalInt min,
+                                                              OptionalInt max) {
             return PROPERTY_FUNCTION_CACHE.apply(property, min, max);
         }
 

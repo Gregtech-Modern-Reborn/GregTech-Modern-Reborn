@@ -3,10 +3,10 @@ package com.gregtechceu.gtceu.common.blockentity;
 import com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity;
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
 import com.gregtechceu.gtceu.api.capability.ILaserContainer;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
 import com.gregtechceu.gtceu.common.pipelike.laser.*;
+import com.gregtechceu.gtceu.data.item.GTItemAbilities;
 import com.gregtechceu.gtceu.utils.GTUtil;
 import com.gregtechceu.gtceu.utils.TaskHandler;
 
@@ -17,15 +17,12 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
 
 import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.EnumMap;
@@ -59,26 +56,6 @@ public class LaserPipeBlockEntity extends PipeBlockEntity<LaserPipeType, LaserPi
     }
 
     public static void onBlockEntityRegister(BlockEntityType<LaserPipeBlockEntity> cableBlockEntityBlockEntityType) {}
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == GTCapability.CAPABILITY_LASER) {
-            if (getLevel().isClientSide())
-                return GTCapability.CAPABILITY_LASER.orEmpty(cap, LazyOptional.of(() -> clientCapability));
-
-            if (handlers.isEmpty()) {
-                initHandlers();
-            }
-            checkNetwork();
-            return GTCapability.CAPABILITY_LASER.orEmpty(cap,
-                    LazyOptional.of(() -> handlers.getOrDefault(side, defaultHandler)));
-        } else if (cap == GTCapability.CAPABILITY_COVERABLE) {
-            return GTCapability.CAPABILITY_COVERABLE.orEmpty(cap, LazyOptional.of(this::getCoverContainer));
-        } else if (cap == GTCapability.CAPABILITY_TOOLABLE) {
-            return GTCapability.CAPABILITY_TOOLABLE.orEmpty(cap, LazyOptional.of(() -> this));
-        }
-        return super.getCapability(cap, side);
-    }
 
     @Override
     public boolean canHaveBlockedFaces() {
@@ -187,6 +164,11 @@ public class LaserPipeBlockEntity extends PipeBlockEntity<LaserPipeType, LaserPi
     @Override
     public GTToolType getPipeTuneTool() {
         return GTToolType.WIRE_CUTTER;
+    }
+
+    @Override
+    public boolean hasCorrectAction(ItemStack stack) {
+        return stack.canPerformAction(GTItemAbilities.WIRE_CUTTER_CONNECT);
     }
 
     @Override

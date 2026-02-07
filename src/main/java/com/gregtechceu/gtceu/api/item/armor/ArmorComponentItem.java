@@ -2,30 +2,28 @@ package com.gregtechceu.gtceu.api.item.armor;
 
 import com.gregtechceu.gtceu.api.item.IComponentItem;
 import com.gregtechceu.gtceu.api.item.component.*;
-import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.data.item.GTItems;
 
-import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.core.Holder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.common.ItemAbility;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.*;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.NotNullByDefault;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -33,7 +31,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-@NotNullByDefault
 public class ArmorComponentItem extends ArmorItem implements IComponentItem {
 
     @Getter
@@ -41,8 +38,9 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
     @Getter
     protected List<IItemComponent> components;
 
-    public ArmorComponentItem(ArmorMaterial material, ArmorItem.Type type, Properties properties) {
-        super(material, type, properties.durability(0));
+    public ArmorComponentItem(Holder<ArmorMaterial> material, ArmorItem.Type type, Properties properties) {
+        // Some trickery to always receive damage events without ever actually breaking the armor
+        super(material, type, properties.durability(Integer.MAX_VALUE));
         components = new ArrayList<>();
     }
 
@@ -61,12 +59,12 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
     }
 
     @Override
-    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
-        Multimap<Attribute, AttributeModifier> multimap = ArrayListMultimap.create();
+    public ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        List<ItemAttributeModifiers.Entry> list = new ArrayList<>();
         IArmorLogic armorLogic = getArmorLogic();
-        multimap.putAll(super.getAttributeModifiers(slot, stack));
-        multimap.putAll(armorLogic.getAttributeModifiers(slot, stack));
-        return multimap;
+        list.addAll(super.getDefaultAttributeModifiers(stack).modifiers());
+        list.addAll(armorLogic.getDefaultAttributeModifiers(Equipable.get(stack).getEquipmentSlot(), stack));
+        return new ItemAttributeModifiers(list, true);
     }
 
     @Override
@@ -80,8 +78,15 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
     }
 
     @Override
-    public void onArmorTick(ItemStack stack, Level level, Player player) {
-        this.armorLogic.onArmorTick(level, player, stack);
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        for (IItemComponent component : components) {
+            if (component instanceof IItemLifeCycle lifeCycle) {
+                lifeCycle.inventoryTick(stack, level, entity, slotId, isSelected);
+            }
+        }
+        if (slotId >= 36 && slotId <= 39 && entity instanceof Player player) {
+            this.armorLogic.onArmorTick(level, player, stack);
+        }
     }
 
     @Override
@@ -103,12 +108,6 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
         return armorLogic.getArmorDisplay(player, armor, slot);
     }
 
-    // Some trickery to always receive damage events without ever actually breaking the armor
-    @Override
-    public boolean canBeDepleted() {
-        return true;
-    }
-
     @Override
     public void setDamage(ItemStack stack, int damage) {}
 
@@ -123,28 +122,15 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
     }
 
     @Override
-    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, Consumer<T> onBroken) {
-        return armorLogic.damageArmor(entity, stack, entity.getLastDamageSource(), amount, this.getEquipmentSlot());
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity,
+                                                   Consumer<Item> onBroken) {
+        return armorLogic.damageArmor(entity, stack, amount, this.getEquipmentSlot());
     }
 
     @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-
-            @Override
-            public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack,
-                                                                   EquipmentSlot equipmentSlot,
-                                                                   HumanoidModel<?> original) {
-                return armorLogic.getArmorModel(livingEntity, itemStack, equipmentSlot, original);
-            }
-        });
-    }
-
-    @Nullable
-    @Override
-    public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        var textureId = armorLogic.getArmorTexture(stack, entity, slot, type);
-        return textureId == null ? null : textureId.toString();
+    public @Nullable ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+                                                      ArmorMaterial.Layer layer, boolean innerModel) {
+        return armorLogic.getArmorTexture(stack, entity, slot, layer);
     }
 
     ///////////////////////////////////////////
@@ -164,11 +150,11 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
                                 TooltipFlag isAdvanced) {
         for (IItemComponent component : components) {
             if (component instanceof IAddInformation addInformation) {
-                addInformation.appendHoverText(stack, level, tooltipComponents, isAdvanced);
+                addInformation.appendHoverText(stack, context, tooltipComponents, isAdvanced);
             }
         }
     }
@@ -204,6 +190,16 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
     }
 
     @Override
+    public boolean canPerformAction(ItemStack stack, ItemAbility action) {
+        for (IItemComponent component : components) {
+            if (component instanceof IAbilityItem abilityItem && abilityItem.canPerformAction(stack, action)) {
+                return true;
+            }
+        }
+        return super.canPerformAction(stack, action);
+    }
+
+    @Override
     public InteractionResult useOn(UseOnContext context) {
         for (IItemComponent component : components) {
             if (component instanceof IInteractionItem interactionItem) {
@@ -220,7 +216,7 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         for (IItemComponent component : components) {
             if (component instanceof IInteractionItem interactionItem) {
-                var result = interactionItem.use(this, level, player, usedHand);
+                var result = interactionItem.use(player.getItemInHand(usedHand), level, player, usedHand);
                 if (result.getResult() != InteractionResult.PASS) {
                     return result;
                 }
@@ -290,15 +286,6 @@ public class ArmorComponentItem extends ArmorItem implements IComponentItem {
             }
         }
         return super.getDescriptionId(stack);
-    }
-
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        for (IItemComponent component : components) {
-            if (component instanceof IItemLifeCycle lifeCycle) {
-                lifeCycle.inventoryTick(stack, level, entity, slotId, isSelected);
-            }
-        }
     }
 
     @Override

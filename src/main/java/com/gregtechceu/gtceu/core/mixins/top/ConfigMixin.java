@@ -1,11 +1,11 @@
 package com.gregtechceu.gtceu.core.mixins.top;
 
 import com.gregtechceu.gtceu.api.GTCEuAPI;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.item.tool.MaterialToolTier;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -47,10 +47,10 @@ public class ConfigMixin {
             at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;"))
     private static void gtceu$injectHarvestTags(CallbackInfoReturnable<Map<ResourceLocation, String>> cir) {
         IntSet passedTiers = new IntOpenHashSet();
-        for (Material mat : GTCEuAPI.materialManager.getRegisteredMaterials()) {
+        for (Material mat : GTCEuAPI.materialManager) {
             if (mat.hasProperty(PropertyKey.TOOL)) {
                 MaterialToolTier tier = mat.getToolTier();
-                int harvestLevel = tier.getLevel();
+                int harvestLevel = tier.property.getHarvestLevel();
                 if (!passedTiers.contains(harvestLevel)) {
                     passedTiers.add(harvestLevel);
                     TagKey<Block> tag = CustomTags.TOOL_TIERS[harvestLevel];

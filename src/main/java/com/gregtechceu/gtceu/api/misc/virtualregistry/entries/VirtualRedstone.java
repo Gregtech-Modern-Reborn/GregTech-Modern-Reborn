@@ -3,6 +3,7 @@ package com.gregtechceu.gtceu.api.misc.virtualregistry.entries;
 import com.gregtechceu.gtceu.api.misc.virtualregistry.EntryTypes;
 import com.gregtechceu.gtceu.api.misc.virtualregistry.VirtualEntry;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 
 import it.unimi.dsi.fastutil.objects.Object2ShortMap;
@@ -24,10 +25,8 @@ public class VirtualRedstone extends VirtualEntry {
         return members.values().intStream().max().orElse(0);
     }
 
-    public UUID addMember() {
-        UUID uuid = UUID.randomUUID();
+    public void addMember(UUID uuid) {
         members.put(uuid, (short) 0);
-        return uuid;
     }
 
     public void setSignal(UUID uuid, int signal) {
@@ -45,8 +44,8 @@ public class VirtualRedstone extends VirtualEntry {
     }
 
     @Override
-    public CompoundTag serializeNBT() {
-        CompoundTag tag = super.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        CompoundTag tag = super.serializeNBT(provider);
         CompoundTag tag2 = new CompoundTag();
         for (var entry : members.object2ShortEntrySet())
             tag2.putShort(entry.getKey().toString(), entry.getShortValue());
@@ -55,8 +54,8 @@ public class VirtualRedstone extends VirtualEntry {
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        super.deserializeNBT(nbt);
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        super.deserializeNBT(provider, nbt);
         CompoundTag tag = nbt.getCompound(MEMBERS_KEY);
         for (String uuid : tag.getAllKeys()) {
             members.put(UUID.fromString(uuid), tag.getShort(uuid));

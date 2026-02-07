@@ -1,22 +1,20 @@
 package com.gregtechceu.gtceu.data.recipe.serialized.chemistry;
 
-import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
+import com.gregtechceu.gtceu.api.fluid.store.FluidStorageKeys;
 
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.Items;
-
-import java.util.function.Consumer;
+import net.minecraft.world.level.Level;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.dust;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.ingot;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.dust;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.ingot;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public class ChemistryRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         AcidRecipes.init(provider);
         BrewingRecipes.init(provider);
         ChemicalBathRecipes.init(provider);
@@ -99,19 +97,19 @@ public class ChemistryRecipes {
         GAS_COLLECTOR_RECIPES.recipeBuilder("air")
                 .circuitMeta(1)
                 .outputFluids(Air.getFluid(10000))
-                .dimension(new ResourceLocation("overworld"))
+                .dimension(Level.OVERWORLD)
                 .duration(200).EUt(16).save(provider);
 
         GAS_COLLECTOR_RECIPES.recipeBuilder("nether_air")
                 .circuitMeta(2)
                 .outputFluids(NetherAir.getFluid(10000))
-                .dimension(new ResourceLocation("the_nether"))
+                .dimension(Level.NETHER)
                 .duration(200).EUt(64).save(provider);
 
         GAS_COLLECTOR_RECIPES.recipeBuilder("ender_air")
                 .circuitMeta(3)
                 .outputFluids(EnderAir.getFluid(10000))
-                .dimension(new ResourceLocation("the_end"))
+                .dimension(Level.END)
                 .duration(200).EUt(256).save(provider);
 
         // CaCO3 + 2NaCl -> Na2CO3 + CaCl2

@@ -16,10 +16,13 @@ import com.lowdragmc.lowdraglib.gui.texture.*;
 import com.lowdragmc.lowdraglib.gui.util.TreeBuilder;
 import com.lowdragmc.lowdraglib.gui.widget.*;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeType;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -27,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,7 +62,7 @@ public class RecipeTypeUIProject extends UIProject {
     }
 
     @Override
-    public UIProject loadProject(File file) {
+    public UIProject loadProject(Path file) {
         try {
             var tag = NbtIo.read(file);
             if (tag != null) {
@@ -69,8 +73,8 @@ public class RecipeTypeUIProject extends UIProject {
     }
 
     @Override
-    public CompoundTag serializeNBT() {
-        var tag = super.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        var tag = super.serializeNBT(provider);
         if (recipeType != null) {
             tag.putString("recipe_type", recipeType.registryName.toString());
         }
@@ -78,10 +82,11 @@ public class RecipeTypeUIProject extends UIProject {
     }
 
     @Override
-    public void deserializeNBT(CompoundTag tag) {
-        super.deserializeNBT(tag);
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        super.deserializeNBT(provider, tag);
         if (tag.contains("recipe_type")) {
-            recipeType = GTRegistries.RECIPE_TYPES.get(new ResourceLocation(tag.getString("recipe_type")));
+            var type = BuiltInRegistries.RECIPE_TYPE.get(ResourceLocation.parse(tag.getString("recipe_type")));
+            recipeType = (GTRecipeType) type;
         }
     }
 
@@ -93,13 +98,13 @@ public class RecipeTypeUIProject extends UIProject {
                         new TextTexture("Main")),
                 new GuiTextureGroup(ColorPattern.T_RED.rectTexture().setBottomRadius(10).transform(0, 0.4f),
                         new TextTexture("Main"))),
-                new UIMainPanel(editor, root, recipeType == null ? null : recipeType.registryName.toLanguageKey()));
+                new UIMainPanel(editor, root, recipeType == null ? null : recipeType.getTranslationKey()));
         for (WidgetToolBox.Default tab : WidgetToolBox.Default.TABS) {
             if (tab == WidgetToolBox.Default.CONTAINER) {
                 continue;
             }
             editor.getToolPanel().addNewToolBox("ldlib.gui.editor.group." + tab.groupName, tab.icon,
-                    tab.createToolBox());
+                    tab::createToolBox);
         }
     }
 
@@ -114,14 +119,17 @@ public class RecipeTypeUIProject extends UIProject {
                     var path = new File(LDLib.getLDLibDir(),
                             "assets/%s/ui/recipe_type".formatted(recipeType.registryName.getNamespace()));
                     path.mkdirs();
-                    saveProject(new File(path, recipeType.registryName.getPath() + "." + this.getRegisterUI().name()));
+                    saveProject(Path.of(recipeType.registryName.getPath(), ".", this.getRegisterUI().name()));
                     recipeType.getRecipeUI().reloadCustomUI();
                 });
             }
         } else if (name.equals("template_tab")) {
             Map<String, List<GTRecipeType>> categories = new LinkedHashMap<>();
-            for (GTRecipeType recipeType : GTRegistries.RECIPE_TYPES) {
-                categories.computeIfAbsent(recipeType.group, group -> new ArrayList<>()).add(recipeType);
+            for (RecipeType<?> recipeType : BuiltInRegistries.RECIPE_TYPE) {
+                if (!(recipeType instanceof GTRecipeType gtType)) {
+                    continue;
+                }
+                categories.computeIfAbsent(gtType.group, group -> new ArrayList<>()).add(gtType);
             }
             categories.forEach((groupName, recipeTypes) -> menu.branch(groupName, m -> {
                 for (GTRecipeType recipeType : recipeTypes) {
@@ -131,12 +139,13 @@ public class RecipeTypeUIProject extends UIProject {
                     } else {
                         icon = new ItemStackTexture(Items.BARRIER);
                     }
-                    m.leaf(icon, recipeType.registryName.toLanguageKey(), () -> {
+                    m.leaf(icon, recipeType.getTranslationKey(), () -> {
                         root.clearAllWidgets();
                         if (recipeType.getRecipeUI().hasCustomUI()) {
                             var nbt = recipeType.getRecipeUI().getCustomUI();
                             IConfigurableWidget.deserializeNBT(root, nbt.getCompound("root"),
-                                    Resources.fromNBT(nbt.getCompound("resources")), false);
+                                    Resources.fromNBT(nbt.getCompound("resources")), false,
+                                    GTRegistries.builtinRegistry());
                         } else {
                             var widget = recipeType.getRecipeUI().createEditableUITemplate(false, false)
                                     .createDefault();

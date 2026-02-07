@@ -1,10 +1,10 @@
 package com.gregtechceu.gtceu.common.recipe.condition;
 
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
-import com.gregtechceu.gtceu.common.data.GTRecipeConditions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeConditions;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.core.BlockPos;
@@ -19,6 +19,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,11 +32,11 @@ import static com.gregtechceu.gtceu.api.recipe.condition.ConditionSerializeUtils
 import static com.gregtechceu.gtceu.api.recipe.condition.ConditionSerializeUtils.encodeHolderSets;
 
 @NoArgsConstructor
-public class AdjacentFluidCondition extends RecipeCondition {
+public class AdjacentFluidCondition extends RecipeCondition<AdjacentFluidCondition> {
 
     // spotless:off
-    public static final Codec<AdjacentFluidCondition> CODEC =
-            RecordCodecBuilder.create(instance -> RecipeCondition.isReverse(instance).and(
+    public static final MapCodec<AdjacentFluidCondition> CODEC =
+            RecordCodecBuilder.mapCodec(instance -> RecipeCondition.isReverse(instance).and(
                     Codec.STRING.fieldOf("fluidString").forGetter(AdjacentFluidCondition::getFluidString)
             ).apply(instance, AdjacentFluidCondition::new));
     // spotless:on
@@ -94,7 +95,7 @@ public class AdjacentFluidCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeConditionType<?> getType() {
+    public RecipeConditionType<AdjacentFluidCondition> getType() {
         return GTRecipeConditions.ADJACENT_FLUID;
     }
 
@@ -133,11 +134,11 @@ public class AdjacentFluidCondition extends RecipeCondition {
         if (this.getFluids().isEmpty() || (recipe.data.contains("fluidA") && recipe.data.contains("fluidB"))) {
             List<HolderSet<Fluid>> fluids = new ArrayList<>();
 
-            Fluid fluidA = BuiltInRegistries.FLUID.get(new ResourceLocation(recipe.data.getString("fluidA")));
+            Fluid fluidA = BuiltInRegistries.FLUID.get(ResourceLocation.parse(recipe.data.getString("fluidA")));
             if (!fluidA.defaultFluidState().isEmpty()) {
                 fluids.add(HolderSet.direct(fluidA.builtInRegistryHolder()));
             }
-            Fluid fluidB = BuiltInRegistries.FLUID.get(new ResourceLocation(recipe.data.getString("fluidB")));
+            Fluid fluidB = BuiltInRegistries.FLUID.get(ResourceLocation.parse(recipe.data.getString("fluidB")));
             if (!fluidB.defaultFluidState().isEmpty()) {
                 fluids.add(HolderSet.direct(fluidB.builtInRegistryHolder()));
             }

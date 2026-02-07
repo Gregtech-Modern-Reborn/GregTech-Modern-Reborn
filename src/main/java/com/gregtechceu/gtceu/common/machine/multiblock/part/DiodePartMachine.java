@@ -6,28 +6,25 @@ import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredIOPartMachine;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableEnergyContainer;
+import com.gregtechceu.gtceu.data.item.GTItemAbilities;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.UpdateListener;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 import lombok.Getter;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class DiodePartMachine extends TieredIOPartMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(DiodePartMachine.class,
@@ -135,15 +132,19 @@ public class DiodePartMachine extends TieredIOPartMachine {
     }
 
     @Override
-    protected InteractionResult onSoftMalletClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                                  BlockHitResult hitResult) {
+    protected ItemInteractionResult onSoftMalletClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                      Direction gridSide,
+                                                      BlockHitResult hitResult) {
+        if (!held.canPerformAction(GTItemAbilities.MALLET_CONFIGURE)) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         cycleAmpMode();
         if (!isRemote()) {
             this.scheduleRenderUpdate();
             playerIn.sendSystemMessage(Component.translatable("gtceu.machine.diode.message", amps));
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
-        return InteractionResult.CONSUME;
+        return ItemInteractionResult.CONSUME;
     }
 
     @Override

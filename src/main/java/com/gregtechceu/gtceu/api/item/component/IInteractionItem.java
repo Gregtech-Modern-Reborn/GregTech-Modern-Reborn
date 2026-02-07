@@ -6,7 +6,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.context.UseOnContext;
@@ -23,26 +23,27 @@ public interface IInteractionItem extends IItemComponent {
         return InteractionResult.PASS;
     }
 
-    default InteractionResultHolder<ItemStack> use(Item item, Level level, Player player, InteractionHand usedHand) {
-        if (item.isEdible()) {
-            ItemStack itemStack = player.getItemInHand(usedHand);
-            if (player.canEat(itemStack.getFoodProperties(player).canAlwaysEat())) {
+    default InteractionResultHolder<ItemStack> use(ItemStack item, Level level,
+                                                   Player player, InteractionHand usedHand) {
+        FoodProperties food = item.getFoodProperties(player);
+        if (food != null) {
+            if (player.canEat(food.canAlwaysEat())) {
                 player.startUsingItem(usedHand);
-                return InteractionResultHolder.consume(itemStack);
+                return InteractionResultHolder.consume(item);
             } else {
-                return InteractionResultHolder.fail(itemStack);
+                return InteractionResultHolder.fail(item);
             }
         } else {
-            return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+            return InteractionResultHolder.pass(item);
         }
     }
 
     default ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
-        return stack.isEdible() ? livingEntity.eat(level, stack) : stack;
+        return stack.getFoodProperties(livingEntity) != null ? livingEntity.eat(level, stack) : stack;
     }
 
     default UseAnim getUseAnimation(ItemStack stack) {
-        return stack.getItem().isEdible() ? UseAnim.EAT : UseAnim.NONE;
+        return stack.getFoodProperties(null) != null ? UseAnim.EAT : UseAnim.NONE;
     }
 
     default boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
@@ -58,7 +59,7 @@ public interface IInteractionItem extends IItemComponent {
         return false;
     }
 
-    default boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
+    default boolean onEntitySwing(ItemStack stack, LivingEntity entity, InteractionHand hand) {
         return false;
     }
 }

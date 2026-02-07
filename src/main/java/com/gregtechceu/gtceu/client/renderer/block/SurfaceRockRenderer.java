@@ -1,9 +1,8 @@
 package com.gregtechceu.gtceu.client.renderer.block;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.data.pack.GTDynamicResourcePack;
+import com.gregtechceu.gtceu.common.pack.GTDynamicResourcePack;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.models.blockstates.MultiVariantGenerator;
@@ -18,10 +17,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class SurfaceRockRenderer {
 
     private static final Set<SurfaceRockRenderer> MODELS = new HashSet<>();

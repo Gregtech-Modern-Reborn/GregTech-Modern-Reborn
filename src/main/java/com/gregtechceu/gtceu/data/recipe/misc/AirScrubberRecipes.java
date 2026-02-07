@@ -1,18 +1,16 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
-import com.gregtechceu.gtceu.common.data.GTMedicalConditions;
+import com.gregtechceu.gtceu.data.medicalcondition.GTMedicalConditions;
 
-import net.minecraft.data.recipes.FinishedRecipe;
-
-import java.util.function.Consumer;
+import net.minecraft.data.recipes.RecipeOutput;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.AIR_SCRUBBER_RECIPES;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.AIR_SCRUBBER_RECIPES;
 
 public class AirScrubberRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         AIR_SCRUBBER_RECIPES.recipeBuilder("carbon_monoxide_poisoning")
                 .circuitMeta(1)
                 .outputFluids(CarbonMonoxide.getFluid(1000))

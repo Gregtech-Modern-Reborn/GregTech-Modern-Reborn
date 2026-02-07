@@ -17,7 +17,6 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.FieldManagedStorage;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.item.ItemStack;
 
 import lombok.Getter;
@@ -26,10 +25,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public abstract class FilterHandler<T, F extends Filter<T, F>> implements IEnhancedManaged {
 
     private final IEnhancedManaged container;

@@ -13,7 +13,6 @@ import com.gregtechceu.gtceu.utils.GTTransferUtils;
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -23,10 +22,6 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class CokeOvenHatch extends MultiblockPartMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(CokeOvenHatch.class,
@@ -114,7 +109,7 @@ public class CokeOvenHatch extends MultiblockPartMachine {
     //////////////////////////////////////
 
     @Override
-    public void onNeighborChanged(Block block, BlockPos fromPos, boolean isMoving) {
+    public void onNeighborChanged(net.minecraft.world.level.block.Block block, BlockPos fromPos, boolean isMoving) {
         super.onNeighborChanged(block, fromPos, isMoving);
         updateAutoIOSubscription();
     }

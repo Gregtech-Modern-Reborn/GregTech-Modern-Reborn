@@ -3,8 +3,8 @@ package com.gregtechceu.gtceu.api.machine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
-import com.gregtechceu.gtceu.api.pattern.BlockPattern;
-import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
+import com.gregtechceu.gtceu.api.multiblock.BlockPattern;
+import com.gregtechceu.gtceu.api.multiblock.MultiblockShapeInfo;
 
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -14,9 +14,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import org.apache.commons.lang3.function.TriFunction;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -31,7 +31,7 @@ public class MultiblockMachineDefinition extends MachineDefinition {
     private boolean generator;
     @Setter
     @Getter
-    @NonNull
+    @NotNull
     private Supplier<BlockPattern> patternFactory;
     @Setter
     @Getter

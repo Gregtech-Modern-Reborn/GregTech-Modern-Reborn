@@ -15,9 +15,9 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +60,7 @@ public interface IMachineRendererModel<T extends IMachineFeature> {
 
     default AABB getRenderBoundingBox(T machine) {
         BlockPos pos = machine.self().getPos();
-        return new AABB(pos.offset(-1, 0, -1), pos.offset(2, 2, 2));
+        return AABB.encapsulatingFullBlocks(pos.offset(-1, -1, -1), pos.offset(1, 1, 1));
     }
 
     default boolean isBlockEntityRenderer() {

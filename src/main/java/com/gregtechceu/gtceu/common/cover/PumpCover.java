@@ -30,14 +30,12 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
@@ -49,10 +47,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class PumpCover extends CoverBehavior implements IIOCover, IUICover, IControllable {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(PumpCover.class,
@@ -123,7 +117,6 @@ public class PumpCover extends CoverBehavior implements IIOCover, IUICover, ICon
 
     protected @Nullable IFluidHandler getAdjacentFluidHandler() {
         return GTTransferUtils.getAdjacentFluidHandler(coverHolder.getLevel(), coverHolder.getPos(), attachedSide)
-                .resolve()
                 .orElse(null);
     }
 
@@ -168,7 +161,7 @@ public class PumpCover extends CoverBehavior implements IIOCover, IUICover, ICon
     }
 
     @Override
-    public void onNeighborChanged(Block block, BlockPos fromPos, boolean isMoving) {
+    public void onNeighborChanged(net.minecraft.world.level.block.Block block, BlockPos fromPos, boolean isMoving) {
         subscriptionHandler.updateSubscription();
     }
 
@@ -369,10 +362,15 @@ public class PumpCover extends CoverBehavior implements IIOCover, IUICover, ICon
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            if (io == IO.OUT && manualIOMode == ManualIOMode.DISABLED) {
-                return 0;
+            if (io == IO.OUT) {
+                if (manualIOMode == ManualIOMode.DISABLED) {
+                    return 0;
+                }
+                if (manualIOMode == ManualIOMode.UNFILTERED) {
+                    return super.fill(resource, action);
+                }
             }
-            if (!filterHandler.test(resource) && manualIOMode == ManualIOMode.FILTERED) {
+            if (!filterHandler.test(resource)) {
                 return 0;
             }
             return super.fill(resource, action);
@@ -380,10 +378,15 @@ public class PumpCover extends CoverBehavior implements IIOCover, IUICover, ICon
 
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (io == IO.IN && manualIOMode == ManualIOMode.DISABLED) {
-                return FluidStack.EMPTY;
+            if (io == IO.IN) {
+                if (manualIOMode == ManualIOMode.DISABLED) {
+                    return FluidStack.EMPTY;
+                }
+                if (manualIOMode == ManualIOMode.UNFILTERED) {
+                    return super.drain(resource, action);
+                }
             }
-            if (manualIOMode == ManualIOMode.FILTERED && !filterHandler.test(resource)) {
+            if (!filterHandler.test(resource)) {
                 return FluidStack.EMPTY;
             }
             return super.drain(resource, action);

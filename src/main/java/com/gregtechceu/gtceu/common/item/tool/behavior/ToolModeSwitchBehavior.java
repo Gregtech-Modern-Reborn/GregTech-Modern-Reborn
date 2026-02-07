@@ -5,18 +5,24 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.item.tool.ToolHelper;
 import com.gregtechceu.gtceu.api.item.tool.behavior.IToolBehavior;
-import com.gregtechceu.gtceu.common.data.GTSoundEntries;
-import com.gregtechceu.gtceu.common.data.item.GTToolActions;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.api.item.tool.behavior.ToolBehaviorType;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
+import com.gregtechceu.gtceu.data.item.GTItemAbilities;
+import com.gregtechceu.gtceu.data.sound.GTSoundEntries;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
+import com.gregtechceu.gtceu.data.tools.GTToolBehaviors;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
@@ -24,41 +30,34 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.common.ToolAction;
+import net.neoforged.neoforge.common.ItemAbility;
 
+import com.mojang.serialization.Codec;
+import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
 
-import static com.gregtechceu.gtceu.api.item.tool.ToolHelper.getBehaviorsTag;
-
-public class ToolModeSwitchBehavior implements IToolBehavior {
+public class ToolModeSwitchBehavior implements IToolBehavior<ToolModeSwitchBehavior> {
 
     public static final ToolModeSwitchBehavior INSTANCE = new ToolModeSwitchBehavior();
+
+    public static final Codec<ToolModeSwitchBehavior> CODEC = Codec.unit(INSTANCE);
+    public static final StreamCodec<ByteBuf, ToolModeSwitchBehavior> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
     protected ToolModeSwitchBehavior() {}
 
     @Override
-    public boolean canPerformAction(ItemStack stack, ToolAction action) {
-        var mode = WrenchModeType.values()[getBehaviorsTag(stack).getByte("Mode")];
-        boolean canWrenchConfigureAll = action == GTToolActions.WRENCH_CONFIGURE_ALL;
-        return action == GTToolActions.WRENCH_CONFIGURE || switch (mode) {
-            case ITEM -> canWrenchConfigureAll || action == GTToolActions.WRENCH_CONFIGURE_ITEMS;
-            case FLUID -> canWrenchConfigureAll || action == GTToolActions.WRENCH_CONFIGURE_FLUIDS;
-            case BOTH -> GTToolActions.WRENCH_CONFIGURE_ACTIONS.contains(action);
+    public boolean canPerformAction(ItemStack stack, ItemAbility action) {
+        var mode = stack.getOrDefault(GTDataComponents.TOOL_MODE, ModeType.BOTH);
+        boolean canWrenchConfigureAll = action == GTItemAbilities.WRENCH_CONFIGURE_ALL;
+        return action == GTItemAbilities.WRENCH_CONFIGURE || switch (mode) {
+            case ITEM -> canWrenchConfigureAll || action == GTItemAbilities.WRENCH_CONFIGURE_ITEMS;
+            case FLUID -> canWrenchConfigureAll || action == GTItemAbilities.WRENCH_CONFIGURE_FLUIDS;
+            case BOTH -> GTItemAbilities.WRENCH_CONFIGURE_ACTIONS.contains(action);
         };
-    }
-
-    @Override
-    public void addBehaviorNBT(@NotNull ItemStack stack, @NotNull CompoundTag tag) {
-        var toolTypes = ToolHelper.getToolTypes(stack);
-        if (toolTypes.contains(GTToolType.WRENCH)) {
-            tag.putByte("Mode", (byte) WrenchModeType.BOTH.ordinal());
-        }
-        IToolBehavior.super.addBehaviorNBT(stack, tag);
     }
 
     @Override
@@ -85,7 +84,8 @@ public class ToolModeSwitchBehavior implements IToolBehavior {
             return InteractionResult.SUCCESS;
         }
 
-        if (player != null) world.getBlockState(pos).use(world, player, context.getHand(), blockHitResult);
+        if (player != null)
+            world.getBlockState(pos).useItemOn(itemStack, world, player, context.getHand(), blockHitResult);
         return InteractionResult.SUCCESS;
     }
 
@@ -93,52 +93,59 @@ public class ToolModeSwitchBehavior implements IToolBehavior {
     public @NotNull InteractionResultHolder<ItemStack> onItemRightClick(@NotNull Level world, @NotNull Player player,
                                                                         @NotNull InteractionHand hand) {
         var itemStack = player.getItemInHand(hand);
-        var tagCompound = getBehaviorsTag(itemStack);
         if (player.isShiftKeyDown()) {
             var toolTypes = ToolHelper.getToolTypes(itemStack);
             if (toolTypes.contains(GTToolType.WRENCH)) {
-                tagCompound.putByte("Mode",
-                        (byte) ((tagCompound.getByte("Mode") + 1) % WrenchModeType.values().length));
-                player.displayClientMessage(Component.translatable("metaitem.machine_configuration.mode",
-                        WrenchModeType.values()[tagCompound.getByte("Mode")].getName()), true);
+                var newMode = itemStack.getOrDefault(GTDataComponents.TOOL_MODE, ModeType.BOTH).nextMode();
+                itemStack.set(GTDataComponents.TOOL_MODE, newMode);
+
+                player.displayClientMessage(
+                        Component.translatable("metaitem.machine_configuration.mode", newMode.getName()),
+                        true);
             }
             return InteractionResultHolder.success(itemStack);
         }
-
-        return IToolBehavior.super.onItemRightClick(world, player, hand);
+        return InteractionResultHolder.success(itemStack);
     }
 
     @Override
-    public void addInformation(@NotNull ItemStack stack, @Nullable Level world, @NotNull List<Component> tooltip,
-                               @NotNull TooltipFlag flag) {
-        var tagCompound = getBehaviorsTag(stack);
-
-        var toolTypes = ToolHelper.getToolTypes(stack);
-        if (toolTypes.contains(GTToolType.WRENCH)) {
-            tooltip.add(Component.translatable("metaitem.machine_configuration.mode",
-                    WrenchModeType.values()[tagCompound.getByte("Mode")].getName()));
-        }
+    public ToolBehaviorType<ToolModeSwitchBehavior> getType() {
+        return GTToolBehaviors.MODE_SWITCH;
     }
 
-    @Getter
-    public enum WrenchModeType {
+    @Override
+    public void addInformation(@NotNull ItemStack stack, Item.TooltipContext context, @NotNull List<Component> tooltip,
+                               @NotNull TooltipFlag flag) {
+        ModeType behavior = stack.getOrDefault(GTDataComponents.TOOL_MODE, ModeType.BOTH);
+        tooltip.add(Component.translatable("metaitem.machine_configuration.mode", behavior.getName()));
+    }
 
-        ITEM(Component.translatable("gtceu.mode.item")),
-        FLUID(Component.translatable("gtceu.mode.fluid")),
-        BOTH(Component.translatable("gtceu.mode.both"));
+    public enum ModeType implements StringRepresentable {
 
+        ITEM("item", Component.translatable("gtceu.mode.item")),
+        FLUID("fluid", Component.translatable("gtceu.mode.fluid")),
+        BOTH("both", Component.translatable("gtceu.mode.both"));
+
+        public static final Codec<ModeType> CODEC = StringRepresentable.fromEnum(ModeType::values);
+        public static final StreamCodec<ByteBuf, ModeType> STREAM_CODEC = ByteBufCodecs.BYTE
+                .map(aByte -> ModeType.values()[aByte], val -> (byte) val.ordinal());
+
+        @Getter
+        private final @NotNull String serializedName;
+        @Getter
         private final Component name;
 
-        WrenchModeType(Component name) {
+        ModeType(String id, Component name) {
+            this.serializedName = id;
             this.name = name;
         }
 
-        public boolean isItem() {
-            return this == ITEM || this == BOTH;
-        }
-
-        public boolean isFluid() {
-            return this == FLUID || this == BOTH;
+        public ModeType nextMode() {
+            return switch (this) {
+                case ITEM -> FLUID;
+                case FLUID -> BOTH;
+                case BOTH -> ITEM;
+            };
         }
     }
 }

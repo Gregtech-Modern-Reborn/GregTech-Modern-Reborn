@@ -19,6 +19,7 @@ import com.lowdragmc.lowdraglib.gui.widget.TabButton;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.utils.Position;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceLocation;
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 
 @LDLRegister(name = "mui", group = "editor.gtceu")
@@ -58,7 +60,7 @@ public class MachineUIProject extends UIProject {
     }
 
     @Override
-    public UIProject loadProject(File file) {
+    public UIProject loadProject(Path file) {
         try {
             var tag = NbtIo.read(file);
             if (tag != null) {
@@ -69,8 +71,8 @@ public class MachineUIProject extends UIProject {
     }
 
     @Override
-    public CompoundTag serializeNBT() {
-        var tag = super.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        var tag = super.serializeNBT(provider);
         if (machineDefinition != null) {
             tag.putString("machine", machineDefinition.getId().toString());
         }
@@ -78,10 +80,10 @@ public class MachineUIProject extends UIProject {
     }
 
     @Override
-    public void deserializeNBT(CompoundTag tag) {
-        super.deserializeNBT(tag);
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        super.deserializeNBT(provider, tag);
         if (tag.contains("machine")) {
-            machineDefinition = GTRegistries.MACHINES.get(new ResourceLocation(tag.getString("machine")));
+            machineDefinition = GTRegistries.MACHINES.get(ResourceLocation.parse(tag.getString("machine")));
         }
     }
 
@@ -100,7 +102,7 @@ public class MachineUIProject extends UIProject {
                 continue;
             }
             editor.getToolPanel().addNewToolBox("ldlib.gui.editor.group." + tab.groupName, tab.icon,
-                    tab.createToolBox());
+                    tab::createToolBox);
         }
     }
 
@@ -113,10 +115,10 @@ public class MachineUIProject extends UIProject {
                 menu.remove("ldlib.gui.editor.menu.save");
                 menu.leaf(Icons.SAVE, "ldlib.gui.editor.menu.save", () -> {
                     var editableUI = machineDefinition.getEditableUI();
-                    var path = new File(LDLib.location,
+                    var path = new File(LDLib.getLDLibDir(),
                             "assets/%s/ui/machine".formatted(editableUI.getUiPath().getNamespace()));
                     path.mkdirs();
-                    saveProject(new File(path, editableUI.getUiPath().getPath() + "." + this.getRegisterUI().name()));
+                    saveProject(Path.of(editableUI.getUiPath().getPath(), ".", this.getRegisterUI().name()));
                     editableUI.reloadCustomUI();
                 });
             }
@@ -137,7 +139,7 @@ public class MachineUIProject extends UIProject {
                         m.leaf(new ItemStackTexture(definition.asStack()), definition.getDescriptionId(), () -> {
                             root.clearAllWidgets();
                             if (editableUI.hasCustomUI()) {
-                                deserializeNBT(editableUI.getCustomUI());
+                                deserializeNBT(GTRegistries.builtinRegistry(), editableUI.getCustomUI());
                             } else {
                                 var template = editableUI.createDefault();
                                 template.setSelfPosition(

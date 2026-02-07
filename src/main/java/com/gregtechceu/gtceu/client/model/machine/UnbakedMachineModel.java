@@ -10,8 +10,8 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
-import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
+import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +51,7 @@ public class UnbakedMachineModel implements IUnbakedGeometry<UnbakedMachineModel
     @Override
     public BakedModel bake(IGeometryBakingContext context, ModelBaker baker,
                            Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState,
-                           ItemOverrides overrides, ResourceLocation modelLocation) {
+                           ItemOverrides overrides) {
         Map<String, TextureAtlasSprite> textureOverrides = new HashMap<>();
         for (var entry : this.textureOverrides.entrySet()) {
             Material material = new Material(TextureAtlas.LOCATION_BLOCKS, entry.getValue());
@@ -60,10 +60,10 @@ public class UnbakedMachineModel implements IUnbakedGeometry<UnbakedMachineModel
 
         Map<MachineRenderState, BakedModel> baseModels = new IdentityHashMap<>();
         models.forEach((machineState, unbaked) -> {
-            baseModels.put(machineState, unbaked.bake(baker, spriteGetter, modelState, modelLocation));
+            baseModels.put(machineState, unbaked.bake(baker, spriteGetter, modelState));
         });
         MultiPartBakedModel multiPart = this.multiPart == null ? null :
-                this.multiPart.bake(baker, spriteGetter, modelState, modelLocation);
+                this.multiPart.bake(baker, spriteGetter, modelState);
 
         MachineModel model = new MachineModel(this.getDefinition(), baseModels, multiPart, this.dynamicRenders,
                 context.getTransforms(), context.getRootTransform(), modelState,

@@ -10,20 +10,20 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 import net.minecraft.world.level.levelgen.placement.RepeatingPlacement;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import org.jetbrains.annotations.NotNull;
 
 public class RubberTreeChancePlacement extends RepeatingPlacement {
 
     public static final PlacementModifierType<RubberTreeChancePlacement> RUBBER_TREE_CHANCE_PLACEMENT = GTRegistries
-            .register(
-                    BuiltInRegistries.PLACEMENT_MODIFIER_TYPE, GTCEu.id("rubber_tree_chance"),
+            .register(BuiltInRegistries.PLACEMENT_MODIFIER_TYPE, GTCEu.id("rubber_tree_chance"),
                     () -> RubberTreeChancePlacement.CODEC);
 
     public static final RubberTreeChancePlacement INSTANCE = new RubberTreeChancePlacement();
-    public static final Codec<RubberTreeChancePlacement> CODEC = Codec.unit(INSTANCE);
+    public static final MapCodec<RubberTreeChancePlacement> CODEC = MapCodec.unit(INSTANCE);
 
     @Override
-    protected int count(RandomSource random, BlockPos pos) {
+    protected int count(RandomSource random, @NotNull BlockPos pos) {
         return random.nextFloat() < ConfigHolder.INSTANCE.worldgen.rubberTreeSpawnChance ? 1 : 0;
     }
 

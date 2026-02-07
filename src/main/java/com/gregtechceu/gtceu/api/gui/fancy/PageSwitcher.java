@@ -7,7 +7,6 @@ import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
 import com.lowdragmc.lowdraglib.gui.widget.*;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
 
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -18,10 +17,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class PageSwitcher implements IFancyUIProvider {
 
     private final Consumer<IFancyUIProvider> onPageSwitched;
@@ -71,7 +66,7 @@ public class PageSwitcher implements IFancyUIProvider {
                                 clickData -> onPageSwitched.accept(page)));
                         pageWidget.addWidget(new ImageWidget(4, 4, 17, 17, page.getTabIcon()));
                         // For some reason, this doesn't work in any other way:
-                        pageWidget.widgets.get(0).setHoverTooltips(page.getTitle().getString());
+                        pageWidget.widgets.getFirst().setHoverTooltips(page.getTitle());
                         scrollableGroup.addWidget(pageWidget);
                     });
 

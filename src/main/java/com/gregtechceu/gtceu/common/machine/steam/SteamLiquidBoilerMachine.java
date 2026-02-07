@@ -14,7 +14,6 @@ import com.lowdragmc.lowdraglib.gui.texture.ProgressTexture;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
@@ -25,19 +24,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.FluidUtil;
 
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class SteamLiquidBoilerMachine extends SteamBoilerMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
@@ -52,9 +48,9 @@ public class SteamLiquidBoilerMachine extends SteamBoilerMachine {
         this.fuelTank = createFuelTank(args).setFilter(fluid -> FUEL_CACHE.computeIfAbsent(fluid.getFluid(), f -> {
             if (isRemote()) return true;
             return recipeLogic.getRecipeManager().getAllRecipesFor(getRecipeType()).stream().anyMatch(recipe -> {
-                var list = recipe.inputs.getOrDefault(FluidRecipeCapability.CAP, Collections.emptyList());
+                var list = recipe.value().inputs.getOrDefault(FluidRecipeCapability.CAP, Collections.emptyList());
                 if (!list.isEmpty()) {
-                    return Arrays.stream(FluidRecipeCapability.CAP.of(list.get(0).content).getStacks())
+                    return Arrays.stream(FluidRecipeCapability.CAP.of(list.getFirst().content).getFluids())
                             .anyMatch(stack -> stack.getFluid() == f);
                 }
                 return false;
@@ -66,7 +62,7 @@ public class SteamLiquidBoilerMachine extends SteamBoilerMachine {
     // ***** Initialization *****//
     //////////////////////////////////////
     @Override
-    public ManagedFieldHolder getFieldHolder() {
+    public @NotNull ManagedFieldHolder getFieldHolder() {
         return MANAGED_FIELD_HOLDER;
     }
 

@@ -12,7 +12,7 @@ import net.minecraft.world.level.Level;
 
 import org.jetbrains.annotations.NotNull;
 
-public interface IToolUIBehavior extends IToolBehavior {
+public interface IToolUIBehavior<T extends IToolUIBehavior<T>> extends IToolBehavior<T> {
 
     @Override
     default @NotNull InteractionResultHolder<ItemStack> onItemRightClick(@NotNull Level level, @NotNull Player player,

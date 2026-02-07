@@ -3,6 +3,7 @@ package com.gregtechceu.gtceu.client.util;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.client.model.machine.MachineModel;
 import com.gregtechceu.gtceu.client.renderer.cover.ICoverableRenderer;
+import com.gregtechceu.gtceu.core.mixins.neoforge.BakedModelWrapperAccessor;
 import com.gregtechceu.gtceu.integration.modernfix.GTModernFixIntegration;
 
 import com.lowdragmc.lowdraglib.client.model.custommodel.CustomBakedModel;
@@ -22,14 +23,14 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -37,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = GTCEu.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = GTCEu.MOD_ID, value = Dist.CLIENT)
 public class ModelUtils {
 
     private ModelUtils() {}
@@ -104,7 +105,7 @@ public class ModelUtils {
 
     @SuppressWarnings({ "unchecked", "deprecation" })
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onAtlasStitched(TextureStitchEvent.Post event) {
+    public static void onAtlasStitched(TextureAtlasStitchedEvent event) {
         TextureAtlas atlas = event.getAtlas();
         if (atlas.location() == TextureAtlas.LOCATION_BLOCKS) {
             MachineModel.initSprites(atlas);
@@ -114,7 +115,7 @@ public class ModelUtils {
         for (var listener : EVENT_LISTENERS) {
             Class<?> eventClass = listener.listener.eventClass();
             if (eventClass != null && eventClass.isInstance(event)) {
-                ((AssetEventListener<TextureStitchEvent.Post>) listener.listener).accept(event);
+                ((AssetEventListener<TextureAtlasStitchedEvent>) listener.listener).accept(event);
             }
         }
     }
@@ -136,10 +137,10 @@ public class ModelUtils {
         // Also, the caching they have stops our models from updating properly
         for (var entry : event.getModels().entrySet()) {
             BakedModel model = entry.getValue();
-            if (!(model instanceof CustomBakedModel ctmModel)) {
+            if (!(model instanceof CustomBakedModel<?> ctmModel)) {
                 continue;
             }
-            if (ctmModel.getParent() instanceof MachineModel machine) {
+            if (((BakedModelWrapperAccessor<?>) ctmModel).gtceu$getParent() instanceof MachineModel machine) {
                 entry.setValue(machine);
             }
         }

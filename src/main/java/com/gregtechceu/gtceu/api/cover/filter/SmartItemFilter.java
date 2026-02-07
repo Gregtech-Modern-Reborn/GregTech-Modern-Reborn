@@ -6,17 +6,18 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.lookup.GTRecipeLookup;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.MapIngredientTypeManager;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 
+import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
 
 import java.util.List;
@@ -24,21 +25,20 @@ import java.util.function.Consumer;
 
 public class SmartItemFilter implements ItemFilter {
 
-    protected Consumer<ItemFilter> itemWriter = filter -> {};
-    protected Consumer<ItemFilter> onUpdated = filter -> itemWriter.accept(filter);
+    protected Consumer<SmartItemFilter> itemWriter = filter -> {};
+    protected Consumer<SmartItemFilter> onUpdated = filter -> itemWriter.accept(filter);
 
-    private SmartFilteringMode filterMode = SmartFilteringMode.ELECTROLYZER;
+    private SmartFilteringMode filterMode;
 
-    protected SmartItemFilter() {}
-
-    public static SmartItemFilter loadFilter(ItemStack itemStack) {
-        return loadFilter(itemStack.getOrCreateTag(), filter -> itemStack.setTag(filter.saveFilter()));
+    private SmartItemFilter(SmartFilteringMode filterMode) {
+        this.filterMode = filterMode;
     }
 
-    private static SmartItemFilter loadFilter(CompoundTag tag, Consumer<ItemFilter> itemWriter) {
-        var handler = new SmartItemFilter();
-        handler.itemWriter = itemWriter;
-        handler.filterMode = SmartFilteringMode.VALUES[tag.getInt("filterMode")];
+    public static SmartItemFilter loadFilter(ItemStack itemStack) {
+        SmartFilteringMode mode = itemStack.getOrDefault(GTDataComponents.SMART_ITEM_FILTER,
+                SmartFilteringMode.ELECTROLYZER);
+        SmartItemFilter handler = new SmartItemFilter(mode);
+        handler.itemWriter = filter -> itemStack.set(GTDataComponents.SMART_ITEM_FILTER, filter.filterMode);
         return handler;
     }
 
@@ -48,21 +48,6 @@ public class SmartItemFilter implements ItemFilter {
             this.itemWriter.accept(filter);
             onUpdated.accept(filter);
         };
-    }
-
-    @Override
-    public boolean isBlank() {
-        return filterMode.ordinal() == 0;
-    }
-
-    @Override
-    public CompoundTag saveFilter() {
-        if (isBlank()) {
-            return null;
-        }
-        var tag = new CompoundTag();
-        tag.putInt("filterMode", filterMode.ordinal());
-        return tag;
     }
 
     private void setFilterMode(SmartFilteringMode filterMode) {
@@ -105,39 +90,45 @@ public class SmartItemFilter implements ItemFilter {
 
     public void setModeFromMachine(String machineName) {
         for (SmartFilteringMode mode : SmartFilteringMode.VALUES) {
-            if (machineName.contains(mode.localeName)) {
+            if (machineName.contains(mode.name)) {
                 setFilterMode(mode);
                 return;
             }
         }
     }
 
-    @MethodsReturnNonnullByDefault
-    private enum SmartFilteringMode implements EnumSelectorWidget.SelectableEnum {
+    public enum SmartFilteringMode implements EnumSelectorWidget.SelectableEnum, StringRepresentable {
 
         ELECTROLYZER("electrolyzer", GTRecipeTypes.ELECTROLYZER_RECIPES),
         CENTRIFUGE("centrifuge", GTRecipeTypes.CENTRIFUGE_RECIPES),
         SIFTER("sifter", GTRecipeTypes.SIFTER_RECIPES);
 
+        public static final Codec<SmartFilteringMode> CODEC = StringRepresentable.fromEnum(SmartFilteringMode::values);
         private static final SmartFilteringMode[] VALUES = values();
-        private final String localeName;
+
+        private final String name;
         private final GTRecipeLookup lookup;
         private final Object2IntOpenCustomHashMap<ItemStack> cache = new Object2IntOpenCustomHashMap<>(
                 ItemStackHashStrategy.comparingAllButCount());
 
-        SmartFilteringMode(String localeName, GTRecipeType type) {
-            this.localeName = localeName;
+        SmartFilteringMode(String name, GTRecipeType type) {
+            this.name = name;
             this.lookup = type.getLookup();
         }
 
         @Override
         public String getTooltip() {
-            return "cover.item_smart_filter.filtering_mode." + localeName;
+            return "cover.smart_item_filter.filtering_mode." + name;
         }
 
         @Override
         public IGuiTexture getIcon() {
-            return new ResourceTexture("gtceu:textures/block/machines/" + localeName + "/overlay_front.png");
+            return new ResourceTexture("gtceu:textures/block/machines/" + name + "/overlay_front.png");
+        }
+
+        @Override
+        public String getSerializedName() {
+            return name;
         }
     }
 }

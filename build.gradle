@@ -4,14 +4,11 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
+    id 'jacoco'
     alias libs.plugins.modDevGradle
     //alias libs.plugins.shadow
     alias libs.plugins.spotless
     alias libs.plugins.lombok
-}
-
-plugins {
-    id "com.matthewprenger.cursegradle" version "1.4.0"
 }
 
 group = maven_group
@@ -21,7 +18,7 @@ version = "${mod_version}" + (isSnapshot ? "-SNAPSHOT" : "")
 boolean isCI = System.getenv("CI") != null
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
 sourceSets {
@@ -50,11 +47,14 @@ sourceSets {
         runtimeClasspath += client.output + client.runtimeClasspath + extra.runtimeClasspath
     }
 }
+
 configurations {
     // set these as unresolvable so we don't accidentally force all dependents to use them with us
     clientRuntimeOnly.canBeResolved = false
     extraRuntimeOnly.canBeResolved = false
     clientExtraRuntimeOnly.canBeResolved = false
+    testImplementation.canBeResolved = false
+    testRuntimeOnly.canBeResolved = false
 
     runtimeClasspath.extendsFrom localRuntime
     extraRuntimeClasspath.extendsFrom extraLocalRuntime
@@ -66,28 +66,12 @@ configurations {
     }
 }
 
-afterEvaluate {
-    configurations {
-        // same as above but for the modRuntimeOnly configurations
-        modClientRuntimeOnly.canBeResolved = false
-        modExtraRuntimeOnly.canBeResolved = false
-        modClientExtraRuntimeOnly.canBeResolved = false
-    }
-}
-obfuscation {
-    createRemappingConfiguration(configurations.localRuntime)
-    createRemappingConfiguration(configurations.clientLocalRuntime)
-
-    createRemappingConfiguration(configurations.extraLocalRuntime)
-    createRemappingConfiguration(configurations.clientExtraLocalRuntime)
-}
-
 apply from: "$rootDir/gradle/scripts/jars.gradle"
 apply from: "$rootDir/gradle/scripts/moddevgradle.gradle"
 apply from: "$rootDir/gradle/scripts/repositories.gradle"
 apply from: "$rootDir/dependencies.gradle"
 apply from: "$rootDir/gradle/scripts/resources.gradle"
-//apply from: "$rootDir/gradle/scripts/publishing.gradle"
+apply from: "$rootDir/gradle/scripts/publishing.gradle"
 apply from: "$rootDir/gradle/scripts/spotless.gradle"
 apply from: "$rootDir/gradle/scripts/docs.gradle"
 
@@ -100,4 +84,35 @@ tasks.withType(JavaCompile).configureEach {
 
 lombok {
     version = "1.18.38"
+}
+
+jacoco {
+    applyTo runGameTestServer
+}
+
+jacocoTestReport {
+    doFirst {
+        try {
+            runGameTestServer.exec()
+        } catch (RuntimeException ignored) {}
+    }
+    doLast {
+        println "Coverage report location:"
+        println " - file://${layout.buildDirectory.dir('coverage').map(a -> a.file('index.html')).get()}"
+        println " - file://${layout.buildDirectory.dir('coverage').map(a -> a.file('coverage.xml')).get()}"
+    }
+    executionData runGameTestServer
+    sourceSets sourceSets.test
+    reports {
+        csv.required = false
+        xml.required = true
+        html.outputLocation = layout.buildDirectory.dir('coverage')
+        xml.outputLocation = layout.buildDirectory.dir('coverage').map(a -> a.file('coverage.xml'))
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: '**/client/**')
+            fileTree(dir: it, exclude: '**/mixins/**')
+        }))
+    }
 }

@@ -17,9 +17,9 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredIOPartMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableFluidTank;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
-import com.gregtechceu.gtceu.common.data.GTMachines;
-import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour;
+import com.gregtechceu.gtceu.common.item.behavior.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
 import com.gregtechceu.gtceu.utils.GTTransferUtils;
 
 import com.lowdragmc.lowdraglib.gui.widget.ImageWidget;
@@ -31,30 +31,25 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachineLife, IHasCircuitSlot, IPaintable {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(FluidHatchPartMachine.class,
@@ -108,7 +103,7 @@ public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachi
     }
 
     protected NotifiableItemStackHandler createCircuitItemHandler(Object... args) {
-        if (args.length > 0 && args[0] instanceof IO io && io == IO.IN) {
+        if (args.length > 0 && args[0] instanceof IO io && io.support(IO.IN)) {
             return new NotifiableItemStackHandler(this, 1, IO.IN, IO.NONE)
                     .setFilter(IntCircuitBehaviour::isIntegratedCircuit);
         } else {
@@ -182,7 +177,7 @@ public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachi
     //////////////////////////////////////
 
     @Override
-    public void onNeighborChanged(Block block, BlockPos fromPos, boolean isMoving) {
+    public void onNeighborChanged(net.minecraft.world.level.block.Block block, BlockPos fromPos, boolean isMoving) {
         super.onNeighborChanged(block, fromPos, isMoving);
         updateTankSubscription();
     }
@@ -210,13 +205,10 @@ public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachi
     protected void autoIO() {
         if (getOffsetTimer() % 5 == 0) {
             if (isWorkingEnabled()) {
-                if (io == IO.OUT) {
+                if (io.support(IO.OUT)) {
                     tank.exportToNearby(getFrontFacing());
-                } else if (io == IO.IN) {
+                } else if (io.support(IO.IN)) {
                     tank.importFromNearby(getFrontFacing());
-                } else if (io == IO.BOTH) {
-                    tank.importFromNearby(getFrontFacing());
-                    tank.exportToNearby(getFrontFacing().getOpposite());
                 }
             }
             updateTankSubscription();
@@ -230,28 +222,26 @@ public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachi
     }
 
     @Override
-    protected InteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                                   BlockHitResult hitResult) {
-        InteractionResult superResult = super.onScrewdriverClick(playerIn, hand, gridSide, hitResult);
-        if (superResult != InteractionResult.PASS) return superResult;
-        if (io == IO.BOTH) return InteractionResult.PASS;
-        if (playerIn.isShiftKeyDown()) {
-            if (swapIO()) {
-                return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
-            }
+    protected ItemInteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                       Direction gridSide, BlockHitResult hitResult) {
+        ItemInteractionResult superResult = super.onScrewdriverClick(playerIn, hand, held, gridSide, hitResult);
+        if (superResult != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) return superResult;
+        if (io == IO.BOTH) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (playerIn.isShiftKeyDown() && swapIO()) {
+            return ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide);
         }
-        return InteractionResult.PASS;
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     public boolean swapIO() {
         BlockPos blockPos = getHolder().pos();
         MachineDefinition newDefinition = null;
 
-        if (io == IO.IN) {
+        if (io.support(IO.IN)) {
             if (this.slots == 1) newDefinition = GTMachines.FLUID_EXPORT_HATCH[this.getTier()];
             else if (this.slots == 4) newDefinition = GTMachines.FLUID_EXPORT_HATCH_4X[this.getTier()];
             else if (this.slots == 9) newDefinition = GTMachines.FLUID_EXPORT_HATCH_9X[this.getTier()];
-        } else if (io == IO.OUT) {
+        } else if (io.support(IO.OUT)) {
             if (this.slots == 1) newDefinition = GTMachines.FLUID_IMPORT_HATCH[this.getTier()];
             else if (this.slots == 4) newDefinition = GTMachines.FLUID_IMPORT_HATCH_4X[this.getTier()];
             else if (this.slots == 9) newDefinition = GTMachines.FLUID_IMPORT_HATCH_9X[this.getTier()];
@@ -282,7 +272,7 @@ public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachi
     @Override
     public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
         super.attachConfigurators(configuratorPanel);
-        if (isCircuitSlotEnabled() && this.io == IO.IN) {
+        if (isCircuitSlotEnabled() && this.io.support(IO.IN)) {
             configuratorPanel.attachConfigurators(new CircuitFancyConfigurator(circuitInventory.storage));
         }
     }
@@ -302,7 +292,7 @@ public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachi
         TankWidget tankWidget;
 
         // Add input/output-specific widgets
-        if (this.io == IO.OUT) {
+        if (this.io.support(IO.OUT)) {
             // if this is an output hatch, assign tankWidget to the phantom widget displaying the locked fluid...
             group.addWidget(tankWidget = new PhantomFluidWidget(this.tank.getLockedFluid(), 0, 67, 40, 18, 18,
                     () -> this.tank.getLockedFluid().getFluid(), f -> {
@@ -341,9 +331,9 @@ public class FluidHatchPartMachine extends TieredIOPartMachine implements IMachi
     private Component getFluidNameText(TankWidget tankWidget) {
         Component translation;
         if (!tank.getFluidInTank(tankWidget.getTank()).isEmpty()) {
-            translation = tank.getFluidInTank(tankWidget.getTank()).getDisplayName();
+            translation = tank.getFluidInTank(tankWidget.getTank()).getHoverName();
         } else {
-            translation = this.tank.getLockedFluid().getFluid().getDisplayName();
+            translation = this.tank.getLockedFluid().getFluid().getHoverName();
         }
         return translation;
     }

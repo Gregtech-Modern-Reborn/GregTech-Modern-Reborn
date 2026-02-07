@@ -17,13 +17,12 @@ import com.lowdragmc.lowdraglib.utils.BlockPosFace;
 import com.lowdragmc.lowdraglib.utils.Position;
 import com.lowdragmc.lowdraglib.utils.Size;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -31,10 +30,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class CombinedDirectionalConfigurator extends WidgetGroup {
 
     protected final static int MOUSE_CLICK_CLIENT_ACTION_ID = 0x0001_0001;
@@ -166,7 +161,7 @@ public class CombinedDirectionalConfigurator extends WidgetGroup {
         if (isMouseOverElement(mouseX, mouseY) && this.selectedSide == lastSide && this.selectedSide != null) {
             var hover = sceneWidget.getHoverPosFace();
 
-            if (hover != null && hover.pos.equals(machine.getPos()) && hover.facing == this.selectedSide) {
+            if (hover != null && hover.pos().equals(machine.getPos()) && hover.facing() == this.selectedSide) {
                 var cd = new ClickData();
                 writeClientAction(MOUSE_CLICK_CLIENT_ACTION_ID, buf -> {
                     cd.writeToBuf(buf);
@@ -179,7 +174,7 @@ public class CombinedDirectionalConfigurator extends WidgetGroup {
     }
 
     @Override
-    public void handleClientAction(int id, FriendlyByteBuf buf) {
+    public void handleClientAction(int id, RegistryFriendlyByteBuf buf) {
         if (id != MOUSE_CLICK_CLIENT_ACTION_ID) {
             super.handleClientAction(id, buf);
             return;

@@ -12,9 +12,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import it.unimi.dsi.fastutil.floats.FloatIntPair;
 import lombok.Getter;
@@ -34,11 +33,7 @@ public class EnvironmentalHazardClientHandler {
 
     public static final EnvironmentalHazardClientHandler INSTANCE = new EnvironmentalHazardClientHandler();
 
-    private EnvironmentalHazardClientHandler() {
-        if (ConfigHolder.INSTANCE.gameplay.hazardsEnabled) {
-            MinecraftForge.EVENT_BUS.register(this);
-        }
-    }
+    private EnvironmentalHazardClientHandler() {}
 
     /**
      * Map of source position to a triple of (trigger, material).

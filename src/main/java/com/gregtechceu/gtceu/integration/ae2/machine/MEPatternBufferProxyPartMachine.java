@@ -8,6 +8,7 @@ import com.gregtechceu.gtceu.api.machine.feature.IDataStickInteractable;
 import com.gregtechceu.gtceu.api.machine.feature.IMachineLife;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredIOPartMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 import com.gregtechceu.gtceu.integration.ae2.machine.trait.ProxySlotRecipeHandler;
 
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
@@ -15,9 +16,7 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -31,10 +30,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine
                                              implements IMachineLife, IDataStickInteractable {
 
@@ -118,14 +113,10 @@ public class MEPatternBufferProxyPartMachine extends TieredIOPartMachine
 
     @Override
     public InteractionResult onDataStickUse(Player player, ItemStack dataStick) {
-        if (dataStick.hasTag()) {
-            assert dataStick.getTag() != null;
-            if (dataStick.getTag().contains("pos", Tag.TAG_INT_ARRAY)) {
-                var posArray = dataStick.getOrCreateTag().getIntArray("pos");
-                var bufferPos = new BlockPos(posArray[0], posArray[1], posArray[2]);
-                setBuffer(bufferPos);
-                return InteractionResult.SUCCESS;
-            }
+        BlockPos bufferPos = dataStick.get(GTDataComponents.DATA_COPY_POS);
+        if (bufferPos != null) {
+            setBuffer(bufferPos);
+            return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
     }

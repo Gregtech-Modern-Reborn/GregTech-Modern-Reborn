@@ -1,9 +1,7 @@
 package com.gregtechceu.gtceu.api.recipe.content;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -14,23 +12,13 @@ public class SerializerDouble implements IContentSerializer<Double> {
     private SerializerDouble() {}
 
     @Override
-    public void toNetwork(FriendlyByteBuf buf, Double content) {
+    public void toNetwork(RegistryFriendlyByteBuf buf, Double content) {
         buf.writeDouble(content);
     }
 
     @Override
-    public Double fromNetwork(FriendlyByteBuf buf) {
+    public Double fromNetwork(RegistryFriendlyByteBuf buf) {
         return buf.readDouble();
-    }
-
-    @Override
-    public Double fromJson(JsonElement json) {
-        return json.getAsDouble();
-    }
-
-    @Override
-    public JsonElement toJson(Double content) {
-        return new JsonPrimitive(content);
     }
 
     @Override

@@ -41,9 +41,9 @@ public class MonitorImageRenderer implements IMonitorRenderer {
         float minX = 0, maxX = size.getX();
         float minY = 0, maxY = size.getY();
 
-        consumer.vertex(pose, minX, maxY, 0).color(0xFFFFFFFF).uv(0, 1).uv2(LightTexture.FULL_BRIGHT).endVertex();
-        consumer.vertex(pose, maxX, maxY, 0).color(0xFFFFFFFF).uv(1, 1).uv2(LightTexture.FULL_BRIGHT).endVertex();
-        consumer.vertex(pose, maxX, minY, 0).color(0xFFFFFFFF).uv(1, 0).uv2(LightTexture.FULL_BRIGHT).endVertex();
-        consumer.vertex(pose, minX, minY, 0).color(0xFFFFFFFF).uv(0, 0).uv2(LightTexture.FULL_BRIGHT).endVertex();
+        consumer.addVertex(pose, minX, maxY, 0).setColor(0xFFFFFFFF).setUv(0, 1).setLight(LightTexture.FULL_BRIGHT);
+        consumer.addVertex(pose, maxX, maxY, 0).setColor(0xFFFFFFFF).setUv(1, 1).setLight(LightTexture.FULL_BRIGHT);
+        consumer.addVertex(pose, maxX, minY, 0).setColor(0xFFFFFFFF).setUv(1, 0).setLight(LightTexture.FULL_BRIGHT);
+        consumer.addVertex(pose, minX, minY, 0).setColor(0xFFFFFFFF).setUv(0, 0).setLight(LightTexture.FULL_BRIGHT);
     }
 }

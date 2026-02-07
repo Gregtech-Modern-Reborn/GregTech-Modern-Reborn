@@ -1,6 +1,6 @@
 package com.gregtechceu.gtceu.api.recipe.lookup;
 
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.AbstractMapIngredient;
 
 import com.mojang.datafixers.util.Either;
@@ -21,15 +21,18 @@ public class Branch {
         Stream<GTRecipe> stream = null;
         if (nodes != null) {
             stream = nodes.values().stream()
-                    .flatMap(either -> either.map(Stream::of, right -> right.getRecipes(filterHidden)));
+                    .flatMap(either -> either.map(recipe -> Stream.of(recipe),
+                            right -> right.getRecipes(filterHidden)));
         }
         if (specialNodes != null) {
             if (stream == null) {
                 stream = specialNodes.values().stream()
-                        .flatMap(either -> either.map(Stream::of, right -> right.getRecipes(filterHidden)));
+                        .flatMap(either -> either.map(recipe -> Stream.of(recipe),
+                                right -> right.getRecipes(filterHidden)));
             } else {
                 stream = Stream.concat(stream, specialNodes.values().stream()
-                        .flatMap(either -> either.map(Stream::of, right -> right.getRecipes(filterHidden))));
+                        .flatMap(either -> either.map(recipe -> Stream.of(recipe),
+                                right -> right.getRecipes(filterHidden))));
             }
         }
         if (stream == null) {

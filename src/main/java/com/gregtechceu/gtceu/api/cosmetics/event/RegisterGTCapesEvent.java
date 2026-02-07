@@ -3,8 +3,8 @@ package com.gregtechceu.gtceu.api.cosmetics.event;
 import com.gregtechceu.gtceu.api.cosmetics.CapeRegistry;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.neoforge.common.NeoForge;
 
 import org.jetbrains.annotations.ApiStatus;
 
@@ -15,7 +15,7 @@ import java.util.UUID;
  * It can be used to make additional capes available to the player in
  * {@link CapeRegistry#registerCape(ResourceLocation, ResourceLocation)}
  * <br>
- * This event is fired on the {@link MinecraftForge#EVENT_BUS}.
+ * This event is fired on the {@link NeoForge#EVENT_BUS}.
  **/
 public class RegisterGTCapesEvent extends Event {
 

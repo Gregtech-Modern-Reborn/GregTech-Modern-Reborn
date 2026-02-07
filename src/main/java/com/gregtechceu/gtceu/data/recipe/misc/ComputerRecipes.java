@@ -1,27 +1,25 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
 import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.function.Consumer;
-
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTBlocks.*;
-import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTMachines.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
-import static com.gregtechceu.gtceu.common.data.machines.GTResearchMachines.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.block.GTBlocks.*;
+import static com.gregtechceu.gtceu.data.item.GTItems.*;
+import static com.gregtechceu.gtceu.data.machine.GTMachines.*;
+import static com.gregtechceu.gtceu.data.machine.GTResearchMachines.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public class ComputerRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         ASSEMBLER_RECIPES.recipeBuilder("basic_data_access_hatch")
                 .inputItems(ITEM_IMPORT_BUS[HV])
                 .inputItems(TOOL_DATA_STICK, 4)
@@ -53,15 +51,15 @@ public class ComputerRecipes {
                 .duration(400).EUt(6000)
                 .addMaterialInfo(true, true).save(provider);
 
-        ASSEMBLER_RECIPES.recipeBuilder("wireless_transmitter_cover")
-                .inputItems(plate, EnderPearl)
-                .inputItems(foil, AnnealedCopper)
-                .inputItems(EMITTER_MV)
-                .inputItems(wireFine, Platinum)
-                .inputFluids(SolderingAlloy, L)
-                .outputItems(COVER_WIRELESS_TRANSMITTER)
-                .duration(1000).EUt(VA[MV])
-                .addMaterialInfo(true).save(provider);
+        // ASSEMBLER_RECIPES.recipeBuilder("wireless_transmitter_cover")
+        // .inputItems(plate, EnderPearl)
+        // .inputItems(foil, AnnealedCopper)
+        // .inputItems(EMITTER_MV)
+        // .inputItems(wireFine, Platinum)
+        // .inputFluids(SolderingAlloy, L)
+        // .outputItems(COVER_WIRELESS_TRANSMITTER)
+        // .duration(1000).EUt(VA[MV])
+        // .addMaterialInfo(true).save(provider);
 
         ASSEMBLER_RECIPES.recipeBuilder("text_module")
                 .inputItems(PLASTIC_CIRCUIT_BOARD)

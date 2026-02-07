@@ -7,12 +7,12 @@ import com.lowdragmc.lowdraglib.gui.modular.IUIHolder;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * A machine that has gui. can be opened via right click.
+ * A machine that has a gui that can be opened via right click.
  */
 public interface IUIMachine extends IUIHolder, IMachineFeature {
 
@@ -20,15 +20,15 @@ public interface IUIMachine extends IUIHolder, IMachineFeature {
         return true;
     }
 
-    default InteractionResult tryToOpenUI(Player player, InteractionHand hand, BlockHitResult hit) {
+    default ItemInteractionResult tryToOpenUI(Player player, InteractionHand hand, BlockHitResult hit) {
         if (this.shouldOpenUI(player, hand, hit)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 MachineUIFactory.INSTANCE.openUI(self(), serverPlayer);
             }
         } else {
-            return InteractionResult.PASS;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        return InteractionResult.sidedSuccess(player.level().isClientSide);
+        return ItemInteractionResult.sidedSuccess(player.level().isClientSide);
     }
 
     @Override

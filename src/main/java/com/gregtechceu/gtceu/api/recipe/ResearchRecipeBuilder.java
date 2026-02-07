@@ -1,21 +1,19 @@
 package com.gregtechceu.gtceu.api.recipe;
 
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.item.IComponentItem;
-import com.gregtechceu.gtceu.api.item.component.IDataItem;
-import com.gregtechceu.gtceu.api.item.component.IItemComponent;
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 import com.gregtechceu.gtceu.utils.GTStringUtils;
 import com.gregtechceu.gtceu.utils.ResearchManager;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("unchecked")
 public abstract class ResearchRecipeBuilder<T extends ResearchRecipeBuilder<T>> {
 
     protected ItemStack itemResearchStack = ItemStack.EMPTY;
@@ -59,10 +57,9 @@ public abstract class ResearchRecipeBuilder<T extends ResearchRecipeBuilder<T>> 
         return (T) this;
     }
 
-    protected void validateResearchItem(ResourceLocation recipeId) {
+    protected void validateResearchItem() {
         if (itemResearchStack.isEmpty() && fluidResearchStack.isEmpty()) {
-            throw new IllegalArgumentException(String.format(
-                    "Research recipe must have an item or fluid stack, id: %s", recipeId));
+            throw new IllegalArgumentException("Research recipe must have an item or fluid stack!");
         }
 
         if (researchId == null) {
@@ -74,25 +71,17 @@ public abstract class ResearchRecipeBuilder<T extends ResearchRecipeBuilder<T>> 
             dataStack = getDefaultDataItem();
         }
 
-        boolean foundBehavior = false;
-        if (dataStack.getItem() instanceof IComponentItem metaItem) {
-            for (IItemComponent behaviour : metaItem.getComponents()) {
-                if (behaviour instanceof IDataItem) {
-                    foundBehavior = true;
-                    dataStack = dataStack.copy();
-                    dataStack.setCount(1);
-                    break;
-                }
-            }
-        }
-        if (!foundBehavior) {
-            throw new IllegalArgumentException("Data ItemStack must have the IDataItem behavior");
+        if (dataStack.has(GTDataComponents.DATA_ITEM)) {
+            dataStack = dataStack.copy();
+            dataStack.setCount(1);
+        } else {
+            throw new IllegalArgumentException("Data ItemStack must have the gtceu:data_item component");
         }
     }
 
     public abstract ItemStack getDefaultDataItem();
 
-    public abstract GTRecipeBuilder.ResearchRecipeEntry build(ResourceLocation recipeId);
+    public abstract GTRecipeBuilder.ResearchRecipeEntry build();
 
     @NoArgsConstructor
     public static class ScannerRecipeBuilder extends ResearchRecipeBuilder<ScannerRecipeBuilder> {
@@ -113,8 +102,8 @@ public abstract class ResearchRecipeBuilder<T extends ResearchRecipeBuilder<T>> 
         }
 
         @Override
-        public GTRecipeBuilder.ResearchRecipeEntry build(ResourceLocation recipeId) {
-            validateResearchItem(recipeId);
+        public GTRecipeBuilder.ResearchRecipeEntry build() {
+            validateResearchItem();
             if (duration <= 0) duration = DEFAULT_SCANNER_DURATION;
             if (eut == null || eut.voltage() <= 0) eut = new EnergyStack(DEFAULT_SCANNER_EUT, 1);
             return new GTRecipeBuilder.ResearchRecipeEntry(researchId, itemResearchStack, fluidResearchStack, dataStack,
@@ -151,8 +140,8 @@ public abstract class ResearchRecipeBuilder<T extends ResearchRecipeBuilder<T>> 
         }
 
         @Override
-        public GTRecipeBuilder.ResearchRecipeEntry build(ResourceLocation recipeId) {
-            validateResearchItem(recipeId);
+        public GTRecipeBuilder.ResearchRecipeEntry build() {
+            validateResearchItem();
             if (cwut <= 0 || totalCWU <= 0) {
                 throw new IllegalArgumentException("CWU/t and total CWU must both be set, and non-zero!");
             }

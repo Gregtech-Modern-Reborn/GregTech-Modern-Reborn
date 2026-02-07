@@ -9,11 +9,11 @@ import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -88,7 +88,7 @@ public class TabsWidget extends Widget {
     }
 
     @Override
-    public void handleClientAction(int id, FriendlyByteBuf buffer) {
+    public void handleClientAction(int id, RegistryFriendlyByteBuf buffer) {
         super.handleClientAction(id, buffer);
         if (id == 0) {
             var index = buffer.readVarInt();
@@ -143,12 +143,12 @@ public class TabsWidget extends Widget {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public boolean mouseWheelMove(double mouseX, double mouseY, double wheelDelta) {
+    public boolean mouseWheelMove(double mouseX, double mouseY, double scrollX, double scrollY) {
         var sx = getPosition().x + 8 + 24 + 4 + 16;
         if (isMouseOver(sx, getPosition().y, getSubTabsWidth(), 24, mouseX, mouseY)) {
-            offset = Mth.clamp(offset + 5 * (wheelDelta > 0 ? -1 : 1), 0, subTabs.size() * 24 - getSubTabsWidth());
+            offset = Mth.clamp(offset + 5 * (scrollY > 0 ? -1 : 1), 0, subTabs.size() * 24 - getSubTabsWidth());
         }
-        return super.mouseWheelMove(mouseX, mouseY, wheelDelta);
+        return super.mouseWheelMove(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override

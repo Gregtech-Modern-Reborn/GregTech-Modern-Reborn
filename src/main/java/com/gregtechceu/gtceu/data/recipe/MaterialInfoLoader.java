@@ -1,10 +1,10 @@
 package com.gregtechceu.gtceu.data.recipe;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.ItemMaterialData;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.ItemMaterialInfo;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialStack;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.material.material.ItemMaterialData;
+import com.gregtechceu.gtceu.api.material.material.stack.ItemMaterialInfo;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialStack;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -23,10 +23,13 @@ public class MaterialInfoLoader {
         for (DyeColor color : DyeColor.values()) {
             String dye = color.getName();
             ItemMaterialData.registerMaterialInfo(
-                    new ItemStack(BuiltInRegistries.ITEM.get(new ResourceLocation(dye + "_terracotta"))).getItem(),
+                    new ItemStack(
+                            BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(dye + "_terracotta")))
+                            .getItem(),
                     new ItemMaterialInfo(new MaterialStack(GTMaterials.Clay, M * 4)));
             ItemMaterialData.registerMaterialInfo(
-                    new ItemStack(BuiltInRegistries.ITEM.get(new ResourceLocation(dye + "_glazed_terracotta")))
+                    new ItemStack(BuiltInRegistries.ITEM
+                            .get(ResourceLocation.withDefaultNamespace(dye + "_glazed_terracotta")))
                             .getItem(),
                     new ItemMaterialInfo(new MaterialStack(GTMaterials.Clay, M * 4)));
         }

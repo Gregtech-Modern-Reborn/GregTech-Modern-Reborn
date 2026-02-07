@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +35,8 @@ public class HazmatSuit implements IArmorLogic {
     }
 
     @Override
-    public @Nullable ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
+    public @Nullable ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+                                                      ArmorMaterial.Layer layer) {
         return slot != EquipmentSlot.LEGS ?
                 GTCEu.id(String.format("textures/armor/%s_1.png", armorTexture)) :
                 GTCEu.id(String.format("textures/armor/%s_2.png", armorTexture));

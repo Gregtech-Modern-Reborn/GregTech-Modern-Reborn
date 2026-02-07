@@ -1,13 +1,26 @@
 package com.gregtechceu.gtceu.integration.kjs.recipe;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.item.tool.ToolHelper;
+import com.gregtechceu.gtceu.integration.kjs.recipe.components.StringGridComponent;
 
-import dev.latvian.mods.kubejs.item.InputItem;
-import dev.latvian.mods.kubejs.recipe.RecipeExceptionJS;
-import dev.latvian.mods.kubejs.recipe.RecipeJS;
-import dev.latvian.mods.kubejs.recipe.ingredientaction.IngredientAction;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.Ingredient;
+
+import dev.latvian.mods.kubejs.KubeJS;
+import dev.latvian.mods.kubejs.error.KubeRuntimeException;
+import dev.latvian.mods.kubejs.recipe.KubeRecipe;
+import dev.latvian.mods.kubejs.recipe.RecipeKey;
+import dev.latvian.mods.kubejs.recipe.RecipeTypeFunction;
+import dev.latvian.mods.kubejs.recipe.component.*;
+import dev.latvian.mods.kubejs.recipe.ingredientaction.IngredientActionHolder;
+import dev.latvian.mods.kubejs.recipe.schema.KubeRecipeFactory;
 import dev.latvian.mods.kubejs.recipe.schema.RecipeSchema;
-import dev.latvian.mods.kubejs.util.ConsoleJS;
+import dev.latvian.mods.kubejs.recipe.schema.function.RecipeFunctionInstance;
+import dev.latvian.mods.kubejs.recipe.schema.function.SetFunction;
+import dev.latvian.mods.kubejs.recipe.special.KubeJSCraftingRecipe;
+import dev.latvian.mods.kubejs.script.ConsoleJS;
 import dev.latvian.mods.kubejs.util.TinyMap;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
@@ -21,41 +34,37 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static dev.latvian.mods.kubejs.recipe.schema.minecraft.ShapedRecipeSchema.KEY;
-import static dev.latvian.mods.kubejs.recipe.schema.minecraft.ShapedRecipeSchema.PATTERN;
-import static dev.latvian.mods.kubejs.recipe.schema.minecraft.ShapedRecipeSchema.RESULT;
-
 public interface GTShapedRecipeSchema {
 
-    class ShapedRecipeJS extends RecipeJS {
+    class ShapedKubeRecipe extends KubeRecipe {
 
         @Getter
         protected boolean addMaterialInfo = false;
 
-        public ShapedRecipeJS addMaterialInfo() {
+        public ShapedKubeRecipe addMaterialInfo() {
             addMaterialInfo = true;
             return this;
         }
 
         @HideFromJS
-        public List<IngredientAction> getIngredientActions() {
+        public List<IngredientActionHolder> getIngredientActions() {
             if (recipeIngredientActions == null) return Collections.emptyList();
             return recipeIngredientActions;
         }
 
-        // Adapted from KJS's ShapedRecipeSchema#ShapedRecipeJS
+        // Adapted from KJS's ShapedRecipeSchema#ShapedKubeRecipe
         @Override
-        public void afterLoaded() {
-            super.afterLoaded();
-            var pattern = getValue(PATTERN);
-            var key = getValue(KEY);
+        public void validate(RecipeValidationContext cx) {
+            // super.afterLoaded(stack);
+            var pattern = new ArrayList<>(cx.recipe().getValue(PATTERN));
+            var key = cx.recipe().getValue(KEY);
 
-            if (pattern.length == 0) {
-                throw new RecipeExceptionJS("Pattern is empty!");
+            if (pattern.isEmpty()) {
+                throw new KubeRuntimeException("Pattern is empty!");
             }
 
             if (key.isEmpty()) {
-                throw new RecipeExceptionJS("Key map is empty!");
+                throw new KubeRuntimeException("Key map is empty!");
             }
 
             final CharSet tools = ToolHelper.getToolSymbols();
@@ -76,14 +85,14 @@ public interface GTShapedRecipeSchema {
                 }
             }
 
-            for (int i = 0; i < pattern.length; i++) {
+            for (int i = 0; i < pattern.size(); i++) {
                 for (var it = airs.iterator(); it.hasNext();) {
-                    pattern[i] = pattern[i].replace(it.nextChar(), ' ');
+                    pattern.set(i, pattern.get(i).replace(it.nextChar(), ' '));
                 }
-                for (char c : pattern[i].toCharArray()) { // Inject tool symbol mappings
+                for (char c : pattern.get(i).toCharArray()) { // Inject tool symbol mappings
                     if (tools.contains(c) && !addedTools.contains(c)) {
                         var tool = ToolHelper.getToolFromSymbol(c);
-                        keyEntries.add(new TinyMap.Entry<>(c, InputItem.of(tool.itemTags.get(0))));
+                        keyEntries.add(new TinyMap.Entry<>(c, Ingredient.of(tool.craftingTags.get(0))));
                         addedTools.add(c);
                     }
                 }
@@ -94,9 +103,42 @@ public interface GTShapedRecipeSchema {
                 setValue(KEY, new TinyMap<>(keyEntries));
             }
         }
+
+        @Override
+        public RecipeTypeFunction getSerializationTypeFunction() {
+            // Use vanilla shaped recipe type if KubeJS is not needed
+            if (type == type.event.shaped // if this type == kubejs:shaped
+                    && type.event.shaped != type.event.vanillaShaped // check if not in serverOnly mode
+                    && !json.has(KubeJSCraftingRecipe.INGREDIENT_ACTIONS_KEY) &&
+                    !json.has(KubeJSCraftingRecipe.MODIFY_RESULT_KEY) && !json.has(KubeJSCraftingRecipe.STAGE_KEY) &&
+                    !json.has(KubeJSCraftingRecipe.MIRROR_KEY)) {
+                return type.event.vanillaShaped;
+            }
+
+            return super.getSerializationTypeFunction();
+        }
     }
 
-    RecipeSchema SCHEMA = new RecipeSchema(ShapedRecipeJS.class, ShapedRecipeJS::new, RESULT, PATTERN, KEY)
+    // spotless:off
+    KubeRecipeFactory RECIPE_FACTORY = new KubeRecipeFactory(GTCEu.id("shaped"), ShapedKubeRecipe.class, ShapedKubeRecipe::new);
+
+    RecipeKey<ItemStack> RESULT = ItemStackComponent.ITEM_STACK.outputKey("result");
+    RecipeKey<List<String>> PATTERN = StringGridComponent.STRING_GRID.otherKey("pattern");
+    RecipeKey<TinyMap<Character, Ingredient>> KEY = IngredientComponent.INGREDIENT.instance().asPatternKey().inputKey("key");
+    RecipeKey<Boolean> MIRROR = BooleanComponent.BOOLEAN.otherKey(KubeJSCraftingRecipe.MIRROR_KEY).optional(true).exclude()
+            .functionNames(List.of("kjsMirror"));
+    RecipeKey<Boolean> SHRINK = BooleanComponent.BOOLEAN.otherKey("kubejs:shrink").optional(true).exclude()
+            .functionNames(List.of("kjsShrink"));
+    RecipeKey<CraftingBookCategory> CATEGORY = BookCategoryComponent.CRAFTING_BOOK_CATEGORY.otherKey("category")
+            .optional(CraftingBookCategory.MISC)
+            .functionNames(List.of("kjsShrink"));
+    // spotless:on
+
+    RecipeSchema SCHEMA = new RecipeSchema(RESULT, PATTERN, KEY, MIRROR, SHRINK, CATEGORY)
+            .factory(RECIPE_FACTORY)
             .constructor(RESULT, PATTERN, KEY)
-            .uniqueOutputId(RESULT);
+            .uniqueId(RESULT)
+            .typeOverride(KubeJS.id("shaped"))
+            .function(new RecipeFunctionInstance("noMirror", new SetFunction.Resolved<>(MIRROR, false)))
+            .function(new RecipeFunctionInstance("noShrink", new SetFunction.Resolved<>(SHRINK, false)));
 }

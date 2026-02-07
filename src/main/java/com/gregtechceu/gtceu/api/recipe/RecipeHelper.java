@@ -7,20 +7,30 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerGroupColor;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerGroupDistinctness;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.ingredient.ExDataComponentFluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.api.tag.TagUtil;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import org.jetbrains.annotations.Contract;
@@ -118,7 +128,7 @@ public class RecipeHelper {
     public static List<FluidStack> getInputFluids(GTRecipe recipe) {
         return recipe.getInputContents(FluidRecipeCapability.CAP).stream()
                 .map(content -> FluidRecipeCapability.CAP.of(content.getContent()))
-                .map(ingredient -> ingredient.getStacks()[0])
+                .map(ingredient -> ingredient.getFluids()[0])
                 .collect(Collectors.toList());
     }
 
@@ -157,7 +167,7 @@ public class RecipeHelper {
     public static List<FluidStack> getOutputFluids(GTRecipe recipe) {
         return recipe.getOutputContents(FluidRecipeCapability.CAP).stream()
                 .map(content -> FluidRecipeCapability.CAP.of(content.getContent()))
-                .map(ingredient -> ingredient.getStacks()[0])
+                .map(ingredient -> ingredient.getFluids()[0])
                 .collect(Collectors.toList());
     }
 
@@ -170,7 +180,7 @@ public class RecipeHelper {
     public static List<FluidStack> getOutputFluids(GTRecipeBuilder builder) {
         return builder.output.getOrDefault(FluidRecipeCapability.CAP, Collections.emptyList()).stream()
                 .map(content -> FluidRecipeCapability.CAP.of(content.getContent()))
-                .map(ingredient -> ingredient.getStacks()[0])
+                .map(ingredient -> ingredient.getFluids()[0])
                 .collect(Collectors.toList());
     }
 
@@ -248,8 +258,8 @@ public class RecipeHelper {
      */
     public static ActionResult checkConditions(GTRecipe recipe, @NotNull RecipeLogic recipeLogic) {
         if (recipe.conditions.isEmpty()) return ActionResult.SUCCESS;
-        Map<RecipeConditionType<?>, List<RecipeCondition>> or = new Reference2ObjectArrayMap<>();
-        for (RecipeCondition condition : recipe.conditions) {
+        Map<RecipeConditionType<?>, List<RecipeCondition<?>>> or = new Reference2ObjectArrayMap<>();
+        for (RecipeCondition<?> condition : recipe.conditions) {
             if (condition.isOr()) {
                 or.computeIfAbsent(condition.getType(), type -> new ArrayList<>()).add(condition);
             } else if (!condition.check(recipe, recipeLogic)) {
@@ -259,11 +269,11 @@ public class RecipeHelper {
             }
         }
 
-        for (List<RecipeCondition> conditions : or.values()) {
+        for (List<RecipeCondition<?>> conditions : or.values()) {
             boolean passed = conditions.isEmpty();
             MutableComponent component = Component.translatable("gtceu.recipe_logic.condition_fails")
                     .append(": ");
-            for (RecipeCondition condition : conditions) {
+            for (RecipeCondition<?> condition : conditions) {
                 passed = condition.check(recipe, recipeLogic);
                 if (passed) break;
                 else component.append(condition.getTooltips());
@@ -281,7 +291,7 @@ public class RecipeHelper {
      * Returns the recipe itself if no valid trim limits are passed
      */
     @Contract(pure = true)
-    public static GTRecipe trimRecipeOutputs(GTRecipe recipe, Object2IntMap<RecipeCapability<?>> trimLimits) {
+    public static GTRecipe trimRecipeOutputs(GTRecipe recipe, Reference2IntMap<RecipeCapability<?>> trimLimits) {
         // Fast return early if no trimming desired
         if (trimLimits.isEmpty() || trimLimits.values().intStream().allMatch(integer -> integer == -1)) {
             return recipe;
@@ -307,7 +317,7 @@ public class RecipeHelper {
      */
     @Contract(pure = true)
     public static Map<RecipeCapability<?>, List<Content>> doTrim(Map<RecipeCapability<?>, List<Content>> current,
-                                                                 Object2IntMap<RecipeCapability<?>> trimLimits) {
+                                                                 Reference2IntMap<RecipeCapability<?>> trimLimits) {
         Map<RecipeCapability<?>, List<Content>> outputs = new Reference2ObjectOpenHashMap<>(current.size());
 
         for (var entry : current.entrySet()) {
@@ -370,7 +380,7 @@ public class RecipeHelper {
         map.computeIfAbsent(key, $ -> new ArrayList<>(undyed)).add(handler);
     }
 
-    public static int getRatioForDistillery(FluidIngredient fluidInput, FluidIngredient fluidOutput,
+    public static int getRatioForDistillery(SizedFluidIngredient fluidInput, SizedFluidIngredient fluidOutput,
                                             @Nullable ItemStack output) {
         int[] divisors = new int[] { 2, 5, 10, 25, 50 };
         int ratio = -1;
@@ -392,7 +402,32 @@ public class RecipeHelper {
         return Math.max(1, ratio);
     }
 
-    public static boolean isFluidStackDivisibleForDistillery(FluidIngredient fluidStack, int divisor) {
-        return fluidStack.getAmount() % divisor == 0 && fluidStack.getAmount() / divisor >= 25;
+    public static boolean isFluidStackDivisibleForDistillery(SizedFluidIngredient fluidStack, int divisor) {
+        return fluidStack.amount() % divisor == 0 && fluidStack.amount() / divisor >= 25;
+    }
+
+    public static SizedFluidIngredient makeSizedFluidIngredient(FluidStack stack) {
+        return new SizedFluidIngredient(makeFluidIngredient(stack), stack.getAmount());
+    }
+
+    public static FluidIngredient makeFluidIngredient(FluidStack stack) {
+        var tagKey = TagUtil.createFluidTag(BuiltInRegistries.FLUID.getKey(stack.getFluid()).getPath());
+        if (stack.isComponentsPatchEmpty()) {
+            return FluidIngredient.tag(tagKey);
+        } else {
+            return ExDataComponentFluidIngredient.of(true, stack.getComponents(), tagKey);
+        }
+    }
+
+    public static SizedIngredient makeSizedIngredient(ItemStack stack) {
+        return new SizedIngredient(makeItemIngredient(stack), stack.getCount());
+    }
+
+    public static Ingredient makeItemIngredient(ItemStack stack) {
+        if (stack.isComponentsPatchEmpty()) {
+            return Ingredient.of(stack);
+        } else {
+            return DataComponentIngredient.of(true, stack);
+        }
     }
 }

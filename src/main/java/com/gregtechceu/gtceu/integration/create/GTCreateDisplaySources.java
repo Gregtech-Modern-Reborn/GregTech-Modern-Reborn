@@ -13,22 +13,20 @@ import com.tterrag.registrate.util.entry.RegistryEntry;
 
 import java.util.function.Supplier;
 
-@SuppressWarnings("unused")
 public class GTCreateDisplaySources {
 
-    public static final RegistryEntry<ComputerMonitorCoverDisplaySource> COMPUTER_MONITOR_COVER = registerToAllMachines(
+    public static final RegistryEntry<DisplaySource, ComputerMonitorCoverDisplaySource> COMPUTER_MONITOR_COVER = registerToAllMachines(
             "computer_monitor_cover", ComputerMonitorCoverDisplaySource::new);
 
     @SuppressWarnings("SameParameterValue")
-    private static <T extends DisplaySource> RegistryEntry<T> registerToAllMachines(String name, Supplier<T> supplier) {
+    private static <
+            T extends DisplaySource> RegistryEntry<DisplaySource, T> registerToAllMachines(String name,
+                                                                                           Supplier<T> supplier) {
         SimpleBuilder<DisplaySource, T, GTRegistrate> builder = GTCreateIntegration
                 .displaySource(GTRegistration.REGISTRATE, name, supplier);
-        builder.onRegisterAfter(
-                Registries.BLOCK_ENTITY_TYPE,
-                source -> GTRegistries.MACHINES.entries().forEach(
-                        (entry) -> DisplaySource.BY_BLOCK_ENTITY.add(
-                                entry.getValue().getBlockEntityType(),
-                                source)));
+        builder.onRegisterAfter(Registries.BLOCK_ENTITY_TYPE,
+                source -> GTRegistries.MACHINES.forEach(
+                        (def) -> DisplaySource.BY_BLOCK_ENTITY.add(def.getBlockEntityType(), source)));
         return builder.register();
     }
 

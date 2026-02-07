@@ -1,34 +1,30 @@
 package com.gregtechceu.gtceu.client.renderer.machine.impl;
 
-import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
+import com.gregtechceu.gtceu.api.multiblock.util.RelativeDirection;
 import com.gregtechceu.gtceu.client.renderer.GTRenderTypes;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRender;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRenderType;
-import com.gregtechceu.gtceu.client.util.BloomUtils;
 import com.gregtechceu.gtceu.client.util.RenderBufferHelper;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.FusionReactorMachine;
-
-import com.lowdragmc.shimmer.client.shader.RenderUtils;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 
 import static net.minecraft.util.FastColor.ARGB32.*;
 
 public class FusionRingRender extends DynamicRender<FusionReactorMachine, FusionRingRender> {
 
     // spotless:off
-    public static final Codec<FusionRingRender> CODEC = Codec.unit(FusionRingRender::new);
+    public static final MapCodec<FusionRingRender> CODEC = MapCodec.unit(FusionRingRender::new);
     public static final DynamicRenderType<FusionReactorMachine, FusionRingRender> TYPE = new DynamicRenderType<>(FusionRingRender.CODEC);
     // spotless:on
 
@@ -56,13 +52,13 @@ public class FusionRingRender extends DynamicRender<FusionReactorMachine, Fusion
         if (!machine.recipeLogic.isWorking() && delta <= 0) {
             return;
         }
-        if (GTCEu.Mods.isShimmerLoaded()) {
-            PoseStack finalStack = RenderUtils.copyPoseStack(poseStack);
-            BloomUtils.entityBloom(source -> renderLightRing(machine, partialTick, finalStack,
-                    source.getBuffer(GTRenderTypes.getLightRing())));
-        } else {
-            renderLightRing(machine, partialTick, poseStack, buffer.getBuffer(GTRenderTypes.getLightRing()));
-        }
+        // if (GTCEu.Mods.isShimmerLoaded()) {
+        // PoseStack finalStack = RenderUtils.copyPoseStack(poseStack);
+        // BloomUtils.entityBloom(source -> renderLightRing(machine, partialTick, finalStack,
+        // source.getBuffer(GTRenderTypes.getLightRing())));
+        // } else {
+        renderLightRing(machine, partialTick, poseStack, buffer.getBuffer(GTRenderTypes.getLightRing()));
+        // }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -76,7 +72,7 @@ public class FusionRingRender extends DynamicRender<FusionReactorMachine, Fusion
         } else {
             alpha = delta / FADEOUT;
             lastColor = color(Mth.floor(alpha * 255), red(lastColor), green(lastColor), blue(lastColor));
-            delta -= Minecraft.getInstance().getDeltaFrameTime();
+            delta -= Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         }
 
         final var lerpFactor = Math.abs((Math.abs(machine.getOffsetTimer() % 50) + partialTicks) - 25) / 25;

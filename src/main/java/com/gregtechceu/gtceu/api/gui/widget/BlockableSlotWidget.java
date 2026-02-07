@@ -5,7 +5,7 @@ import com.lowdragmc.lowdraglib.utils.Size;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.Container;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import org.jetbrains.annotations.NotNull;
@@ -26,8 +26,7 @@ public class BlockableSlotWidget extends SlotWidget {
 
     public BlockableSlotWidget(IItemHandlerModifiable itemHandler, int slotIndex, int xPosition, int yPosition,
                                boolean canTakeItems, boolean canPutItems) {
-        super(itemHandler, slotIndex, xPosition, yPosition, canTakeItems,
-                canPutItems);
+        super(itemHandler, slotIndex, xPosition, yPosition, canTakeItems, canPutItems);
     }
 
     public BlockableSlotWidget(IItemHandlerModifiable itemHandler, int slotIndex, int xPosition, int yPosition) {

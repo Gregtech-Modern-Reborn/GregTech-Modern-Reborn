@@ -9,11 +9,11 @@ import com.lowdragmc.lowdraglib.gui.factory.UIFactory;
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 public class MachineUIFactory extends UIFactory<MetaMachine> {
 
@@ -33,7 +33,7 @@ public class MachineUIFactory extends UIFactory<MetaMachine> {
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    protected MetaMachine readHolderFromSyncData(FriendlyByteBuf syncData) {
+    protected MetaMachine readHolderFromSyncData(RegistryFriendlyByteBuf syncData) {
         Level world = Minecraft.getInstance().level;
         if (world == null) return null;
         if (world.getBlockEntity(syncData.readBlockPos()) instanceof IMachineBlockEntity holder) {
@@ -43,7 +43,7 @@ public class MachineUIFactory extends UIFactory<MetaMachine> {
     }
 
     @Override
-    protected void writeHolderToSyncData(FriendlyByteBuf syncData, MetaMachine holder) {
+    protected void writeHolderToSyncData(RegistryFriendlyByteBuf syncData, MetaMachine holder) {
         syncData.writeBlockPos(holder.getPos());
     }
 }

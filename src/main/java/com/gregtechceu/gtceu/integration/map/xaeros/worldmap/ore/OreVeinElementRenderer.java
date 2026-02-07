@@ -1,8 +1,8 @@
 package com.gregtechceu.gtceu.integration.map.xaeros.worldmap.ore;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialIconType;
-import com.gregtechceu.gtceu.api.data.worldgen.ores.GeneratedVeinMetadata;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.info.MaterialIconType;
+import com.gregtechceu.gtceu.api.worldgen.ores.GeneratedVeinMetadata;
 import com.gregtechceu.gtceu.client.util.DrawUtil;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.integration.map.GroupingMapRenderer;
@@ -24,7 +24,7 @@ import xaero.map.graphics.renderer.multitexture.MultiTextureRenderTypeRendererPr
 public class OreVeinElementRenderer extends
                                     MapElementRenderer<OreVeinElement, OreVeinElementContext, OreVeinElementRenderer> {
 
-    protected static final ResourceLocation STONE = new ResourceLocation("block/stone");
+    protected static final ResourceLocation STONE = ResourceLocation.withDefaultNamespace("block/stone");
 
     protected OreVeinElementRenderer(OreVeinElementContext context,
                                      MapElementRenderProvider<OreVeinElement, OreVeinElementContext> provider,
@@ -82,7 +82,7 @@ public class OreVeinElementRenderer extends
         GeneratedVeinMetadata vein = element.getVein();
         int iconSize = ConfigHolder.INSTANCE.compat.minimap.oreIconSize;
 
-        Material firstMaterial = vein.definition().veinGenerator().getAllMaterials().get(0);
+        Material firstMaterial = vein.definition().value().veinGenerator().getAllMaterials().getFirst();
         int materialARGB = firstMaterial.getMaterialARGB();
         float[] colors = DrawUtil.floats(materialARGB);
         RenderSystem.setShaderColor(1, 1, 1, 1);

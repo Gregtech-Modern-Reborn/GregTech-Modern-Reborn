@@ -3,7 +3,7 @@ package com.gregtechceu.gtceu.integration.rei.multipage;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
 
 import com.lowdragmc.lowdraglib.gui.texture.ItemStackTexture;
 import com.lowdragmc.lowdraglib.rei.IGui2Renderer;
@@ -26,7 +26,7 @@ public class MultiblockInfoDisplayCategory extends ModularUIDisplayCategory<Mult
     }
 
     public static void registerDisplays(DisplayRegistry registry) {
-        GTRegistries.MACHINES.values().stream()
+        GTRegistries.MACHINES.stream()
                 .filter(MultiblockMachineDefinition.class::isInstance)
                 .map(MultiblockMachineDefinition.class::cast)
                 .filter(MultiblockMachineDefinition::isRenderXEIPreview)

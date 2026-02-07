@@ -3,6 +3,7 @@ package com.gregtechceu.gtceu.common.machine.trait.miner;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.capability.IMiner;
 import com.gregtechceu.gtceu.api.capability.recipe.*;
+import com.gregtechceu.gtceu.api.item.MaterialBlockItem;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
@@ -10,13 +11,13 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.misc.IgnoreEnergyRecipeHandler;
 import com.gregtechceu.gtceu.api.misc.ItemRecipeHandler;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.transfer.item.NotifiableAccountedInvWrapper;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
-import com.gregtechceu.gtceu.common.data.GTMaterialItems;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.data.item.GTMaterialItems;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.utils.GTTransferUtils;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
@@ -31,14 +32,15 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import lombok.Getter;
@@ -68,6 +70,7 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
     @Getter
     public ItemStack pickaxeTool;
     private final LinkedList<BlockPos> blocksToMine = new LinkedList<>();
+    private int blocksToMineOriginalCount = 0;
     @Getter
     @Persisted
     protected int x = Integer.MAX_VALUE;
@@ -157,6 +160,15 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
     }
 
     @Override
+    public void onMachineLoad() {
+        super.onMachineLoad();
+        if (getMachine().getLevel() != null) {
+            var registry = getMachine().getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+            this.pickaxeTool.enchant(registry.getHolderOrThrow(Enchantments.FORTUNE), fortune);
+        }
+    }
+
+    @Override
     public void resetRecipeLogic() {
         super.resetRecipeLogic();
         resetArea(false);
@@ -176,7 +188,16 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
         this.pipeLength = 0;
     }
 
-    private static BlockState findMiningReplacementBlock(Level level) {
+    private static BlockState findMiningReplacementBlock(Level level, BlockPos pos) {
+        if (ConfigHolder.INSTANCE.machines.replaceWithCobbleVersion) {
+            BlockState oreState = level.getBlockState(pos);
+            if (oreState.getBlock().asItem() instanceof MaterialBlockItem matBlockItem) {
+                var prefix = matBlockItem.tagPrefix;
+                if (!GTBlocks.COBBLE_BLOCKS.containsKey(prefix)) return Blocks.COBBLESTONE.defaultBlockState();
+                return GTBlocks.COBBLE_BLOCKS.get(prefix).get();
+            }
+        }
+
         try {
             return BlockStateParser.parseForBlock(level.holderLookup(Registries.BLOCK),
                     ConfigHolder.INSTANCE.machines.replaceMinedBlocksWith, false).blockState();
@@ -359,13 +380,18 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
 
         var matches = machine.getRecipeType().searchRecipe(this, r -> RecipeHelper.matchContents(this, r).isSuccess());
 
+        GTRecipe recipe = null; // attempt ore block that has a static gt recipe
         while (matches.hasNext()) {
             GTRecipe match = matches.next();
             if (match == null) continue;
+            recipe = match;
+            break;
+        }
 
-            long eut = match.getInputEUt().getTotalEU();
+        if (recipe != null) {
+            long eut = recipe.getInputEUt().getTotalEU();
             if (GTUtil.getTierByVoltage(eut) <= getVoltageTier()) {
-                if (RecipeHelper.handleRecipeIO(this, match, IO.OUT, this.chanceCaches).isSuccess()) {
+                if (RecipeHelper.handleRecipeIO(this, recipe, IO.OUT, this.chanceCaches).isSuccess()) {
                     blockDrops.clear();
                     var result = new ArrayList<ItemStack>();
                     for (int i = 0; i < outputItemHandler.storage.getSlots(); ++i) {
@@ -422,10 +448,11 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
         if (handler != null) {
             if (GTTransferUtils.addItemsToItemHandler(handler, true, blockDrops)) {
                 GTTransferUtils.addItemsToItemHandler(handler, false, blockDrops);
-                world.setBlock(blocksToMine.getFirst(), findMiningReplacementBlock(world), 3);
-                mineX = blocksToMine.getFirst().getX();
-                mineZ = blocksToMine.getFirst().getZ();
-                mineY = blocksToMine.getFirst().getY();
+                var pos = blocksToMine.getFirst();
+                world.setBlock(pos, findMiningReplacementBlock(world, pos), 3);
+                mineX = pos.getX();
+                mineZ = pos.getZ();
+                mineY = pos.getY();
                 blocksToMine.removeFirst();
                 onMineOperation();
 
@@ -483,8 +510,10 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
      * Checks whether there are any more blocks to mine, if there are currently none queued
      */
     public void checkBlocksToMine() {
-        if (blocksToMine.isEmpty())
+        if (blocksToMine.isEmpty()) {
             blocksToMine.addAll(getBlocksToMine());
+            blocksToMineOriginalCount = blocksToMine.size();
+        }
     }
 
     /**
@@ -581,7 +610,7 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
      * @return the mean tick time
      */
     private static double getMeanTickTime(@NotNull Level world) {
-        return mean(Objects.requireNonNull(world.getServer()).tickTimes) * 1.0E-6D;
+        return mean(Objects.requireNonNull(world.getServer()).getTickTimesNanos()) * 1.0E-6D;
     }
 
     /**
@@ -621,5 +650,17 @@ public class MinerLogic extends RecipeLogic implements IRecipeCapabilityHolder {
                 pos = pos.relative(dir);
             }
         }
+    }
+
+    @Override
+    public boolean hasCustomProgressLine() {
+        return true;
+    }
+
+    @Nullable
+    @Override
+    public Component getCustomProgressLine() {
+        return Component.translatable("gtceu.machine.miner.progress", blocksToMineOriginalCount - blocksToMine.size(),
+                blocksToMineOriginalCount);
     }
 }

@@ -1,10 +1,11 @@
 package com.gregtechceu.gtceu.api.capability;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.HazardProperty;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.data.medicalcondition.MedicalCondition;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.HazardProperty;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.medicalcondition.MedicalCondition;
 
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
@@ -34,7 +35,7 @@ public interface IMedicalConditionTracker {
 
     void heal(MedicalCondition condition, int progression);
 
-    void setMobEffect(MobEffect effect, int amplifier);
+    void setMobEffect(Holder<MobEffect> effect, int amplifier);
 
     void removeMedicalCondition(MedicalCondition condition);
 }

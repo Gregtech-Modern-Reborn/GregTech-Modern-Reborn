@@ -1,34 +1,32 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.MarkerMaterials.Color;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.api.machine.multiblock.CleanroomType;
+import com.gregtechceu.gtceu.api.material.material.MarkerMaterials.Color;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import java.util.function.Consumer;
-
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.item.GTItems.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.*;
 
 public class CircuitRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         waferRecipes(provider);
         componentRecipes(provider);
         boardRecipes(provider);
         circuitRecipes(provider);
     }
 
-    private static void waferRecipes(Consumer<FinishedRecipe> provider) {
+    private static void waferRecipes(RecipeOutput provider) {
         // Boules
         BLAST_RECIPES.recipeBuilder("silicon_boule")
                 .inputItems(dust, Silicon, 32)
@@ -302,7 +300,7 @@ public class CircuitRecipes {
                 .cleanroom(CleanroomType.CLEANROOM).save(provider);
     }
 
-    private static void componentRecipes(Consumer<FinishedRecipe> provider) {
+    private static void componentRecipes(RecipeOutput provider) {
         // Vacuum Tube
         VanillaRecipeHelper.addShapedRecipe(provider, "vacuum_tube", VACUUM_TUBE.asStack(),
                 "PTP", "WWW",
@@ -690,14 +688,14 @@ public class CircuitRecipes {
         AUTOCLAVE_RECIPES.recipeBuilder("raw_crystal_chip_emerald")
                 .inputItems(gemExquisite, Emerald)
                 .inputFluids(Europium.getFluid(L / 9))
-                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 2500, 500)
+                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 2500, 0)
                 .cleanroom(CleanroomType.CLEANROOM)
                 .duration(12000).EUt(320).save(provider);
 
         AUTOCLAVE_RECIPES.recipeBuilder("raw_crystal_chip_olivine")
                 .inputItems(gemExquisite, Olivine)
                 .inputFluids(Europium.getFluid(L / 9))
-                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 2500, 500)
+                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 2500, 0)
                 .cleanroom(CleanroomType.CLEANROOM)
                 .duration(12000).EUt(320).save(provider);
 
@@ -716,14 +714,14 @@ public class CircuitRecipes {
         AUTOCLAVE_RECIPES.recipeBuilder("raw_crystal_chip_from_part_mutagen")
                 .inputItems(RAW_CRYSTAL_CHIP_PART)
                 .inputFluids(Mutagen.getFluid(250))
-                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 8500, 500)
+                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 8500, 0)
                 .cleanroom(CleanroomType.CLEANROOM)
                 .duration(12000).EUt(VA[HV]).save(provider);
 
         AUTOCLAVE_RECIPES.recipeBuilder("raw_crystal_chip_from_part_bacterial_sludge")
                 .inputItems(RAW_CRYSTAL_CHIP_PART)
                 .inputFluids(BacterialSludge.getFluid(250))
-                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 8500, 500)
+                .chancedOutput(RAW_CRYSTAL_CHIP.asStack(), 8500, 0)
                 .cleanroom(CleanroomType.CLEANROOM)
                 .duration(12000).EUt(VA[HV]).save(provider);
 
@@ -763,7 +761,7 @@ public class CircuitRecipes {
                 .duration(480).EUt(VA[IV]).save(provider);
     }
 
-    private static void boardRecipes(Consumer<FinishedRecipe> provider) {
+    private static void boardRecipes(RecipeOutput provider) {
         // Coated Board
         VanillaRecipeHelper.addShapedRecipe(provider, "coated_board", COATED_BOARD.asStack(3),
                 "RRR", "PPP", "RRR",
@@ -996,7 +994,7 @@ public class CircuitRecipes {
                 .save(provider);
     }
 
-    private static void circuitRecipes(Consumer<FinishedRecipe> provider) {
+    private static void circuitRecipes(RecipeOutput provider) {
         int outputAmount = ConfigHolder.INSTANCE.recipes.harderCircuitRecipes ? 1 : 2;
 
         // T1: Electronic ==============================================================================================

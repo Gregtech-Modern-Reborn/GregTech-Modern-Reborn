@@ -7,15 +7,15 @@ import com.gregtechceu.gtceu.client.renderer.block.SurfaceRockRenderer;
 import com.gregtechceu.gtceu.client.renderer.item.ArmorItemRenderer;
 import com.gregtechceu.gtceu.client.renderer.item.TagPrefixItemRenderer;
 import com.gregtechceu.gtceu.client.renderer.item.ToolItemRenderer;
-import com.gregtechceu.gtceu.common.data.models.GTModels;
-import com.gregtechceu.gtceu.integration.kjs.GregTechKubeJSPlugin;
+import com.gregtechceu.gtceu.data.model.GTModels;
+import com.gregtechceu.gtceu.integration.kjs.GTKubeJSPlugin;
 import com.gregtechceu.gtceu.integration.modernfix.GTModernFixIntegration;
 
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.fml.ModLoader;
+import net.neoforged.fml.ModLoader;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -33,7 +33,10 @@ public abstract class ModelManagerMixin {
                                          ResourceManager resourceManager, ProfilerFiller preparationsProfiler,
                                          ProfilerFiller reloadProfiler, Executor backgroundExecutor,
                                          Executor gameExecutor, CallbackInfoReturnable<CompletableFuture<Void>> cir) {
-        if (!ModLoader.isLoadingStateValid()) return;
+        if (ModLoader.hasErrors()) {
+            GTCEu.LOGGER.warn("GregTech Model loading CANCELLED because loading errors have been encountered");
+            return;
+        }
 
         long startTime = System.currentTimeMillis();
         // turns out these do have to be init in here after all, as they check for asset existence. whoops.
@@ -46,7 +49,7 @@ public abstract class ModelManagerMixin {
         GTModels.registerMaterialFluidModels();
 
         if (GTCEu.Mods.isKubeJSLoaded()) {
-            GregTechKubeJSPlugin.generateMachineBlockModels();
+            GTKubeJSPlugin.generateMachineBlockModels();
         }
         if (GTCEu.Mods.isModernFixLoaded()) {
             GTModernFixIntegration.setAsLast();

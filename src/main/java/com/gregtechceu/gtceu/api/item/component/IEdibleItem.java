@@ -12,8 +12,6 @@ public interface IEdibleItem {
 
     FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity);
 
-    boolean isEdible();
-
     default SoundEvent getEatingSound() {
         return SoundEvents.GENERIC_EAT;
     }

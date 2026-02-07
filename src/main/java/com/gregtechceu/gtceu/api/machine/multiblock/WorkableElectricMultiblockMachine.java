@@ -12,11 +12,12 @@ import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IFancyUIMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IOverclockMachine;
 import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
+import com.gregtechceu.gtceu.api.machine.feature.IVoidable;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDisplayUIMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
 import com.gregtechceu.gtceu.api.recipe.modifier.RecipeModifierList;
-import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeModifiers;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
@@ -24,25 +25,20 @@ import com.lowdragmc.lowdraglib.gui.widget.*;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class WorkableElectricMultiblockMachine extends WorkableMultiblockMachine implements IFancyUIMachine,
                                                IDisplayUIMachine, ITieredMachine, IOverclockMachine {
 
-    // it(Must these recipes are in same recipe type;
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             WorkableElectricMultiblockMachine.class, WorkableMultiblockMachine.MANAGED_FIELD_HOLDER);
     // runtime
@@ -96,32 +92,38 @@ public class WorkableElectricMultiblockMachine extends WorkableMultiblockMachine
     //////////////////////////////////////
 
     @Override
-    public void addDisplayText(List<Component> textList) {
+    public void addDisplayText(@NotNull List<Component> textList) {
         int numParallels;
+        int subtickParallels;
         int batchParallels;
+        int totalRuns;
         boolean exact = false;
         if (recipeLogic.isActive() && recipeLogic.getLastRecipe() != null) {
             numParallels = recipeLogic.getLastRecipe().parallels;
+            subtickParallels = recipeLogic.getLastRecipe().subtickParallels;
             batchParallels = recipeLogic.getLastRecipe().batchParallels;
+            totalRuns = recipeLogic.getLastRecipe().getTotalRuns();
             exact = true;
         } else {
             numParallels = getParallelHatch()
                     .map(IParallelHatch::getCurrentParallel)
                     .orElse(0);
+            subtickParallels = 0;
             batchParallels = 0;
-
+            totalRuns = 0;
         }
 
         MultiblockDisplayText.builder(textList, isFormed())
                 .setWorkingStatus(recipeLogic.isWorkingEnabled(), recipeLogic.isActive())
                 .addEnergyUsageLine(energyContainer)
                 .addEnergyTierLine(tier)
-                .addMachineModeLine(getRecipeType(), getRecipeTypes().length > 1, this.recipeLogic, this)
+                .addMachineModeLine(getRecipeType(), getRecipeTypes().length > 1)
+                .addTotalRunsLine(totalRuns)
                 .addParallelsLine(numParallels, exact)
+                .addSubtickParallelsLine(subtickParallels)
                 .addBatchModeLine(isBatchEnabled(), batchParallels)
                 .addWorkingStatusLine()
-                .addProgressLine(recipeLogic.getProgress(), recipeLogic.getMaxProgress(),
-                        recipeLogic.getProgressPercent())
+                .addProgressLine(recipeLogic)
                 .addOutputLines(recipeLogic.getLastRecipe());
         getDefinition().getAdditionalDisplay().accept(this, textList);
         IDisplayUIMachine.super.addDisplayText(textList);
@@ -152,6 +154,7 @@ public class WorkableElectricMultiblockMachine extends WorkableMultiblockMachine
 
     @Override
     public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
+        IVoidable.attachConfigurators(configuratorPanel, this);
         if (getDefinition().getRecipeModifier() instanceof RecipeModifierList list && Arrays.stream(list.getModifiers())
                 .anyMatch(modifier -> modifier == GTRecipeModifiers.BATCH_MODE)) {
             configuratorPanel.attachConfigurators(new IFancyConfiguratorButton.Toggle(

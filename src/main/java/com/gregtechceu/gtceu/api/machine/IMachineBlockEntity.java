@@ -3,8 +3,9 @@ package com.gregtechceu.gtceu.api.machine;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.block.IMachineBlock;
 import com.gregtechceu.gtceu.api.blockentity.IPaintable;
-import com.gregtechceu.gtceu.api.item.tool.IToolGridHighlight;
+import com.gregtechceu.gtceu.api.item.tool.IToolGridHighLight;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
+import com.gregtechceu.gtceu.core.mixins.LevelAccessor;
 
 import com.lowdragmc.lowdraglib.syncdata.blockentity.IAsyncAutoSyncBlockEntity;
 import com.lowdragmc.lowdraglib.syncdata.blockentity.IAutoPersistBlockEntity;
@@ -17,19 +18,20 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
-import net.minecraftforge.common.extensions.IForgeBlockEntity;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+import net.neoforged.neoforge.common.extensions.IBlockEntityExtension;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A simple compound Interface for all my TileEntities.
  * <p/>
  * Also delivers most of the Information about TileEntities.
  */
-public interface IMachineBlockEntity extends IToolGridHighlight, IAsyncAutoSyncBlockEntity, IRPCBlockEntity,
-                                     IAutoPersistBlockEntity, IPaintable, IForgeBlockEntity {
+public interface IMachineBlockEntity extends IToolGridHighLight, IAsyncAutoSyncBlockEntity, IRPCBlockEntity,
+                                     IAutoPersistBlockEntity, IPaintable, IBlockEntityExtension {
 
     ModelProperty<BlockAndTintGetter> MODEL_DATA_LEVEL = new ModelProperty<>();
     ModelProperty<BlockPos> MODEL_DATA_POS = new ModelProperty<>();
@@ -38,7 +40,7 @@ public interface IMachineBlockEntity extends IToolGridHighlight, IAsyncAutoSyncB
         return (BlockEntity) this;
     }
 
-    default Level level() {
+    default @Nullable Level level() {
         return self().getLevel();
     }
 
@@ -47,36 +49,39 @@ public interface IMachineBlockEntity extends IToolGridHighlight, IAsyncAutoSyncB
     }
 
     default void notifyBlockUpdate() {
-        if (level() != null) {
-            level().updateNeighborsAt(pos(), level().getBlockState(pos()).getBlock());
+        Level level = level();
+        if (level != null) {
+            level.updateNeighborsAt(pos(), level.getBlockState(pos()).getBlock());
         }
     }
 
     default void scheduleRenderUpdate() {
         var pos = pos();
-        if (level() != null) {
-            var state = level().getBlockState(pos);
-            if (level().isClientSide) {
-                level().sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE);
-                self().requestModelDataUpdate();
+        Level level = level();
+        if (level != null) {
+            var state = level.getBlockState(pos);
+            if (level.isClientSide) {
+                level.sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE);
+                ClientCallWrapper.requestModelDataUpdate(this);
             } else {
-                level().blockEvent(pos, state.getBlock(), 1, 0);
+                level.blockEvent(pos, state.getBlock(), 1, 0);
             }
         }
     }
 
     @Override
     default @NotNull ModelData getModelData() {
-        ModelData.Builder data = IForgeBlockEntity.super.getModelData().derive();
+        ModelData.Builder data = IBlockEntityExtension.super.getModelData().derive();
         getMetaMachine().updateModelData(data);
         return data.build();
     }
 
     default long getOffsetTimer() {
-        if (level() == null) return getOffset();
-        else if (level().isClientSide()) return GTValues.CLIENT_TIME + getOffset();
+        Level level = level();
+        if (level == null) return getOffset();
+        else if (level.isClientSide()) return GTValues.CLIENT_TIME + getOffset();
 
-        var server = level().getServer();
+        var server = level.getServer();
         if (server != null) return server.getTickCount() + getOffset();
         return getOffset();
     }
@@ -125,5 +130,17 @@ public interface IMachineBlockEntity extends IToolGridHighlight, IAsyncAutoSyncB
     @Override
     default int getDefaultPaintingColor() {
         return getMetaMachine().getDefaultPaintingColor();
+    }
+
+    final class ClientCallWrapper {
+
+        public static void requestModelDataUpdate(IMachineBlockEntity blockEntity) {
+            LevelAccessor accessor = (LevelAccessor) blockEntity.level();
+            if (accessor == null || Thread.currentThread() != accessor.gtceu$getThread()) {
+                // don't update model data on worker threads
+                return;
+            }
+            blockEntity.requestModelDataUpdate();
+        }
     }
 }

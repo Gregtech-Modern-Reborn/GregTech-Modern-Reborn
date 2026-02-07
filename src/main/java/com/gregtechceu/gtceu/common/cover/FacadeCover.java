@@ -3,14 +3,13 @@ package com.gregtechceu.gtceu.common.cover;
 import com.gregtechceu.gtceu.api.capability.ICoverable;
 import com.gregtechceu.gtceu.api.cover.CoverBehavior;
 import com.gregtechceu.gtceu.api.cover.CoverDefinition;
-import com.gregtechceu.gtceu.common.item.FacadeItemBehaviour;
+import com.gregtechceu.gtceu.common.item.behavior.FacadeItemBehaviour;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,10 +21,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class FacadeCover extends CoverBehavior {
 
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(FacadeCover.class,
@@ -65,7 +60,7 @@ public class FacadeCover extends CoverBehavior {
     }
 
     @Nullable
-    public BlockState getAppearance(BlockState sourceState, BlockPos sourcePos) {
+    public BlockState getAppearance(@Nullable BlockState sourceState, @Nullable BlockPos sourcePos) {
         return facadeState;
     }
 }

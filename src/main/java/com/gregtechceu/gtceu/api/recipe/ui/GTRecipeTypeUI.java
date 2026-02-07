@@ -12,10 +12,11 @@ import com.gregtechceu.gtceu.api.gui.editor.IEditableUI;
 import com.gregtechceu.gtceu.api.gui.widget.DualProgressWidget;
 import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.gui.widget.TankWidget;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.category.GTRecipeCategory;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.integration.emi.recipe.GTRecipeEMICategory;
 import com.gregtechceu.gtceu.integration.jei.recipe.GTRecipeJEICategory;
 import com.gregtechceu.gtceu.integration.rei.recipe.GTRecipeREICategory;
@@ -111,11 +112,12 @@ public class GTRecipeTypeUI {
             } else {
                 try {
                     var resource = resourceManager
-                            .getResourceOrThrow(new ResourceLocation(recipeType.registryName.getNamespace(),
-                                    "ui/recipe_type/%s.rtui".formatted(recipeType.registryName.getPath())));
+                            .getResourceOrThrow(
+                                    ResourceLocation.fromNamespaceAndPath(recipeType.registryName.getNamespace(),
+                                            "ui/recipe_type/%s.rtui".formatted(recipeType.registryName.getPath())));
                     try (InputStream inputStream = resource.open()) {
                         try (DataInputStream dataInputStream = new DataInputStream(inputStream)) {
-                            this.customUICache = NbtIo.read(dataInputStream, NbtAccounter.UNLIMITED);
+                            this.customUICache = NbtIo.read(dataInputStream, NbtAccounter.unlimitedHeap());
                         }
                     }
                 } catch (Exception e) {
@@ -152,7 +154,7 @@ public class GTRecipeTypeUI {
     public record RecipeHolder(DoubleSupplier progressSupplier,
                                Table<IO, RecipeCapability<?>, Object> storages,
                                CompoundTag data,
-                               List<RecipeCondition> conditions,
+                               List<RecipeCondition<?>> conditions,
                                boolean isSteam,
                                boolean isHighPressure) {}
 
@@ -164,7 +166,7 @@ public class GTRecipeTypeUI {
     public WidgetGroup createUITemplate(DoubleSupplier progressSupplier,
                                         Table<IO, RecipeCapability<?>, Object> storages,
                                         CompoundTag data,
-                                        List<RecipeCondition> conditions,
+                                        List<RecipeCondition<?>> conditions,
                                         boolean isSteam,
                                         boolean isHighPressure) {
         var template = createEditableUITemplate(isSteam, isHighPressure);
@@ -177,7 +179,7 @@ public class GTRecipeTypeUI {
     public WidgetGroup createUITemplate(DoubleSupplier progressSupplier,
                                         Table<IO, RecipeCapability<?>, Object> storages,
                                         CompoundTag data,
-                                        List<RecipeCondition> conditions) {
+                                        List<RecipeCondition<?>> conditions) {
         return createUITemplate(progressSupplier, storages, data, conditions, false, false);
     }
 
@@ -192,7 +194,8 @@ public class GTRecipeTypeUI {
                 CompoundTag nbt = getCustomUI();
                 WidgetGroup group = new WidgetGroup();
                 IConfigurableWidget.deserializeNBT(group, nbt.getCompound("root"),
-                        Resources.fromNBT(nbt.getCompound("resources")), false);
+                        Resources.fromNBT(nbt.getCompound("resources")), false,
+                        GTRegistries.builtinRegistry());
                 group.setSelfPosition(new Position(0, 0));
                 return group;
             }
@@ -239,12 +242,15 @@ public class GTRecipeTypeUI {
                 progress.add(dualProgressWidget);
             });
             // add recipe button
-            if (!isJEI && (GTCEu.Mods.isREILoaded() || GTCEu.Mods.isJEILoaded() || GTCEu.Mods.isEMILoaded())) {
+            if (!isJEI && GTCEu.Mods.isAnyRecipeViewerLoaded()) {
                 for (Widget widget : progress) {
                     template.addWidget(new ButtonWidget(widget.getPosition().x, widget.getPosition().y,
                             widget.getSize().width, widget.getSize().height, IGuiTexture.EMPTY, cd -> {
                                 if (cd.isRemote) {
-                                    if (GTCEu.Mods.isREILoaded()) {
+                                    if (GTCEu.Mods.isEMILoaded()) {
+                                        EmiApi.displayRecipeCategory(
+                                                GTRecipeEMICategory.machineCategory(recipeType.getCategory()));
+                                    } else if (GTCEu.Mods.isREILoaded()) {
                                         ViewSearchBuilder.builder().addCategories(
                                                 recipeType.getCategories().stream()
                                                         .filter(GTRecipeCategory::isXEIVisible)
@@ -257,9 +263,6 @@ public class GTRecipeTypeUI {
                                                         .filter(GTRecipeCategory::isXEIVisible)
                                                         .map(GTRecipeJEICategory::machineType)
                                                         .collect(Collectors.toList()));
-                                    } else if (GTCEu.Mods.isEMILoaded()) {
-                                        EmiApi.displayRecipeCategory(
-                                                GTRecipeEMICategory.machineCategory(recipeType.getCategory()));
                                     }
                                 }
                             }).setHoverTooltips("gtceu.recipe_type.show_recipes"));
@@ -325,6 +328,7 @@ public class GTRecipeTypeUI {
             int capCount = entry.getIntValue();
             for (int slotIndex = 0; slotIndex < capCount; slotIndex++) {
                 var slot = cap.createWidget();
+                // noinspection DataFlowIssue
                 slot.setSelfPosition(new Position((index % 3) * 18 + 4, (index / 3) * 18 + 4));
                 slot.setBackground(
                         getOverlaysForSlot(isOutputs, cap, slotIndex == capCount - 1, isSteam, isHighPressure));

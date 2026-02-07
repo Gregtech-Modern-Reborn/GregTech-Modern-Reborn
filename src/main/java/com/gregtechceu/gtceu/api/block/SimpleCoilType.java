@@ -1,6 +1,6 @@
 package com.gregtechceu.gtceu.api.block;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
+import com.gregtechceu.gtceu.api.material.material.Material;
 import com.gregtechceu.gtceu.utils.memoization.GTMemoizer;
 
 import net.minecraft.resources.ResourceLocation;
@@ -50,7 +50,7 @@ public class SimpleCoilType implements ICoilType, StringRepresentable {
     @Override
     @NotNull
     public String getSerializedName() {
-        return name;
+        return getName();
     }
 
     @Override

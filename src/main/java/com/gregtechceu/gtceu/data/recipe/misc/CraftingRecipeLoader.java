@@ -1,36 +1,33 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.stack.MaterialEntry;
-import com.gregtechceu.gtceu.api.recipe.FacadeCoverRecipe;
+import com.gregtechceu.gtceu.api.material.ChemicalHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.stack.MaterialEntry;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidContainerIngredient;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
-import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.api.recipe.kind.FacadeCoverRecipe;
 import com.gregtechceu.gtceu.common.pipelike.duct.DuctPipeType;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
+import com.gregtechceu.gtceu.data.item.GTItems;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
+import com.gregtechceu.gtceu.data.tag.CustomTags;
 
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.SpecialRecipeBuilder;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTItems.*;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.item.GTItems.*;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
 
 public class CraftingRecipeLoader {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
-        // Add Coal Block To Coal Recipe
+    public static void init(RecipeOutput provider) {
         // todo facades
         // registerFacadeRecipe(provider, Iron, 4);
 
@@ -236,17 +233,6 @@ public class CraftingRecipeLoader {
                 "   ", 'S', SHAPE_EMPTY.asStack());
         VanillaRecipeHelper.addStrictShapedRecipe(provider, "shape_mold_plate", SHAPE_MOLD_PLATE.asStack(), " h ",
                 " S ", "   ", 'S', SHAPE_EMPTY.asStack());
-        VanillaRecipeHelper.addStrictShapedRecipe(provider, "shape_mold_pipe_huge",
-                SHAPE_MOLD_HUGE_PIPE.asStack(), "   ", "   ", "hS ", 'S', SHAPE_EMPTY.asStack());
-        VanillaRecipeHelper.addStrictShapedRecipe(provider, "shape_mold_pipe_large",
-                SHAPE_MOLD_LARGE_PIPE.asStack(), "   ", "h  ", " S ", 'S', SHAPE_EMPTY.asStack());
-        VanillaRecipeHelper.addStrictShapedRecipe(provider, "shape_mold_pipe_normal",
-                SHAPE_MOLD_NORMAL_PIPE.asStack(), "   ", " h ", " S ", 'S', SHAPE_EMPTY.asStack());
-        VanillaRecipeHelper.addStrictShapedRecipe(provider, "shape_mold_pipe_small",
-                SHAPE_MOLD_SMALL_PIPE.asStack(), "   ", "  h", " S ", 'S', SHAPE_EMPTY.asStack());
-        VanillaRecipeHelper.addStrictShapedRecipe(provider, "shape_mold_pipe_tiny",
-                SHAPE_MOLD_TINY_PIPE.asStack(), "   ", "   ", " Sh", 'S', SHAPE_EMPTY.asStack());
-
         ///////////////////////////////////////////////////
         // Armors //
         ///////////////////////////////////////////////////
@@ -298,10 +284,10 @@ public class CraftingRecipeLoader {
         ///////////////////////////////////////////////////
         // Special //
         ///////////////////////////////////////////////////
-        SpecialRecipeBuilder.special(FacadeCoverRecipe.SERIALIZER).save(provider, "gtceu:crafting/facade_cover");
+        SpecialRecipeBuilder.special(FacadeCoverRecipe::new).save(provider, FacadeCoverRecipe.ID);
     }
 
-    private static void addDuctRecipes(@NotNull Consumer<FinishedRecipe> provider, @NotNull Material material,
+    private static void addDuctRecipes(@NotNull RecipeOutput provider, @NotNull Material material,
                                        int outputAmount) {
         VanillaRecipeHelper.addShapedRecipe(provider, "small_duct_%s".formatted(material.getName()),
                 GTBlocks.DUCT_PIPES[DuctPipeType.SMALL.ordinal()].asStack(outputAmount * 2), "w", "X", "h",
@@ -317,7 +303,7 @@ public class CraftingRecipeLoader {
                 'X', new MaterialEntry(plateDouble, material));
     }
 
-    // private static void registerFacadeRecipe(Consumer<FinishedRecipe> provider, Material material, int facadeAmount)
+    // private static void registerFacadeRecipe(RecipeOutput provider, Material material, int facadeAmount)
     // {
     // OreIngredient ingredient = new OreIngredient(new MaterialEntry(plate, material).toString());
     // ForgeRegistries.RECIPES.register(new FacadeRecipe(null, ingredient, facadeAmount).setRegistryName("facade_" +

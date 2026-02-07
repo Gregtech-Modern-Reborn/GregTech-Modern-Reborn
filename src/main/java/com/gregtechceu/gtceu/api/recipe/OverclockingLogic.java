@@ -3,6 +3,7 @@ package com.gregtechceu.gtceu.api.recipe;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.modifier.ModifierFunction;
 import com.gregtechceu.gtceu.api.recipe.modifier.ParallelLogic;
 import com.gregtechceu.gtceu.utils.GTMath;
@@ -13,13 +14,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.math.RoundingMode;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 /**
  * Represents a function that, given an initial set of {@link OCParams} and a {@code maxVoltage},
  * will produce an {@link OCResult}
  */
-@ParametersAreNonnullByDefault
 @FunctionalInterface
 public interface OverclockingLogic {
 
@@ -348,7 +346,7 @@ public interface OverclockingLogic {
                     .eutMultiplier(eutMultiplier)
                     .durationMultiplier(durationMultiplier)
                     .addOCs(ocLevel)
-                    .parallels(parallels)
+                    .subtickParallels(parallels)
                     .build();
         }
     }

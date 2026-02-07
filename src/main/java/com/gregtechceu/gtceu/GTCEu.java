@@ -1,58 +1,69 @@
 package com.gregtechceu.gtceu;
 
-import com.gregtechceu.bettergtae.data.StorageManager;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.client.ClientProxy;
-import com.gregtechceu.gtceu.common.CommonProxy;
+import com.gregtechceu.gtceu.api.material.material.IMaterialRegistry;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
+import com.gregtechceu.gtceu.common.CommonInit;
+import com.gregtechceu.gtceu.common.network.GTNetwork;
+import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.forge.AlloyBlastPropertyAddition;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.javafmlmod.FMLModContainer;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.data.loading.DatagenModLoader;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import com.mojang.serialization.Codec;
 import dev.emi.emi.config.EmiConfig;
 import me.shedaniel.rei.api.client.REIRuntime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.file.Path;
-import java.util.Objects;
 
 @Mod(GTCEu.MOD_ID)
 public class GTCEu {
 
     public static final String MOD_ID = "gtceu";
-    private static final ResourceLocation TEMPLATE_LOCATION = new ResourceLocation(MOD_ID, "");
-    public static final String NAME = "GregTechCEu";
+    private static final ResourceLocation TEMPLATE_LOCATION = ResourceLocation.fromNamespaceAndPath(MOD_ID, "");
+    public static final Codec<ResourceLocation> GTCEU_ID = Codec.STRING.comapFlatMap(
+            str -> ResourceLocation.read(appendIdString(str)),
+            s -> s.getNamespace().equals(MOD_ID) ? s.getPath() : s.toString());
+
+    public static final String NAME = "GTCEu";
     public static final Logger LOGGER = LogManager.getLogger(NAME);
-    public static StorageManager STORAGE_INSTANCE = new StorageManager();
 
-    public GTCEu() {
-        GTCEu.init();
+    @ApiStatus.Internal
+    public static IEventBus gtModBus;
+
+    public GTCEu(IEventBus modBus, FMLModContainer container) {
         GTCEuAPI.instance = this;
-        DistExecutor.unsafeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
+        GTCEu.gtModBus = modBus;
+        ConfigHolder.init();
 
-        MinecraftForge.EVENT_BUS.addListener(this::worldTick);
-    }
-
-    public void worldTick(TickEvent.LevelTickEvent event) {
-        if (event.phase == TickEvent.Phase.START && event.side.isServer()) {
-            STORAGE_INSTANCE = StorageManager.getInstance(Objects.requireNonNull(event.level.getServer()));
+        // must be set here because of KubeJS compat
+        // trying to read this before the pre-init stage
+        GTCEuAPI.materialManager = (IMaterialRegistry) GTRegistries.MATERIALS;
+        GTCEuAPI.initializeHighTier();
+        if (GTCEu.isDev()) {
+            ConfigHolder.INSTANCE.recipes.generateLowQualityGems = true;
+            ConfigHolder.INSTANCE.compat.energy.enableFEConverters = true;
         }
-    }
+        CommonInit.init(modBus);
 
-    public static void init() {
-        LOGGER.info("{} is initializing...", NAME);
+        modBus.addListener(AlloyBlastPropertyAddition::addAlloyBlastProperties);
+        modBus.addListener(GTNetwork::registerPayloads);
     }
 
     public static ResourceLocation id(String path) {
@@ -62,7 +73,7 @@ public class GTCEu {
 
         int i = path.indexOf(':');
         if (i > 0) {
-            return new ResourceLocation(path);
+            return ResourceLocation.tryParse(path);
         } else if (i == 0) {
             path = path.substring(i + 1);
         }
@@ -102,7 +113,7 @@ public class GTCEu {
      * @return if we're running data generation
      */
     public static boolean isDataGen() {
-        return FMLLoader.getLaunchHandler().isData();
+        return DatagenModLoader.isRunningDataGen();
     }
 
     /**
@@ -127,8 +138,9 @@ public class GTCEu {
      * 
      * @return if the current thread is the client thread
      */
+    @SuppressWarnings("ConstantValue")
     public static boolean isClientThread() {
-        return isClientSide() && Minecraft.getInstance().isSameThread();
+        return isClientSide() && Minecraft.getInstance() != null && Minecraft.getInstance().isSameThread();
     }
 
     /**
@@ -165,6 +177,11 @@ public class GTCEu {
 
     public static class Mods {
 
+        public static boolean isAnyRecipeViewerLoaded() {
+            return isModLoaded(GTValues.MODID_EMI) || isModLoaded(GTValues.MODID_JEI) ||
+                    isModLoaded(GTValues.MODID_REI);
+        }
+
         public static boolean isJEILoaded() {
             return !(isModLoaded(GTValues.MODID_EMI) || isModLoaded(GTValues.MODID_REI)) &&
                     isModLoaded(GTValues.MODID_JEI);
@@ -182,13 +199,12 @@ public class GTCEu {
             return isModLoaded(GTValues.MODID_KUBEJS);
         }
 
-        public static boolean isIrisOculusLoaded() {
-            return isModLoaded(GTValues.MODID_IRIS) || isModLoaded(GTValues.MODID_OCULUS);
+        public static boolean isIrisLoaded() {
+            return isModLoaded(GTValues.MODID_IRIS);
         }
 
-        public static boolean isSodiumRubidiumEmbeddiumLoaded() {
-            return isModLoaded(GTValues.MODID_SODIUM) || isModLoaded(GTValues.MODID_RUBIDIUM) ||
-                    isModLoaded(GTValues.MODID_EMBEDDIUM);
+        public static boolean isSodiumLoaded() {
+            return isModLoaded(GTValues.MODID_SODIUM);
         }
 
         public static boolean isAE2Loaded() {
@@ -205,10 +221,6 @@ public class GTCEu {
 
         public static boolean isModernFixLoaded() {
             return isModLoaded(GTValues.MODID_MODERNFIX);
-        }
-
-        public static boolean isJAVDLoaded() {
-            return isModLoaded(GTValues.MODID_JAVD);
         }
 
         public static boolean isFTBTeamsLoaded() {

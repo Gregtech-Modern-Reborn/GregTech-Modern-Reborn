@@ -24,11 +24,10 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import com.lowdragmc.lowdraglib.utils.Position;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraftforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -37,10 +36,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+/**
+ * @author lucifer_ll
+ * @date 2023/7/12
+ * @implNote ChargerMachine
+ */
 public class ChargerMachine extends TieredEnergyMachine implements IControllable, IFancyUIMachine, IMachineLife {
 
     public static final long AMPS_PER_ITEM = 4L;
@@ -101,7 +101,13 @@ public class ChargerMachine extends TieredEnergyMachine implements IControllable
     }
 
     protected CustomItemStackHandler createChargerInventory(Object... args) {
-        var handler = new CustomItemStackHandler(this.inventorySize);
+        var handler = new CustomItemStackHandler(this.inventorySize) {
+
+            @Override
+            public int getSlotLimit(int slot) {
+                return 1;
+            }
+        };
         handler.setFilter(item -> GTCapabilityHelper.getElectricItem(item) != null ||
                 (ConfigHolder.INSTANCE.compat.energy.nativeEUToFE &&
                         GTCapabilityHelper.getForgeEnergyItem(item) != null));

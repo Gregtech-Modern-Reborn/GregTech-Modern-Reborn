@@ -1,19 +1,14 @@
 package com.gregtechceu.gtceu.integration.ae2.slot;
 
-import com.gregtechceu.gtceu.utils.GTMath;
+import com.gregtechceu.gtceu.integration.ae2.utils.AEUtil;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class ExportOnlyAEItemSlot extends ExportOnlyAESlot implements IItemHandlerModifiable {
 
     public ExportOnlyAEItemSlot() {
@@ -60,9 +55,7 @@ public class ExportOnlyAEItemSlot extends ExportOnlyAESlot implements IItemHandl
     @Override
     public ItemStack getStackInSlot(int slot) {
         if (slot == 0 && this.stock != null) {
-            return this.stock.what() instanceof AEItemKey itemKey ?
-                    itemKey.toStack(GTMath.saturatedCast(this.stock.amount())) :
-                    ItemStack.EMPTY;
+            return AEUtil.toItemStack(stock);
         }
         return ItemStack.EMPTY;
     }

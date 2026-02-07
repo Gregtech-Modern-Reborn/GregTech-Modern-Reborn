@@ -8,14 +8,14 @@ import com.gregtechceu.gtceu.utils.GTStringUtils;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGrid;
@@ -65,8 +65,10 @@ public class GTAEPlaceholders {
     }
 
     private static long countItems(String id, IGrid grid) {
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
-        if (item == null) return 0;
+        var key = ResourceLocation.parse(id);
+        if (key == null) return 0;
+        if (!BuiltInRegistries.ITEM.containsKey(key)) return 0;
+        Item item = BuiltInRegistries.ITEM.get(key);
         GenericStack stack = GenericStack.fromItemStack(new ItemStack(item, 1));
         if (stack == null) return 0;
         return grid.getStorageService().getInventory().getAvailableStacks().get(stack.what());
@@ -92,8 +94,9 @@ public class GTAEPlaceholders {
             }
             return count;
         }
-        Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(id));
-        if (fluid == null) return 0;
+        var fluidId = ResourceLocation.parse(id);
+        if (!BuiltInRegistries.FLUID.containsKey(fluidId)) return 0;
+        Fluid fluid = BuiltInRegistries.FLUID.get(fluidId);
         GenericStack stack = GenericStack.fromFluidStack(new FluidStack(fluid, 1));
         if (stack == null) return 0;
         return grid.getStorageService().getInventory().getAvailableStacks().get(stack.what());

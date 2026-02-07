@@ -5,25 +5,26 @@ import com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem;
 import com.gregtechceu.gtceu.api.item.component.IItemComponent;
 import com.gregtechceu.gtceu.api.item.component.IItemHUDProvider;
 
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
-public class HudGuiOverlay implements IGuiOverlay {
+public class HudGuiOverlay implements LayeredDraw.Layer {
 
     @Override
-    public void render(ForgeGui forgeGui, GuiGraphics guiGraphics, float partialTick, int screenWidth,
-                       int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker tracker) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.isWindowActive() && mc.level != null && !mc.options.renderDebug && !mc.options.hideGui) {
+        if (mc.isWindowActive() && mc.level != null &&
+                !mc.gui.getDebugOverlay().showDebugScreen() &&
+                !mc.options.hideGui) {
             renderHUDMetaArmor(mc.player.getItemBySlot(EquipmentSlot.HEAD), guiGraphics);
             renderHUDMetaArmor(mc.player.getItemBySlot(EquipmentSlot.CHEST), guiGraphics);
             renderHUDMetaArmor(mc.player.getItemBySlot(EquipmentSlot.LEGS), guiGraphics);

@@ -3,15 +3,14 @@ package com.gregtechceu.gtceu.client.renderer;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.block.IMachineBlock;
 import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
-import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
+import com.gregtechceu.gtceu.api.machine.RotationState;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
-import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
+import com.gregtechceu.gtceu.api.multiblock.MultiblockShapeInfo;
 
 import com.lowdragmc.lowdraglib.client.scene.WorldSceneRenderer;
-import com.lowdragmc.lowdraglib.client.scene.forge.WorldSceneRendererImpl;
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
 import com.lowdragmc.lowdraglib.utils.TrackedDummyWorld;
 
@@ -31,8 +30,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -196,13 +195,15 @@ public class MultiblockInWorldPreviewRenderer {
 
                     BlockPos realPos = pos.offset(offset);
 
-                    if (column[z].getBlockEntity(realPos) instanceof IMachineBlockEntity holder &&
+                    // spotless:off
+                    if (column[z].getBlockEntity(realPos, controller.getLevel().registryAccess()) instanceof IMachineBlockEntity holder &&
                             holder.getMetaMachine() instanceof IMultiController cont) {
                         holder.getSelf().setLevel(LEVEL);
                         controllerBase = cont;
                     } else {
                         blockMap.put(realPos, BlockInfo.fromBlockState(blockState));
                     }
+                    // spotless:on
                 }
             }
         }
@@ -386,11 +387,11 @@ public class MultiblockInWorldPreviewRenderer {
                 if (Thread.interrupted())
                     return;
                 var layer = RenderType.chunkBufferLayers().get(i);
-                var buffer = new BufferBuilder(layer.bufferSize());
-                buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+                var buffer = new BufferBuilder(new ByteBufferBuilder(layer.bufferSize()),
+                        VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
                 renderBlocks(level, poseStack, dispatcher, layer, new WorldSceneRenderer.VertexConsumerWrapper(buffer),
                         renderedBlocks);
-                var builder = buffer.end();
+                var builder = buffer.buildOrThrow();
                 var vertexBuffer = getBUFFERS()[i];
                 Runnable toUpload = () -> {
                     if (!vertexBuffer.isInvalid()) {
@@ -450,7 +451,7 @@ public class MultiblockInWorldPreviewRenderer {
                 poseStack.translate(-0.5, -0.5, -0.5);
 
                 level.setRenderFilter(p -> p.equals(pos));
-                WorldSceneRendererImpl.renderBlocksForge(dispatcher, state, pos, level, poseStack, wrapperBuffer,
+                WorldSceneRenderer.renderBlocksForge(dispatcher, state, pos, level, poseStack, wrapperBuffer,
                         GTValues.RNG, layer);
                 level.setRenderFilter(p -> true);
                 poseStack.popPose();
@@ -463,7 +464,7 @@ public class MultiblockInWorldPreviewRenderer {
                 dispatcher.renderLiquid(pos, level, wrapperBuffer, state, fluidState);
             }
 
-            wrapperBuffer.clerOffset();
+            wrapperBuffer.clearOffset();
             wrapperBuffer.clearColor();
         }
     }

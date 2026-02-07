@@ -1,21 +1,21 @@
 tasks.register('slimJar', Jar) {
     dependsOn("classes")
-    archiveClassifier = "dev-slim"
+    archiveClassifier = "slim"
     from sourceSets.main.output
-}
-
-obfuscation {
-    reobfuscate(tasks.named('slimJar'), sourceSets.main) {
-        archiveClassifier = "slim"
-    }
 }
 
 // Add sources jar to components.java
 java {
-    artifacts.archives(reobfSlimJar)
     withSourcesJar()
 }
 
+// Use delombok'd files for sources
+sourcesJar {
+    exclude {
+        sourceSets.main.allSource.contains it.file
+    }
+    from delombok
+}
 jar.archiveClassifier = "dev"
 
 base {
@@ -23,17 +23,17 @@ base {
 }
 
 afterEvaluate {
-    reobfJar.archiveClassifier = ""
+    jar.archiveClassifier = ""
     tasks.withType(org.gradle.jvm.tasks.Jar).configureEach {
         destinationDirectory = file('build/libs/')
         manifest.attributes([
                 'MixinConfigs': 'gtceu.mixins.json',
                 'Specification-Title': project.name,
                 'Specification-Version': mod_version,
-                'Specification-Vendor': 'gregtechceu Team',
+                'Specification-Vendor': 'GregTechCEu Team',
                 'Implementation-Title': base.archivesName,
                 'Implementation-Version': version,
-                'Implementation-Vendor': 'gregtechceu Team',
+                'Implementation-Vendor': 'GregTechCEu Team',
         ])
     }
 }

@@ -5,9 +5,11 @@ import com.gregtechceu.gtceu.api.cover.CoverDefinition;
 import com.gregtechceu.gtceu.utils.RedstoneUtil;
 
 import net.minecraft.core.Direction;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+
+import org.jetbrains.annotations.Nullable;
 
 public class FluidDetectorCover extends DetectorCover {
 
@@ -46,8 +48,7 @@ public class FluidDetectorCover extends DetectorCover {
         setRedstoneSignalOutput(RedstoneUtil.computeRedstoneValue(storedFluid, fluidCapacity, isInverted()));
     }
 
-    protected IFluidHandler getFluidHandler() {
-        return FluidUtil.getFluidHandler(coverHolder.getLevel(), coverHolder.getPos(), attachedSide).resolve()
-                .orElse(null);
+    protected @Nullable IFluidHandler getFluidHandler() {
+        return FluidUtil.getFluidHandler(coverHolder.getLevel(), coverHolder.getPos(), attachedSide).orElse(null);
     }
 }

@@ -2,12 +2,12 @@ package com.gregtechceu.gtceu.api.recipe.modifier;
 
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -99,20 +99,20 @@ public interface ModifierFunction {
     final class FunctionBuilder {
 
         private int parallels = 1;
+        private int subtickParallels = 1;
         private int batchParallels = 1;
         private int addOCs = 0;
         private ContentModifier eutModifier = ContentModifier.IDENTITY;
-        private ContentModifier amperageModifier = ContentModifier.IDENTITY;
         private ContentModifier durationModifier = ContentModifier.IDENTITY;
         private ContentModifier inputModifier = ContentModifier.IDENTITY;
         private ContentModifier outputModifier = ContentModifier.IDENTITY;
         private ContentModifier tickInputModifier = ContentModifier.IDENTITY;
         private ContentModifier tickOutputModifier = ContentModifier.IDENTITY;
-        private final List<RecipeCondition> addedConditions = new ArrayList<>();
+        private final List<RecipeCondition<?>> addedConditions = new ArrayList<>();
 
         public FunctionBuilder() {}
 
-        public FunctionBuilder conditions(RecipeCondition... conditions) {
+        public FunctionBuilder conditions(RecipeCondition<?>... conditions) {
             addedConditions.addAll(Arrays.asList(conditions));
             return this;
         }
@@ -127,11 +127,6 @@ public interface ModifierFunction {
 
         public FunctionBuilder eutMultiplier(double multiplier) {
             eutModifier = ContentModifier.multiplier(multiplier);
-            return this;
-        }
-
-        public FunctionBuilder amperageMultiplier(double multiplier) {
-            amperageModifier = ContentModifier.multiplier(multiplier);
             return this;
         }
 
@@ -166,6 +161,7 @@ public interface ModifierFunction {
                         newConditions, new ArrayList<>(recipe.ingredientActions),
                         recipe.data, recipe.duration, recipe.recipeCategory);
                 copied.parallels = recipe.parallels * parallels;
+                copied.subtickParallels = recipe.subtickParallels * subtickParallels;
                 copied.ocLevel = recipe.ocLevel + addOCs;
                 copied.batchParallels = recipe.batchParallels * batchParallels;
                 if (recipe.data.getBoolean("duration_is_total_cwu")) {
@@ -176,7 +172,6 @@ public interface ModifierFunction {
                 if (eutModifier != ContentModifier.IDENTITY) {
                     var preEUt = RecipeHelper.getRealEUtWithIO(recipe);
                     EnergyStack eut = EURecipeCapability.CAP.copyWithModifier(preEUt.stack(), eutModifier);
-                    eut = eut.multiplyAmperage((amperageModifier.apply(1)));
                     EURecipeCapability.putEUContent(preEUt.isInput() ? copied.tickInputs : copied.tickOutputs, eut);
                 }
                 return copied;

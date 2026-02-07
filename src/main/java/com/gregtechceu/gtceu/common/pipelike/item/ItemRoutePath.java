@@ -1,6 +1,6 @@
 package com.gregtechceu.gtceu.common.pipelike.item;
 
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.ItemPipeProperties;
+import com.gregtechceu.gtceu.api.material.material.properties.ItemPipeProperties;
 import com.gregtechceu.gtceu.api.pipenet.IRoutePath;
 import com.gregtechceu.gtceu.common.blockentity.ItemPipeBlockEntity;
 import com.gregtechceu.gtceu.utils.FacingPos;
@@ -10,7 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +56,7 @@ public class ItemRoutePath implements IRoutePath<IItemHandler> {
 
     @Override
     public @Nullable IItemHandler getHandler(Level world) {
-        return GTTransferUtils.getAdjacentItemHandler(world, getTargetPipePos(), targetFacing).resolve().orElse(null);
+        return GTTransferUtils.getAdjacentItemHandler(world, getTargetPipePos(), targetFacing).orElse(null);
     }
 
     public boolean matchesFilters(ItemStack stack) {

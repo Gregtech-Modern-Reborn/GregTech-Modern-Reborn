@@ -1,7 +1,7 @@
 package com.gregtechceu.gtceu.core.mixins;
 
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.LoadingModList;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.LoadingModList;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -33,6 +33,7 @@ public class GTMixinPlugin implements IMixinConfigPlugin {
         addModCompatMixin("ftbchunks");
         addModCompatMixin("xaerominimap");
         addModCompatMixin("xaeroworldmap");
+        addModCompatMixin("kubejs");
     }
 
     @Override

@@ -4,9 +4,9 @@ import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.widget.ImageWidget;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -26,14 +26,14 @@ public class PredicatedImageWidget extends ImageWidget {
     }
 
     @Override
-    public void writeInitialData(FriendlyByteBuf buffer) {
+    public void writeInitialData(RegistryFriendlyByteBuf buffer) {
         super.writeInitialData(buffer);
         isVisible = predicate == null || predicate.getAsBoolean();
         buffer.writeBoolean(isVisible);
     }
 
     @Override
-    public void readInitialData(FriendlyByteBuf buffer) {
+    public void readInitialData(RegistryFriendlyByteBuf buffer) {
         super.readInitialData(buffer);
         isVisible = buffer.readBoolean();
     }
@@ -51,7 +51,7 @@ public class PredicatedImageWidget extends ImageWidget {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void readUpdateInfo(int id, FriendlyByteBuf buffer) {
+    public void readUpdateInfo(int id, RegistryFriendlyByteBuf buffer) {
         if (id == 1) {
             isVisible = buffer.readBoolean();
         } else {

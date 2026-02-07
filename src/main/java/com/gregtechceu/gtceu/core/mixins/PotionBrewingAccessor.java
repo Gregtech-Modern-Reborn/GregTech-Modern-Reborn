@@ -11,8 +11,6 @@ import java.util.List;
 @Mixin(PotionBrewing.class)
 public interface PotionBrewingAccessor {
 
-    @Accessor("POTION_MIXES")
-    public static List<PotionBrewing.Mix<Potion>> getPotionMixes() {
-        throw new AssertionError();
-    }
+    @Accessor("potionMixes")
+    List<PotionBrewing.Mix<Potion>> getPotionMixes();
 }

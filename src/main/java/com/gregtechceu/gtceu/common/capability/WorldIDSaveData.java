@@ -1,8 +1,11 @@
 package com.gregtechceu.gtceu.common.capability;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -24,14 +27,16 @@ public class WorldIDSaveData extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag compoundTag) {
+    public @NotNull CompoundTag save(CompoundTag compoundTag, HolderLookup.Provider provider) {
         compoundTag.putString("id", worldID);
         return compoundTag;
     }
 
-    public static void init(ServerLevel world) {
-        instance = world.getDataStorage()
-                .computeIfAbsent(WorldIDSaveData::new, () -> new WorldIDSaveData(world), DATA_NAME);
+    public static void init(ServerLevel level) {
+        instance = level.getDataStorage()
+                .computeIfAbsent(new SavedData.Factory<>(() -> new WorldIDSaveData(level),
+                        (tag, provider) -> new WorldIDSaveData(tag)),
+                        DATA_NAME);
     }
 
     public static String getWorldID() {

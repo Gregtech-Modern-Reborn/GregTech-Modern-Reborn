@@ -1,7 +1,6 @@
 package com.gregtechceu.gtceu.common.network.packets;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 import com.gregtechceu.gtceu.integration.map.ClientCacheManager;
 
 import net.minecraft.client.Minecraft;
@@ -10,18 +9,29 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import lombok.AllArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 import java.util.UUID;
 
 @AllArgsConstructor
-public class SCPacketShareProspection implements GTNetwork.INetPacket {
+public class SCPacketShareProspection implements CustomPacketPayload {
+
+    public static final ResourceLocation ID = GTCEu.id("share_prospection");
+    public static final Type<SCPacketShareProspection> TYPE = new Type<>(ID);
+    public static final StreamCodec<FriendlyByteBuf, SCPacketShareProspection> CODEC = StreamCodec
+            .ofMember(SCPacketShareProspection::encode, SCPacketShareProspection::new);
 
     private UUID sender;
     private UUID receiver;
@@ -31,9 +41,6 @@ public class SCPacketShareProspection implements GTNetwork.INetPacket {
     private ResourceKey<Level> dimension;
     private CompoundTag data;
     private boolean first;
-
-    @SuppressWarnings("unused")
-    public SCPacketShareProspection() {}
 
     public SCPacketShareProspection(FriendlyByteBuf buf) {
         sender = buf.readUUID();
@@ -46,7 +53,6 @@ public class SCPacketShareProspection implements GTNetwork.INetPacket {
         first = buf.readBoolean();
     }
 
-    @Override
     public void encode(FriendlyByteBuf buf) {
         buf.writeUUID(sender);
         buf.writeUUID(receiver);
@@ -58,9 +64,8 @@ public class SCPacketShareProspection implements GTNetwork.INetPacket {
         buf.writeBoolean(first);
     }
 
-    @Override
-    public void execute(NetworkEvent.Context context) {
-        if (context.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
             if (first) {
                 PlayerInfo senderInfo = Objects.requireNonNull(Minecraft.getInstance().getConnection())
                         .getPlayerInfo(sender);
@@ -75,13 +80,23 @@ public class SCPacketShareProspection implements GTNetwork.INetPacket {
                 Minecraft.getInstance().player.sendSystemMessage(Component
                         .translatable("command.gtceu.share_prospection_data.notification", playerName));
             }
-            ClientCacheManager.processProspectionShare(cacheName, key, isDimCache, dimension, data);
+            ClientCacheManager.processProspectionShare(cacheName, key, isDimCache, dimension, data,
+                    context.player().registryAccess());
         } else {
+            ServerPlayer receiverPlayer = GTCEu.getMinecraftServer().getPlayerList().getPlayer(receiver);
+            if (receiverPlayer == null) {
+                return;
+            }
             SCPacketShareProspection newPacket = new SCPacketShareProspection(sender, receiver,
                     cacheName, key,
                     isDimCache, dimension,
                     data, first);
-            GTNetwork.sendToPlayer(GTCEu.getMinecraftServer().getPlayerList().getPlayer(receiver), newPacket);
+            PacketDistributor.sendToPlayer(receiverPlayer, newPacket);
         }
+    }
+
+    @Override
+    public @NotNull Type<SCPacketShareProspection> type() {
+        return TYPE;
     }
 }

@@ -4,19 +4,20 @@ import com.gregtechceu.gtceu.GTCEu;
 
 import com.lowdragmc.lowdraglib.gui.util.DrawerHelper;
 import com.lowdragmc.lowdraglib.gui.util.TextFormattingUtil;
-import com.lowdragmc.lowdraglib.side.fluid.forge.FluidHelperImpl;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mcjty.theoneprobe.api.IElement;
 
 public class FluidStackElement implements IElement {
+
+    public static final ResourceLocation ID = GTCEu.id("fluid_element");
 
     private final FluidStack fluidStack;
     private final IFluidStyle style;
@@ -26,12 +27,8 @@ public class FluidStackElement implements IElement {
         this.style = style;
     }
 
-    public FluidStackElement(FriendlyByteBuf buf) {
-        if (buf.readBoolean()) {
-            this.fluidStack = FluidStack.readFromPacket(buf);
-        } else {
-            this.fluidStack = FluidStack.EMPTY;
-        }
+    public FluidStackElement(RegistryFriendlyByteBuf buf) {
+        this.fluidStack = FluidStack.OPTIONAL_STREAM_CODEC.decode(buf);
 
         this.style = new FluidStyle().width(buf.readInt()).height(buf.readInt());
     }
@@ -44,8 +41,7 @@ public class FluidStackElement implements IElement {
             y += 2;
             int width = style.getWidth() - 4;
             int height = style.getHeight() - 4;
-            DrawerHelper.drawFluidForGui(guiGraphics, FluidHelperImpl.toFluidStack(fluidStack), fluidStack.getAmount(),
-                    x, y, width, height);
+            DrawerHelper.drawFluidForGui(guiGraphics, fluidStack, x, y, width, height);
 
             guiGraphics.pose().pushPose();
             guiGraphics.pose().scale(0.5F, 0.5F, 1);
@@ -70,20 +66,15 @@ public class FluidStackElement implements IElement {
     }
 
     @Override
-    public void toBytes(FriendlyByteBuf friendlyByteBuf) {
-        if (!fluidStack.isEmpty()) {
-            friendlyByteBuf.writeBoolean(true);
-            fluidStack.writeToPacket(friendlyByteBuf);
-        } else {
-            friendlyByteBuf.writeBoolean(false);
-        }
+    public void toBytes(RegistryFriendlyByteBuf buf) {
+        FluidStack.OPTIONAL_STREAM_CODEC.encode(buf, fluidStack);
 
-        friendlyByteBuf.writeInt(this.style.getWidth());
-        friendlyByteBuf.writeInt(this.style.getHeight());
+        buf.writeInt(this.style.getWidth());
+        buf.writeInt(this.style.getHeight());
     }
 
     @Override
     public ResourceLocation getID() {
-        return GTCEu.id("fluid_element");
+        return ID;
     }
 }

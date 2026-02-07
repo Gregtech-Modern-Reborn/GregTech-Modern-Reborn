@@ -1,30 +1,31 @@
 package com.gregtechceu.gtceu.integration.kjs.builders.machine;
 
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
-import com.gregtechceu.gtceu.api.registry.registrate.BuilderBase;
+import com.gregtechceu.gtceu.integration.kjs.helpers.GTResourceLocation;
 
 import net.minecraft.resources.ResourceLocation;
 
-import dev.latvian.mods.kubejs.client.LangEventJS;
-import dev.latvian.mods.kubejs.generator.AssetJsonGenerator;
-import dev.latvian.mods.kubejs.generator.DataJsonGenerator;
+import dev.latvian.mods.kubejs.client.LangKubeEvent;
+import dev.latvian.mods.kubejs.generator.KubeAssetGenerator;
+import dev.latvian.mods.kubejs.generator.KubeDataGenerator;
+import dev.latvian.mods.kubejs.registry.BuilderBase;
 import dev.latvian.mods.rhino.util.HideFromJS;
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import lombok.Getter;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
 @SuppressWarnings("unused")
-public class KJSWrappingMachineBuilder extends BuilderBase<MachineDefinition> {
+public class KJSWrappingMachineBuilder extends BuilderBase<MachineDefinition> implements IMachineBuilderKJS {
 
     @HideFromJS
     @Getter
     private final KJSTieredMachineBuilder tieredBuilder;
 
     public KJSWrappingMachineBuilder(ResourceLocation id, KJSTieredMachineBuilder tieredBuilder) {
-        super(id);
+        super(GTResourceLocation.implicitAsGtceu(id));
         this.tieredBuilder = tieredBuilder;
+        this.dummyBuilder = true;
     }
 
     public KJSWrappingMachineBuilder tiers(int... tiers) {
@@ -63,26 +64,30 @@ public class KJSWrappingMachineBuilder extends BuilderBase<MachineDefinition> {
     }
 
     @Override
-    public void generateDataJsons(DataJsonGenerator generator) {
-        tieredBuilder.generateDataJsons(generator);
+    public void generateData(KubeDataGenerator generator) {
+        tieredBuilder.generateData(generator);
     }
 
     @Override
-    public void generateAssetJsons(@Nullable AssetJsonGenerator generator) {
-        tieredBuilder.generateAssetJsons(generator);
+    public void generateMachineModels() {
+        tieredBuilder.generateMachineModels();
     }
 
     @Override
-    public void generateLang(LangEventJS lang) {
+    public void generateAssets(KubeAssetGenerator generator) {
+        tieredBuilder.generateAssets(generator);
+    }
+
+    @Override
+    public void generateLang(LangKubeEvent lang) {
         tieredBuilder.generateLang(lang);
     }
 
     @Override
-    public MachineDefinition register() {
-        tieredBuilder.register();
-        for (var def : tieredBuilder.get()) {
+    public MachineDefinition createObject() {
+        for (var def : tieredBuilder.createTransformedObject()) {
             if (def != null) {
-                return value = def;
+                return def;
             }
         }
         // should never happen.

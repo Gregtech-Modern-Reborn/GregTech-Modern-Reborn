@@ -1,17 +1,11 @@
 package com.gregtechceu.gtceu.api.misc;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-
 import java.util.Arrays;
 import java.util.function.LongSupplier;
-
-import javax.annotation.ParametersAreNonnullByDefault;
 
 /**
  * Limits a rate/throughput across a certain amount of time, without needing an active tick subscription
  */
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class RateCounter {
 
     private final LongSupplier timeSupplier;

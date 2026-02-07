@@ -17,10 +17,10 @@ import com.lowdragmc.lowdraglib.utils.Size;
 import com.lowdragmc.lowdraglib.utils.interpolate.Eases;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import lombok.Getter;
@@ -183,15 +183,15 @@ public class ConfiguratorPanel extends WidgetGroup {
             this.button = new ButtonWidget(0, 0, getTabSize(), getTabSize(), null, this::onClick) {
 
                 @Override
-                public boolean mouseWheelMove(double mouseX, double mouseY, double wheelDelta) {
+                public boolean mouseWheelMove(double mouseX, double mouseY, double scrollX, double scrollY) {
                     if (!(configurator instanceof IFancyCustomMouseWheelAction hasActions)) return false;
                     if (isMouseOverElement(mouseX, mouseY))
-                        return hasActions.mouseWheelMove(this::writeClientAction, mouseX, mouseY, wheelDelta);
+                        return hasActions.mouseWheelMove(this::writeClientAction, mouseX, mouseY, scrollY);
                     return false;
                 }
 
                 @Override
-                public void handleClientAction(int id, FriendlyByteBuf buffer) {
+                public void handleClientAction(int id, RegistryFriendlyByteBuf buffer) {
                     if (configurator instanceof IFancyCustomClientActionHandler handler && id > 1)
                         handler.handleClientAction(id, buffer);
                     else
@@ -233,13 +233,13 @@ public class ConfiguratorPanel extends WidgetGroup {
         }
 
         @Override
-        public void writeInitialData(FriendlyByteBuf buffer) {
+        public void writeInitialData(RegistryFriendlyByteBuf buffer) {
             super.writeInitialData(buffer);
             configurator.writeInitialData(buffer);
         }
 
         @Override
-        public void readInitialData(FriendlyByteBuf buffer) {
+        public void readInitialData(RegistryFriendlyByteBuf buffer) {
             super.readInitialData(buffer);
             configurator.readInitialData(buffer);
         }
@@ -254,7 +254,7 @@ public class ConfiguratorPanel extends WidgetGroup {
         }
 
         @Override
-        public void readUpdateInfo(int id, FriendlyByteBuf buffer) {
+        public void readUpdateInfo(int id, RegistryFriendlyByteBuf buffer) {
             if (id == 0) {
                 configurator.readUpdateInfo(buffer.readVarInt(), buffer);
             } else {
@@ -411,8 +411,8 @@ public class ConfiguratorPanel extends WidgetGroup {
 
         @Override
         @OnlyIn(Dist.CLIENT)
-        public boolean mouseWheelMove(double mouseX, double mouseY, double wheelDelta) {
-            return super.mouseWheelMove(mouseX, mouseY, wheelDelta) || isMouseOverElement(mouseX, mouseY);
+        public boolean mouseWheelMove(double mouseX, double mouseY, double scrollX, double scrollY) {
+            return super.mouseWheelMove(mouseX, mouseY, scrollX, scrollY) || isMouseOverElement(mouseX, mouseY);
         }
 
         @Override

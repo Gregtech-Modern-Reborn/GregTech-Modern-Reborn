@@ -1,21 +1,23 @@
 package com.gregtechceu.gtceu.api.transfer.item;
 
 import com.lowdragmc.lowdraglib.syncdata.IContentChangeAware;
-import com.lowdragmc.lowdraglib.syncdata.ITagSerializable;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
+import net.minecraft.world.item.component.ItemContainerContents;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
 
 public class CustomItemStackHandler extends ItemStackHandler
-                                    implements IContentChangeAware, ITagSerializable<CompoundTag> {
+                                    implements IContentChangeAware, INBTSerializable<CompoundTag> {
 
     @Getter
     @Setter
@@ -48,6 +50,17 @@ public class CustomItemStackHandler extends ItemStackHandler
     @Override
     public void onContentsChanged(int slot) {
         onContentsChanged.run();
+    }
+
+    /**
+     * Don't use unless necessary.<br>
+     * (A good use case is loading/saving this container's items from/to a {@link ItemContainerContents} component)
+     * 
+     * @return the internal list of items in this handler
+     */
+    @ApiStatus.Internal
+    public NonNullList<ItemStack> getStacks() {
+        return this.stacks;
     }
 
     public void clear() {

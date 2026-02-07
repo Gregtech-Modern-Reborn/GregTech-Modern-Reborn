@@ -4,14 +4,8 @@ import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.common.block.CoilBlock;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-
 import lombok.Getter;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class CoilWorkableElectricMultiblockMachine extends WorkableElectricMultiblockMachine {
 
     @Getter

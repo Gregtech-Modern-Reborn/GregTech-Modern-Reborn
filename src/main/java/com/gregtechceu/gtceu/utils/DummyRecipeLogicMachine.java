@@ -10,7 +10,7 @@ import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import java.util.Collection;
 
 /**
- * Dummy machine used for searching recipes outside of a machine.
+ * Dummy machine used for searching recipes outside a machine.
  */
 public class DummyRecipeLogicMachine extends WorkableTieredMachine implements IRecipeLogicMachine {
 

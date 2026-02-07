@@ -1,24 +1,27 @@
 package com.gregtechceu.gtceu.api.recipe.ingredient;
 
-import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.tag.GTIngredientTypes;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.util.ExtraCodecs;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.util.valueproviders.UniformInt;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.common.util.NeoForgeExtraCodecs;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.crafting.FluidIngredient;
+import net.neoforged.neoforge.fluids.crafting.FluidIngredientType;
 
-import com.google.gson.*;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.stream.Stream;
 
 /**
  * Allows a {@link FluidIngredient} to be created with a ranged {@code amount}, which will be randomly rolled upon
@@ -27,16 +30,23 @@ import org.jetbrains.annotations.NotNull;
  * and either an {@link IntProvider} or {@code int, int} range bounds (inclusive).
  * Functions similarly to {@link IntProviderIngredient}.
  */
-public class IntProviderFluidIngredient extends FluidIngredient {
+public class IntProviderFluidIngredient extends FluidIngredient implements IRangedIngredient {
 
-    public static final Codec<IntProviderFluidIngredient> CODEC = ExtraCodecs.JSON
-            .xmap(IntProviderFluidIngredient::fromJson, IntProviderFluidIngredient::toJson);
+    public static final MapCodec<IntProviderFluidIngredient> CODEC = RecordCodecBuilder.mapCodec(instance -> instance
+            .group(
+                    FluidIngredient.CODEC.fieldOf("inner").forGetter(IntProviderFluidIngredient::getInner),
+                    IntProvider.CODEC.fieldOf("count_provider").forGetter(IntProviderFluidIngredient::getCountProvider),
+                    NeoForgeExtraCodecs.optionalFieldAlwaysWrite(Codec.INT, "sampledCount", FluidType.BUCKET_VOLUME)
+                            .forGetter(IRangedIngredient::getSampledCount))
+            .apply(instance, IntProviderFluidIngredient::new));
+    public static final FluidStack[] EMPTY_STACK_ARRAY = new FluidStack[0];
 
     @Getter
     private final IntProvider countProvider;
     /**
-     * The last result of {@link IntProviderFluidIngredient#getSampledCount()}. -1 if not rolled.
+     * The last result of {@link IntProviderFluidIngredient#rollSampledCount()}. -1 if not rolled.
      */
+    @Getter
     @Setter
     protected int sampledCount = -1;
     /**
@@ -45,19 +55,24 @@ public class IntProviderFluidIngredient extends FluidIngredient {
     @Getter
     private final FluidIngredient inner;
     @Setter
-    protected FluidStack[] fluidStacks = null;
+    protected FluidStack @Nullable [] fluidStacks = null;
 
     protected IntProviderFluidIngredient(FluidIngredient inner, IntProvider provider) {
-        super(inner.values, provider.getMaxValue(), null);
         this.inner = inner;
         this.countProvider = provider;
     }
 
-    @Override
+    protected IntProviderFluidIngredient(FluidIngredient inner, IntProvider provider, int sampledCount) {
+        this.inner = inner;
+        this.countProvider = provider;
+        this.sampledCount = sampledCount;
+    }
+
     public IntProviderFluidIngredient copy() {
-        IntProviderFluidIngredient ipfi = new IntProviderFluidIngredient(this.inner, this.countProvider);
-        ipfi.setSampledCount(this.sampledCount);
-        return ipfi;
+        IntProviderFluidIngredient copied = new IntProviderFluidIngredient(this.inner, this.countProvider);
+        copied.setSampledCount(this.sampledCount);
+        copied.setFluidStacks(this.fluidStacks);
+        return copied;
     }
 
     /**
@@ -66,7 +81,6 @@ public class IntProviderFluidIngredient extends FluidIngredient {
      * {@link IntProviderFluidIngredient#getMaxSizeStack()}.
      */
     @Deprecated
-    @Override
     public int getAmount() {
         if (ConfigHolder.INSTANCE.dev.debug) {
             throw new IllegalCallerException("An IPFI should never have getAmount() called on it!");
@@ -81,20 +95,55 @@ public class IntProviderFluidIngredient extends FluidIngredient {
      * @return a {@link FluidStack FluidStack[]} with amount {@link IntProviderFluidIngredient#sampledCount}
      */
     @Override
-    public FluidStack[] getStacks() {
+    public Stream<FluidStack> generateStacks() {
         if (fluidStacks == null) {
-            int cachedAmount = getSampledCount(GTValues.RNG);
+            int cachedAmount = rollSampledCount(GTValues.RNG);
+            if (cachedAmount == 0) {
+                return Stream.of(EMPTY_STACK_ARRAY);
+            }
+            var innerStacks = inner.getStacks();
+            this.fluidStacks = new FluidStack[innerStacks.length];
+            for (int i = 0; i < fluidStacks.length; i++) {
+                fluidStacks[i] = innerStacks[i].copyWithAmount(cachedAmount);
+            }
+        }
+        return Stream.of(fluidStacks);
+    }
+
+    /**
+     * Gets a usable {@link FluidStack FluidStack[]} from this {@link IntProviderFluidIngredient}.
+     * If this ingredient has not yet had its {@link IntProviderFluidIngredient#sampledCount} rolled, rolls it.
+     *
+     * @return a {@link FluidStack FluidStack[]} with amount {@link IntProviderFluidIngredient#sampledCount}
+     */
+    public FluidStack[] getFluidStacks() {
+        if (fluidStacks == null) {
+            int cachedAmount = rollSampledCount(GTValues.RNG);
             if (cachedAmount == 0) {
                 return EMPTY_STACK_ARRAY;
             }
             var innerStacks = inner.getStacks();
             this.fluidStacks = new FluidStack[innerStacks.length];
             for (int i = 0; i < fluidStacks.length; i++) {
-                fluidStacks[i] = innerStacks[i].copy();
-                fluidStacks[i].setAmount(cachedAmount);
+                fluidStacks[i] = innerStacks[i].copyWithAmount(cachedAmount);
             }
         }
         return fluidStacks;
+    }
+
+    @Override
+    public boolean test(@NotNull FluidStack stack) {
+        return inner.test(stack);
+    }
+
+    @Override
+    public boolean isSimple() {
+        return false;
+    }
+
+    @Override
+    public FluidIngredientType<?> getType() {
+        return GTIngredientTypes.INT_PROVIDER_FLUID_INGREDIENT.get();
     }
 
     /**
@@ -107,20 +156,7 @@ public class IntProviderFluidIngredient extends FluidIngredient {
     public @NotNull FluidStack getMaxSizeStack() {
         FluidStack[] in = inner.getStacks();
         if (in.length == 0) return FluidStack.EMPTY;
-        return new FluidStack(in[0], countProvider.getMaxValue());
-    }
-
-    /**
-     * If this ingredient has not yet had its {@link IntProviderFluidIngredient#sampledCount} rolled, rolls it and
-     * returns the roll.
-     * If it has, returns the existing roll.
-     * Passthrough method, invokes {@link IntProviderFluidIngredient#getSampledCount(RandomSource)} using the threadsafe
-     * {@link GTValues#RNG}.
-     *
-     * @return the amount rolled
-     */
-    public int getSampledCount() {
-        return getSampledCount(GTValues.RNG);
+        return in[0].copyWithAmount(countProvider.getMaxValue());
     }
 
     /**
@@ -131,23 +167,41 @@ public class IntProviderFluidIngredient extends FluidIngredient {
      * @param random {@link RandomSource}, must be threadsafe, usually called using {@link GTValues#RNG}.
      * @return the amount rolled
      */
-    public int getSampledCount(@NotNull RandomSource random) {
+    public int rollSampledCount(@NotNull RandomSource random) {
         if (sampledCount == -1) {
             sampledCount = countProvider.sample(random);
         }
         return sampledCount;
     }
 
-    /**
-     * @return the average roll of this ranged amount
-     */
-    public double getMidRoll() {
-        return ((countProvider.getMaxValue() + countProvider.getMinValue()) / 2.0);
+    @Override
+    public int hashCode() {
+        return this.inner.hashCode();// * 31 * this.countProvider.hashCode();
     }
 
     @Override
-    public boolean isEmpty() {
-        return inner.isEmpty();
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof IntProviderFluidIngredient other)) {
+            return false;
+        }
+
+        return this.inner.equals(other.inner) && intProviderEqual(this.countProvider, other.countProvider);
+    }
+
+    public static boolean intProviderEqual(IntProvider o1, IntProvider o2) {
+        if (o1 == o2) return true;
+        if (o1.getType() != o2.getType()) return false;
+        return o1.getMinValue() == o2.getMinValue() && o1.getMaxValue() == o2.getMaxValue();
+    }
+
+    /**
+     * Resets the random roll on this ingredient
+     */
+    @Override
+    public void reset() {
+        sampledCount = -1;
+        fluidStacks = null;
     }
 
     /**
@@ -160,47 +214,5 @@ public class IntProviderFluidIngredient extends FluidIngredient {
 
     public static IntProviderFluidIngredient of(FluidStack inner, int min, int max) {
         return IntProviderFluidIngredient.of(FluidIngredient.of(inner), UniformInt.of(min, max));
-    }
-
-    /**
-     * Properties:
-     * <ul>
-     * <li>{@code count_provider}</li>
-     * <li>{@code inner}</li>
-     * </ul>
-     */
-    @Override
-    public @NotNull JsonElement toJson() {
-        JsonObject json = new JsonObject();
-        json.add("count_provider", IntProvider.CODEC.encodeStart(JsonOps.INSTANCE, countProvider)
-                .getOrThrow(false, GTCEu.LOGGER::error));
-        json.add("inner", inner.toJson());
-        return json;
-    }
-
-    /**
-     * @param json containing
-     *             <ul>
-     *             <li>{@code count_provider}</li>
-     *             <li>{@code inner}</li>
-     *             </ul>
-     */
-    public static IntProviderFluidIngredient fromJson(JsonElement json) {
-        if (json == null || json.isJsonNull()) {
-            throw new JsonSyntaxException("Fluid ingredient cannot be null");
-        }
-        JsonObject jsonObject = GsonHelper.convertToJsonObject(json, "ingredient");
-        IntProvider amount = IntProvider.CODEC.parse(JsonOps.INSTANCE, jsonObject.get("count_provider"))
-                .getOrThrow(false, GTCEu.LOGGER::error);
-        FluidIngredient inner = FluidIngredient.fromJson(jsonObject.get("inner"));
-        return new IntProviderFluidIngredient(inner, amount);
-    }
-
-    public CompoundTag toNBT() {
-        return (CompoundTag) JsonOps.INSTANCE.convertTo(NbtOps.INSTANCE, this.toJson());
-    }
-
-    public static IntProviderFluidIngredient fromNBT(CompoundTag nbt) {
-        return IntProviderFluidIngredient.fromJson(NbtOps.INSTANCE.convertTo(JsonOps.INSTANCE, nbt));
     }
 }

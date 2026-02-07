@@ -3,11 +3,10 @@ package com.gregtechceu.gtceu.common.blockentity;
 import com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity;
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
 import com.gregtechceu.gtceu.api.capability.IHazardParticleContainer;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
-import com.gregtechceu.gtceu.api.data.medicalcondition.MedicalCondition;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IEnvironmentalHazardCleaner;
 import com.gregtechceu.gtceu.api.machine.feature.IEnvironmentalHazardEmitter;
+import com.gregtechceu.gtceu.api.medicalcondition.MedicalCondition;
 import com.gregtechceu.gtceu.common.pipelike.duct.*;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
@@ -16,12 +15,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
 
 import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.EnumMap;
@@ -47,28 +42,13 @@ public class DuctPipeBlockEntity extends PipeBlockEntity<DuctPipeType, DuctPipeP
     public static void onBlockEntityRegister(BlockEntityType<DuctPipeBlockEntity> ductBlockEntityBlockEntityType) {}
 
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == GTCapability.CAPABILITY_HAZARD_CONTAINER) {
-            if (getLevel().isClientSide())
-                return GTCapability.CAPABILITY_HAZARD_CONTAINER.orEmpty(cap, LazyOptional.of(() -> clientCapability));
-
-            if (handlers.isEmpty()) {
-                initHandlers();
-            }
-            checkNetwork();
-            return GTCapability.CAPABILITY_HAZARD_CONTAINER.orEmpty(cap,
-                    LazyOptional.of(() -> handlers.getOrDefault(side, defaultHandler)));
-        } else if (cap == GTCapability.CAPABILITY_COVERABLE) {
-            return GTCapability.CAPABILITY_COVERABLE.orEmpty(cap, LazyOptional.of(this::getCoverContainer));
-        } else if (cap == GTCapability.CAPABILITY_TOOLABLE) {
-            return GTCapability.CAPABILITY_TOOLABLE.orEmpty(cap, LazyOptional.of(() -> this));
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
     public boolean canHaveBlockedFaces() {
         return false;
+    }
+
+    public void ensureHandlersInitialized() {
+        if (getHandlers().isEmpty())
+            initHandlers();
     }
 
     public void initHandlers() {

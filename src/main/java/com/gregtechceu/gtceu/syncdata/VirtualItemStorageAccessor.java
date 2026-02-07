@@ -7,6 +7,7 @@ import com.lowdragmc.lowdraglib.syncdata.accessor.CustomObjectAccessor;
 import com.lowdragmc.lowdraglib.syncdata.payload.ITypedPayload;
 import com.lowdragmc.lowdraglib.syncdata.payload.NbtTagPayload;
 
+import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 
 public class VirtualItemStorageAccessor extends CustomObjectAccessor<VirtualItemStorage> {
@@ -18,14 +19,14 @@ public class VirtualItemStorageAccessor extends CustomObjectAccessor<VirtualItem
     }
 
     @Override
-    public ITypedPayload<?> serialize(AccessorOp op, VirtualItemStorage value) {
-        return NbtTagPayload.of(value.serializeNBT());
+    public ITypedPayload<?> serialize(AccessorOp op, VirtualItemStorage value, Provider provider) {
+        return NbtTagPayload.of(value.serializeNBT(provider));
     }
 
     @Override
-    public VirtualItemStorage deserialize(AccessorOp op, ITypedPayload<?> payload) {
+    public VirtualItemStorage deserialize(AccessorOp op, ITypedPayload<?> payload, Provider provider) {
         var tank = new VirtualItemStorage();
-        tank.deserializeNBT((CompoundTag) payload.getPayload());
+        tank.deserializeNBT(provider, (CompoundTag) payload.getPayload());
         return tank;
     }
 }

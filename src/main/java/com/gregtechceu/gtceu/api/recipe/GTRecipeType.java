@@ -5,10 +5,11 @@ import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.gui.SteamTexture;
 import com.gregtechceu.gtceu.api.recipe.category.GTRecipeCategory;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.lookup.GTRecipeLookup;
 import com.gregtechceu.gtceu.api.recipe.ui.GTRecipeTypeUI;
 import com.gregtechceu.gtceu.api.sound.SoundEntry;
-import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
+import com.gregtechceu.gtceu.common.recipe.builder.GTRecipeBuilder;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
@@ -18,18 +19,19 @@ import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.item.crafting.*;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,12 +41,19 @@ import java.util.function.*;
 @Accessors(chain = true)
 public class GTRecipeType implements RecipeType<GTRecipe> {
 
+    public static final String LANGUAGE_KEY_PATH = "recipe_type";
+
+    @Getter
+    @Setter(onMethod_ = { @ApiStatus.Internal })
+    public GTRecipeSerializer serializer;
+
     public final ResourceLocation registryName;
     public final String group;
     public final Object2IntSortedMap<RecipeCapability<?>> maxInputs = new Object2IntAVLTreeMap<>(
             RecipeCapability.COMPARATOR);
     public final Object2IntSortedMap<RecipeCapability<?>> maxOutputs = new Object2IntAVLTreeMap<>(
             RecipeCapability.COMPARATOR);
+    @Getter
     @Setter
     private GTRecipeBuilder recipeBuilder;
     @Getter
@@ -74,7 +83,7 @@ public class GTRecipeType implements RecipeType<GTRecipe> {
     @Setter
     protected boolean hasResearchSlot;
     @Getter
-    protected final Map<RecipeType<?>, List<GTRecipe>> proxyRecipes;
+    protected final Map<RecipeType<?>, List<RecipeHolder<GTRecipe>>> proxyRecipes;
     @Getter
     private final GTRecipeCategory category;
     @Getter
@@ -99,7 +108,7 @@ public class GTRecipeType implements RecipeType<GTRecipe> {
         this.category = GTRecipeCategory.registerDefault(this);
         recipeBuilder = new GTRecipeBuilder(registryName, this);
         // must be linked to stop json contents from shuffling
-        Map<RecipeType<?>, List<GTRecipe>> map = new Object2ObjectLinkedOpenHashMap<>();
+        Map<RecipeType<?>, List<RecipeHolder<GTRecipe>>> map = new Object2ObjectLinkedOpenHashMap<>();
         for (RecipeType<?> proxyRecipe : proxyRecipes) {
             map.put(proxyRecipe, new ArrayList<>());
         }
@@ -193,30 +202,6 @@ public class GTRecipeType implements RecipeType<GTRecipe> {
         return registryName.toString();
     }
 
-    public @NotNull Iterator<GTRecipe> searchRecipe(IRecipeCapabilityHolder holder, Predicate<GTRecipe> canHandle,
-                                                    boolean isMultiParallelLogic) {
-        if (!holder.hasCapabilityProxies()) return Collections.emptyIterator();
-        var iterator = getLookup().getRecipeIterator(holder, canHandle, isMultiParallelLogic);
-        boolean any = false;
-        while (iterator.hasNext()) {
-            GTRecipe recipe = iterator.next();
-            if (recipe == null) continue;
-            any = true;
-            break;
-        }
-
-        if (any) {
-            iterator.reset();
-            return iterator;
-        }
-
-        for (ICustomRecipeLogic logic : customRecipeLogicRunners) {
-            GTRecipe recipe = logic.createCustomRecipe(holder);
-            if (recipe != null && canHandle.test(recipe)) return Collections.singleton(recipe).iterator();
-        }
-        return Collections.emptyIterator();
-    }
-
     public @NotNull Iterator<GTRecipe> searchRecipe(IRecipeCapabilityHolder holder, Predicate<GTRecipe> canHandle) {
         if (!holder.hasCapabilityProxies()) return Collections.emptyIterator();
         var iterator = getLookup().getRecipeIterator(holder, canHandle);
@@ -284,7 +269,7 @@ public class GTRecipeType implements RecipeType<GTRecipe> {
         return recipeBuilder.copyFrom(builder);
     }
 
-    public GTRecipeType onRecipeBuild(BiConsumer<GTRecipeBuilder, Consumer<FinishedRecipe>> onBuild) {
+    public GTRecipeType onRecipeBuild(BiConsumer<GTRecipeBuilder, RecipeOutput> onBuild) {
         recipeBuilder.onSave(onBuild);
         return this;
     }
@@ -311,16 +296,18 @@ public class GTRecipeType implements RecipeType<GTRecipe> {
         return false;
     }
 
-    public GTRecipe toGTrecipe(ResourceLocation id, Recipe<?> recipe) {
-        var builder = recipeBuilder(id);
+    public RecipeHolder<GTRecipe> toGTRecipe(RecipeHolder<?> holder) {
+        var builder = recipeBuilder(holder.id());
+        Recipe<?> recipe = holder.value();
         for (var ingredient : recipe.getIngredients()) {
-            builder.inputItems(ingredient);
+            builder.inputItems(new SizedIngredient(ingredient, 1));
         }
         builder.outputItems(recipe.getResultItem(RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY)));
         if (recipe instanceof SmeltingRecipe smeltingRecipe) {
             builder.duration(smeltingRecipe.getCookingTime());
         }
-        return GTRecipeSerializer.SERIALIZER.fromJson(id, builder.build().serializeRecipe());
+        GTRecipe built = builder.build();
+        return new RecipeHolder<>(built.id, built);
     }
 
     public void buildRepresentativeRecipes() {
@@ -343,6 +330,14 @@ public class GTRecipeType implements RecipeType<GTRecipe> {
 
     public Set<GTRecipe> getRecipesInCategory(GTRecipeCategory category) {
         return Collections.unmodifiableSet(categoryMap.getOrDefault(category, Set.of()));
+    }
+
+    public String getTranslationKey() {
+        return this.registryName.toLanguageKey(LANGUAGE_KEY_PATH);
+    }
+
+    public Component getName() {
+        return Component.translatable(getTranslationKey());
     }
 
     public interface ICustomRecipeLogic {

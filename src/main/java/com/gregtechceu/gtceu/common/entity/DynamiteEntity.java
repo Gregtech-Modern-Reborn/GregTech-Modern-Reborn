@@ -1,7 +1,7 @@
 package com.gregtechceu.gtceu.common.entity;
 
-import com.gregtechceu.gtceu.common.data.GTEntityTypes;
-import com.gregtechceu.gtceu.common.data.GTItems;
+import com.gregtechceu.gtceu.data.entity.GTEntityTypes;
+import com.gregtechceu.gtceu.data.item.GTItems;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
@@ -32,8 +32,8 @@ public class DynamiteEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    public void onAddedToWorld() {
-        super.onAddedToWorld();
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
         ticksUntilExplosion = 80 + level().random.nextInt(60);
     }
 

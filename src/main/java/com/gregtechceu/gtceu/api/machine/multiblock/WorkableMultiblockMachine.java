@@ -1,5 +1,6 @@
 package com.gregtechceu.gtceu.api.machine.multiblock;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeHandler;
@@ -14,8 +15,8 @@ import com.gregtechceu.gtceu.api.machine.trait.IRecipeHandlerTrait;
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
@@ -23,7 +24,6 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 
@@ -33,17 +33,11 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import lombok.Getter;
 import lombok.Setter;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.*;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public abstract class WorkableMultiblockMachine extends MultiblockControllerMachine
                                                 implements IWorkableMultiController, IMufflableMachine {
 
@@ -58,7 +52,7 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     @DescSynced
     public final RecipeLogic recipeLogic;
     @Getter
-    private final GTRecipeType[] recipeTypes;
+    private GTRecipeType[] recipeTypes;
     @Getter
     @Setter
     @Persisted
@@ -77,7 +71,11 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     @Nullable
     @Getter
     protected LongSet activeBlocks;
-    private boolean flag = false;
+
+    @Getter
+    @Persisted
+    @DescSynced
+    protected VoidingMode voidingMode = VoidingMode.VOID_NONE;
 
     public WorkableMultiblockMachine(IMachineBlockEntity holder, Object... args) {
         super(holder);
@@ -116,9 +114,6 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
-        if (this.getMultiParallelHatch().isPresent()) {
-            this.recipeLogic.setMultiParallelLogic(true);
-        }
         // attach parts' traits
         activeBlocks = getMultiblockState().getMatchContext().getOrDefault("vaBlocks", LongSets.emptySet());
         capabilitiesProxy.clear();
@@ -160,14 +155,13 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     public void onStructureInvalid() {
         super.onStructureInvalid();
         updateActiveBlocks(false);
-        recipeLogic.resetRecipeLogic();
         activeBlocks = null;
         capabilitiesProxy.clear();
         capabilitiesFlat.clear();
         traitSubscriptions.forEach(ISubscription::unsubscribe);
         traitSubscriptions.clear();
-
         // reset recipe Logic
+        recipeLogic.resetRecipeLogic();
     }
 
     @Override
@@ -216,8 +210,6 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     }
 
     public void updateActiveBlocks(boolean active) {
-        if (flag) return;
-        flag = true;
         if (activeBlocks != null) {
             for (long pos : activeBlocks) {
                 var blockPos = BlockPos.of(pos);
@@ -225,13 +217,11 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
                 if (blockState.hasProperty(GTBlockStateProperties.ACTIVE)) {
                     var newState = blockState.setValue(GTBlockStateProperties.ACTIVE, active);
                     if (newState != blockState) {
-
                         getLevel().setBlock(blockPos, newState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
                     }
                 }
             }
         }
-        flag = false;
     }
 
     @Override
@@ -306,19 +296,35 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
 
     @NotNull
     public GTRecipeType getRecipeType() {
+        if (activeRecipeType >= recipeTypes.length) {
+            GTCEu.LOGGER.warn("Preventing crash from bad recipe type index!");
+            activeRecipeType = recipeTypes.length - 1;
+        }
         return recipeTypes[activeRecipeType];
     }
 
-    /**
-     * Sets a recipe type of the machine.
-     * FOR INTERNAL / TESTING USE ONLY!
-     * NOT SUPPORTED FOR PRODUCTION USE!
-     *
-     * @param newType The new recipe type
-     */
-    @ApiStatus.Internal
-    @VisibleForTesting
-    public void setRecipeType(GTRecipeType newType) {
-        recipeTypes[activeRecipeType] = newType;
+    // Recipe compat
+    public void setRecipeType(@NotNull GTRecipeType type) {
+        int recipeIndex = -1;
+        for (int i = 0; i < recipeTypes.length; i++) {
+            if (type.equals(recipeTypes[i])) {
+                recipeIndex = i;
+                break;
+            }
+        }
+        if (recipeIndex == -1) {
+            var newer = new GTRecipeType[recipeTypes.length + 1];
+            System.arraycopy(recipeTypes, 0, newer, 0, recipeTypes.length);
+            newer[recipeTypes.length] = type;
+            recipeTypes = newer;
+            recipeIndex = recipeTypes.length - 1;
+        }
+        setActiveRecipeType(recipeIndex);
+    }
+
+    @Override
+    public void setVoidingMode(VoidingMode mode) {
+        voidingMode = mode;
+        getRecipeLogic().updateTickSubscription();
     }
 }

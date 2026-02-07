@@ -5,32 +5,33 @@ import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
 import com.gregtechceu.gtceu.api.blockentity.IPaintable;
 import com.gregtechceu.gtceu.api.blockentity.ITickSubscription;
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
 import com.gregtechceu.gtceu.api.capability.IControllable;
 import com.gregtechceu.gtceu.api.capability.ICoverable;
 import com.gregtechceu.gtceu.api.capability.IToolable;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.cover.CoverBehavior;
-import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyTooltip;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
-import com.gregtechceu.gtceu.api.item.tool.IToolGridHighlight;
+import com.gregtechceu.gtceu.api.item.tool.IToolGridHighLight;
 import com.gregtechceu.gtceu.api.machine.feature.*;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
 import com.gregtechceu.gtceu.api.machine.trait.MachineTrait;
 import com.gregtechceu.gtceu.api.misc.IOFilteredInvWrapper;
 import com.gregtechceu.gtceu.api.misc.IOFluidHandlerList;
-import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
+import com.gregtechceu.gtceu.api.multiblock.util.RelativeDirection;
 import com.gregtechceu.gtceu.api.transfer.fluid.IFluidHandlerModifiable;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 import com.gregtechceu.gtceu.client.util.ModelUtils;
 import com.gregtechceu.gtceu.common.cover.FluidFilterCover;
 import com.gregtechceu.gtceu.common.cover.ItemFilterCover;
-import com.gregtechceu.gtceu.common.item.tool.behavior.ToolModeSwitchBehavior;
+import com.gregtechceu.gtceu.common.cover.data.ManualIOMode;
 import com.gregtechceu.gtceu.common.machine.owner.MachineOwner;
 import com.gregtechceu.gtceu.common.machine.owner.PlayerOwner;
+import com.gregtechceu.gtceu.data.item.GTItemAbilities;
 
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
@@ -46,12 +47,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -63,12 +65,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import com.mojang.datafixers.util.Pair;
 import lombok.Getter;
@@ -83,17 +85,15 @@ import java.util.function.Predicate;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static com.gregtechceu.gtceu.api.item.tool.ToolHelper.getBehaviorsTag;
-
 /**
- * an abstract layer of gregtech machine.
+ * an abstract layer of a gregtech machine.
  * Because I have to implement BlockEntities for both fabric and forge platform.
  * All fundamental features will be implemented here.
  * To add additional features, you can see {@link IMachineFeature}
  */
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscription, IToolGridHighlight,
+public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscription, IToolGridHighLight,
                          IFancyTooltip, IPaintable, IRedstoneSignalMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(MetaMachine.class);
@@ -128,9 +128,7 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
         this.serverTicks = new ArrayList<>();
         this.waitingToAdd = new ArrayList<>();
         // bind sync storage
-        if (holder.getRootStorage() != null) {
-            this.holder.getRootStorage().attach(getSyncStorage());
-        }
+        this.holder.getRootStorage().attach(getSyncStorage());
     }
 
     //////////////////////////////////////
@@ -230,6 +228,12 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
                 this.isPainted() != renderState.getValue(GTMachineModelProperties.IS_PAINTED)) {
             setRenderState(renderState.setValue(GTMachineModelProperties.IS_PAINTED, this.isPainted()));
         }
+
+        // Force model data refresh on client when BlockEntity finishes loading,
+        // in case the chunk was rendered before this BlockEntity was available
+        if (isRemote()) {
+            scheduleRenderUpdate();
+        }
     }
 
     /**
@@ -248,6 +252,15 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
         for (MachineTrait trait : this.getTraits()) {
             trait.loadCustomPersistedData(tag);
         }
+    }
+
+    public void applyImplicitComponents(MetaMachineBlockEntity.ExDataComponentInput componentInput) {}
+
+    public void collectImplicitComponents(DataComponentMap.Builder components) {}
+
+    public void removeItemComponentsFromTag(CompoundTag tag) {
+        // Just clear the tag by default.
+        Set.copyOf(tag.getAllKeys()).forEach(tag::remove);
     }
 
     //////////////////////////////////////
@@ -316,6 +329,7 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
     //////////////////////////////////////
     // ******* Interaction *******//
     //////////////////////////////////////
+
     /**
      * Called when a player clicks this meta tile entity with a tool
      *
@@ -323,11 +337,11 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
      *         animations will be played
      */
     @Override
-    public final Pair<GTToolType, InteractionResult> onToolClick(Set<@NotNull GTToolType> toolType, ItemStack itemStack,
-                                                                 UseOnContext context) {
+    public final Pair<GTToolType, ItemInteractionResult> onToolClick(Set<@NotNull GTToolType> toolType,
+                                                                     ItemStack itemStack, UseOnContext context) {
         // the side hit from the machine grid
         var playerIn = context.getPlayer();
-        if (playerIn == null) return Pair.of(null, InteractionResult.PASS);
+        if (playerIn == null) return Pair.of(null, ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION);
 
         var hand = context.getHand();
         var hitResult = new BlockHitResult(context.getClickLocation(), context.getClickedFace(),
@@ -339,100 +353,116 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
         // Prioritize covers where they apply (Screwdriver, Soft Mallet)
         if (toolType.isEmpty() && playerIn.isShiftKeyDown()) {
             if (coverBehavior != null) {
-                return Pair.of(null, coverBehavior.onScrewdriverClick(playerIn, hand, hitResult));
+                return Pair.of(null, coverBehavior.onScrewdriverClick(playerIn, hand, itemStack, hitResult));
             }
         }
-        if (toolType.contains(GTToolType.SCREWDRIVER)) {
+        if (toolType.contains(GTToolType.SCREWDRIVER) &&
+                itemStack.canPerformAction(GTItemAbilities.SCREWDRIVER_CONFIGURE)) {
             if (coverBehavior != null) {
-                return Pair.of(GTToolType.SCREWDRIVER, coverBehavior.onScrewdriverClick(playerIn, hand, hitResult));
-            } else return Pair.of(GTToolType.SCREWDRIVER, onScrewdriverClick(playerIn, hand, gridSide, hitResult));
+                return Pair.of(GTToolType.SCREWDRIVER,
+                        coverBehavior.onScrewdriverClick(playerIn, hand, itemStack, hitResult));
+            } else return Pair.of(GTToolType.SCREWDRIVER,
+                    onScrewdriverClick(playerIn, hand, itemStack, gridSide, hitResult));
         } else if (toolType.contains(GTToolType.SOFT_MALLET)) {
             if (coverBehavior != null) {
-                return Pair.of(GTToolType.SOFT_MALLET, coverBehavior.onSoftMalletClick(playerIn, hand, hitResult));
-            } else return Pair.of(GTToolType.SOFT_MALLET, onSoftMalletClick(playerIn, hand, gridSide, hitResult));
+                return Pair.of(GTToolType.SOFT_MALLET,
+                        coverBehavior.onSoftMalletClick(playerIn, hand, itemStack, hitResult));
+            } else return Pair.of(GTToolType.SOFT_MALLET,
+                    onSoftMalletClick(playerIn, hand, itemStack, gridSide, hitResult));
         } else if (toolType.contains(GTToolType.WRENCH)) {
-            return Pair.of(GTToolType.WRENCH, onWrenchClick(playerIn, hand, gridSide, hitResult));
+            return Pair.of(GTToolType.WRENCH, onWrenchClick(playerIn, hand, itemStack, gridSide, hitResult));
         } else if (toolType.contains(GTToolType.CROWBAR)) {
-            if (coverBehavior != null) {
+            if (coverBehavior != null && itemStack.canPerformAction(GTItemAbilities.CROWBAR_REMOVE_COVER)) {
                 if (!isRemote()) {
                     getCoverContainer().removeCover(gridSide, playerIn);
                 }
-                return Pair.of(GTToolType.CROWBAR, InteractionResult.CONSUME);
+                return Pair.of(GTToolType.CROWBAR, ItemInteractionResult.CONSUME);
             }
-            return Pair.of(GTToolType.CROWBAR, onCrowbarClick(playerIn, hand, gridSide, hitResult));
+            return Pair.of(GTToolType.CROWBAR, onCrowbarClick(playerIn, hand, itemStack, gridSide, hitResult));
         } else if (toolType.contains(GTToolType.HARD_HAMMER)) {
-            return Pair.of(GTToolType.HARD_HAMMER, onHardHammerClick(playerIn, hand, gridSide, hitResult));
+            return Pair.of(GTToolType.HARD_HAMMER, onHardHammerClick(playerIn, hand, itemStack, gridSide, hitResult));
         }
-        return Pair.of(null, InteractionResult.PASS);
+        return Pair.of(null, ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION);
     }
 
-    protected InteractionResult onHardHammerClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                                  BlockHitResult hitResult) {
+    protected ItemInteractionResult onHardHammerClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                      Direction gridSide, BlockHitResult hitResult) {
+        if (!held.canPerformAction(GTItemAbilities.HAMMER_MUTE)) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         if (this instanceof IMufflableMachine mufflableMachine) {
             if (!isRemote()) {
                 mufflableMachine.setMuffled(!mufflableMachine.isMuffled());
                 playerIn.sendSystemMessage(Component.translatable(mufflableMachine.isMuffled() ?
                         "gtceu.machine.muffle.on" : "gtceu.machine.muffle.off"));
             }
-            return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
+            return ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide);
         }
-        return InteractionResult.PASS;
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
-    protected InteractionResult onCrowbarClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                               BlockHitResult hitResult) {
-        return InteractionResult.PASS;
+    protected ItemInteractionResult onCrowbarClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                   Direction gridSide, BlockHitResult hitResult) {
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
-    protected InteractionResult onWrenchClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                              BlockHitResult hitResult) {
-        if (gridSide == getFrontFacing() && allowExtendedFacing()) {
-            setUpwardsFacing(playerIn.isShiftKeyDown() ? getUpwardsFacing().getCounterClockWise() :
-                    getUpwardsFacing().getClockWise());
-            return InteractionResult.sidedSuccess(isRemote());
-        }
-        if (playerIn.isShiftKeyDown()) {
-            if (gridSide == getFrontFacing() || !isFacingValid(gridSide)) {
-                return InteractionResult.FAIL;
+    protected ItemInteractionResult onWrenchClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                  Direction gridSide, BlockHitResult hitResult) {
+        boolean isShiftDown = playerIn.isShiftKeyDown();
+        if (held.canPerformAction(GTItemAbilities.WRENCH_ROTATE)) {
+            if (gridSide == getFrontFacing() && allowExtendedFacing()) {
+                setUpwardsFacing(playerIn.isShiftKeyDown() ? getUpwardsFacing().getCounterClockWise() :
+                        getUpwardsFacing().getClockWise());
+                return ItemInteractionResult.sidedSuccess(isRemote());
             }
-            setFrontFacing(gridSide);
-        } else {
-            var itemStack = playerIn.getItemInHand(hand);
-            var tagCompound = getBehaviorsTag(itemStack);
-            ToolModeSwitchBehavior.WrenchModeType type = ToolModeSwitchBehavior.WrenchModeType.values()[tagCompound
-                    .getByte("Mode")];
+            if (isShiftDown) {
+                if (gridSide == getFrontFacing() || !isFacingValid(gridSide)) {
+                    return ItemInteractionResult.FAIL;
+                }
+                if (!isRemote()) {
+                    setFrontFacing(gridSide);
+                }
+                return ItemInteractionResult.sidedSuccess(isRemote());
+            }
+        }
+        if (!isShiftDown && held.canPerformAction(GTItemAbilities.WRENCH_CONFIGURE)) {
+            if (isRemote()) return ItemInteractionResult.SUCCESS;
 
-            if (type.isItem()) {
+            boolean canConfigAll = held.canPerformAction(GTItemAbilities.WRENCH_CONFIGURE_ALL);
+
+            if (canConfigAll || held.canPerformAction(GTItemAbilities.WRENCH_CONFIGURE_ITEMS)) {
                 if (this instanceof IAutoOutputItem autoOutputItem &&
                         (!hasFrontFacing() || gridSide != getFrontFacing())) {
                     autoOutputItem.setOutputFacingItems(gridSide);
                 }
             }
-            if (type.isFluid()) {
+            if (canConfigAll || held.canPerformAction(GTItemAbilities.WRENCH_CONFIGURE_FLUIDS)) {
                 if (this instanceof IAutoOutputFluid autoOutputFluid &&
                         (!hasFrontFacing() || gridSide != getFrontFacing())) {
                     autoOutputFluid.setOutputFacingFluids(gridSide);
                 }
             }
         }
-        return InteractionResult.sidedSuccess(isRemote());
+        return ItemInteractionResult.sidedSuccess(isRemote());
     }
 
-    protected InteractionResult onSoftMalletClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                                  BlockHitResult hitResult) {
+    protected ItemInteractionResult onSoftMalletClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                      Direction gridSide, BlockHitResult hitResult) {
+        if (!held.canPerformAction(GTItemAbilities.MALLET_PAUSE)) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         var controllable = GTCapabilityHelper.getControllable(getLevel(), getPos(), gridSide);
-        if (controllable == null) return InteractionResult.PASS;
+        if (controllable == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!isRemote()) {
             controllable.setWorkingEnabled(!controllable.isWorkingEnabled());
             playerIn.sendSystemMessage(Component.translatable(controllable.isWorkingEnabled() ?
                     "behaviour.soft_hammer.enabled" : "behaviour.soft_hammer.disabled_cycle"));
         }
-        return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
+        return ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide);
     }
 
-    protected InteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, Direction gridSide,
-                                                   BlockHitResult hitResult) {
-        if (isRemote()) return InteractionResult.SUCCESS;
+    protected ItemInteractionResult onScrewdriverClick(Player playerIn, InteractionHand hand, ItemStack held,
+                                                       Direction gridSide, BlockHitResult hitResult) {
         if (playerIn.isShiftKeyDown()) {
             boolean changed = false;
             if (this instanceof IAutoOutputItem autoOutputItem) {
@@ -457,7 +487,7 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
                 }
             }
             if (changed) {
-                return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
+                return ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide);
             }
         } else {
             boolean changed = false;
@@ -475,10 +505,10 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
                 }
             }
             if (changed) {
-                return InteractionResult.sidedSuccess(playerIn.level().isClientSide);
+                return ItemInteractionResult.sidedSuccess(playerIn.level().isClientSide);
             }
         }
-        return InteractionResult.PASS;
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     //////////////////////////////////////
@@ -513,8 +543,11 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
     @Override
     public boolean shouldRenderGrid(Player player, BlockPos pos, BlockState state, ItemStack held,
                                     Set<GTToolType> toolTypes) {
-        if (toolTypes.contains(GTToolType.WRENCH)) return true;
-        if (toolTypes.contains(GTToolType.SCREWDRIVER) &&
+        if (toolTypes.contains(GTToolType.WRENCH) || held.canPerformAction(GTItemAbilities.WRENCH_ROTATE)) {
+            return true;
+        }
+        if ((toolTypes.contains(GTToolType.SCREWDRIVER) ||
+                held.canPerformAction(GTItemAbilities.SCREWDRIVER_CONFIGURE)) &&
                 (this instanceof IAutoOutputItem || this instanceof IAutoOutputFluid))
             return true;
         for (CoverBehavior cover : coverContainer.getCovers()) {
@@ -524,25 +557,25 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
     }
 
     @Override
-    public @Nullable ResourceTexture sideTips(Player player, BlockPos pos, BlockState state, Set<GTToolType> toolTypes,
-                                              Direction side) {
+    public @Nullable ResourceTexture sideTips(Player player, BlockPos pos, BlockState state,
+                                              Set<GTToolType> toolTypes, ItemStack held, Direction side) {
         var cover = coverContainer.getCoverAtSide(side);
         if (cover != null) {
-            var tips = cover.sideTips(player, pos, state, toolTypes, side);
+            var tips = cover.sideTips(player, pos, state, toolTypes, held, side);
             if (tips != null) return tips;
         }
 
-        if (toolTypes.contains(GTToolType.WRENCH)) {
-            if (player.isShiftKeyDown()) {
-                if (isFacingValid(side)) {
+        if (toolTypes.contains(GTToolType.WRENCH) || held.canPerformAction(GTItemAbilities.WRENCH_ROTATE)) {
+            if (!player.isShiftKeyDown()) {
+                if (isFacingValid(side) || (allowExtendedFacing() && hasFrontFacing() && side == getFrontFacing())) {
                     return GuiTextures.TOOL_FRONT_FACING_ROTATION;
                 }
             }
-        } else if (toolTypes.contains(GTToolType.SOFT_MALLET)) {
+        } else if (toolTypes.contains(GTToolType.SOFT_MALLET) || held.canPerformAction(GTItemAbilities.MALLET_PAUSE)) {
             if (this instanceof IControllable controllable) {
                 return controllable.isWorkingEnabled() ? GuiTextures.TOOL_START : GuiTextures.TOOL_PAUSE;
             }
-        } else if (toolTypes.contains(GTToolType.HARD_HAMMER)) {
+        } else if (toolTypes.contains(GTToolType.HARD_HAMMER) || held.canPerformAction(GTItemAbilities.HAMMER_MUTE)) {
             if (this instanceof IMufflableMachine mufflableMachine) {
                 return mufflableMachine.isMuffled() ? GuiTextures.TOOL_SOUND : GuiTextures.TOOL_MUTE;
             }
@@ -679,7 +712,7 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
 
     @NotNull
     public BlockState getBlockAppearance(BlockState state, BlockAndTintGetter level, BlockPos pos, Direction side,
-                                         BlockState sourceState, BlockPos sourcePos) {
+                                         @Nullable BlockState sourceState, @Nullable BlockPos sourcePos) {
         var appearance = getCoverContainer().getBlockAppearance(state, level, pos, side, sourceState, sourcePos);
         if (appearance != null) return appearance;
         if (this instanceof IMultiPart part && part.isFormed()) {
@@ -716,7 +749,7 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
     }
 
     @Override
-    public boolean canConnectRedstone(Direction side) {
+    public boolean canConnectRedstone(@Nullable Direction side) {
         if (side == null) return false;
 
         // For some reason, Minecraft requests the output signal from the opposite side...
@@ -745,7 +778,15 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
     public Predicate<ItemStack> getItemCapFilter(@Nullable Direction side, IO io) {
         if (side != null) {
             var cover = getCoverContainer().getCoverAtSide(side);
-            if (cover instanceof ItemFilterCover filterCover && filterCover.getFilterMode().filters(io)) {
+            if (cover instanceof ItemFilterCover filterCover) {
+                if (!filterCover.getFilterMode().filters(io)) {
+                    if (filterCover.getAllowFlow() == ManualIOMode.DISABLED) {
+                        return item -> false;
+                    }
+                    if (filterCover.getAllowFlow() == ManualIOMode.UNFILTERED) {
+                        return item -> true;
+                    }
+                }
                 return filterCover.getItemFilter();
             }
         }
@@ -755,7 +796,15 @@ public class MetaMachine implements IEnhancedManaged, IToolable, ITickSubscripti
     public Predicate<FluidStack> getFluidCapFilter(@Nullable Direction side, IO io) {
         if (side != null) {
             var cover = getCoverContainer().getCoverAtSide(side);
-            if (cover instanceof FluidFilterCover filterCover && filterCover.getFilterMode().filters(io)) {
+            if (cover instanceof FluidFilterCover filterCover) {
+                if (!filterCover.getFilterMode().filters(io)) {
+                    if (filterCover.getAllowFlow() == ManualIOMode.DISABLED) {
+                        return fluid -> false;
+                    }
+                    if (filterCover.getAllowFlow() == ManualIOMode.UNFILTERED) {
+                        return fluid -> true;
+                    }
+                }
                 return filterCover.getFluidFilter();
             }
         }

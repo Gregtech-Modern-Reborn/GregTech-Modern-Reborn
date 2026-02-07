@@ -6,9 +6,9 @@ import com.gregtechceu.gtceu.api.gui.editor.EditableMachineUI;
 import com.gregtechceu.gtceu.api.machine.feature.IEnvironmentalHazardEmitter;
 import com.gregtechceu.gtceu.api.machine.feature.IFancyUIMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableEnergyContainer;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.modifier.ModifierFunction;
 import com.gregtechceu.gtceu.api.recipe.modifier.ParallelLogic;
 import com.gregtechceu.gtceu.api.recipe.modifier.RecipeModifier;
@@ -23,7 +23,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
 import com.google.common.collect.Tables;
-import com.mojang.blaze3d.MethodsReturnNonnullByDefault;
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -33,10 +32,6 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.function.BiFunction;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class SimpleGeneratorMachine extends WorkableTieredMachine
                                     implements IFancyUIMachine, IEnvironmentalHazardEmitter {
 
@@ -54,6 +49,7 @@ public class SimpleGeneratorMachine extends WorkableTieredMachine
                                   Object... args) {
         this(holder, tier, 0.25f, tankScalingFunction, args);
     }
+
     //////////////////////////////////////
     // ***** Initialization ******//
     //////////////////////////////////////

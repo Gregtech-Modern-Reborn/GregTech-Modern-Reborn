@@ -1,11 +1,10 @@
 package com.gregtechceu.gtceu.utils;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.PlainTextContents;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -75,7 +74,7 @@ public class FormattingUtil {
      *
      * @param string Any string with ASCII characters.
      * @return A string that is all lowercase, with underscores inserted before word/number boundaries:
-     * 
+     *
      *         <pre>
      *         <br>{@code "maragingSteel300" -> "maraging_steel_300"}
      *         <br>{@code "gtceu:maraging_steel_300" -> "gtceu:maraging_steel_300"}
@@ -101,15 +100,6 @@ public class FormattingUtil {
     }
 
     /**
-     * @deprecated use {@link FormattingUtil#toLowerCaseUnderscore(String) toLowerCaseUnderscore} instead.
-     */
-    @ApiStatus.Obsolete(since = "7.0.0")
-    @Deprecated(since = "7.0.0")
-    public static String toLowerCaseUnder(String string) {
-        return toLowerCaseUnderscore(string);
-    }
-
-    /**
      * Check if {@code string} has any uppercase characters.
      *
      * @param string the string to check
@@ -126,8 +116,8 @@ public class FormattingUtil {
     /**
      * apple_orange.juice => Apple Orange (Juice)
      */
-    public static String toEnglishName(Object internalName) {
-        return Arrays.stream(internalName.toString().toLowerCase(Locale.ROOT).split("_"))
+    public static String toEnglishName(String internalName) {
+        return Arrays.stream(internalName.toLowerCase(Locale.ROOT).split("_"))
                 .map(StringUtils::capitalize)
                 .collect(Collectors.joining(" "));
     }
@@ -165,7 +155,7 @@ public class FormattingUtil {
         for (int i = 0; i < string.length(); i++) {
             if (string.charAt(i) == '_')
                 continue;
-            if (i == 0 || string.charAt(i - 1) == '_') {
+            if (i != 0 && string.charAt(i - 1) == '_') {
                 result.append(Character.toUpperCase(string.charAt(i)));
             } else {
                 result.append(string.charAt(i));
@@ -275,6 +265,6 @@ public class FormattingUtil {
     }
 
     private static boolean isEmptyComponent(Component component) {
-        return component.getContents() == ComponentContents.EMPTY && component.getSiblings().isEmpty();
+        return component.getContents() == PlainTextContents.EMPTY && component.getSiblings().isEmpty();
     }
 }

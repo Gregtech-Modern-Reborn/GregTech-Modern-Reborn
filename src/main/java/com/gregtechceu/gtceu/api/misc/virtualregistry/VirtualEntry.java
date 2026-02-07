@@ -1,9 +1,8 @@
 package com.gregtechceu.gtceu.api.misc.virtualregistry;
 
-import com.lowdragmc.lowdraglib.syncdata.ITagSerializable;
-
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +13,7 @@ import java.util.Locale;
 
 @Getter
 @Accessors(chain = true)
-public abstract class VirtualEntry implements INBTSerializable<CompoundTag>, ITagSerializable<CompoundTag> {
+public abstract class VirtualEntry implements INBTSerializable<CompoundTag> {
 
     public static final String DEFAULT_COLOR = "FFFFFFFF";
     protected static final String COLOR_KEY = "color";
@@ -59,7 +58,7 @@ public abstract class VirtualEntry implements INBTSerializable<CompoundTag>, ITa
     }
 
     @Override
-    public CompoundTag serializeNBT() {
+    public CompoundTag serializeNBT(HolderLookup.@NotNull Provider registries) {
         var tag = new CompoundTag();
         tag.putString(COLOR_KEY, this.colorStr);
 
@@ -70,7 +69,7 @@ public abstract class VirtualEntry implements INBTSerializable<CompoundTag>, ITa
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
+    public void deserializeNBT(HolderLookup.@NotNull Provider registries, CompoundTag nbt) {
         setColor(nbt.getString(COLOR_KEY));
 
         if (nbt.contains(DESC_KEY))

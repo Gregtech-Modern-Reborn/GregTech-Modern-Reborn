@@ -7,7 +7,6 @@ import com.gregtechceu.gtceu.api.sound.CustomSoundEntry;
 import com.gregtechceu.gtceu.api.sound.SoundEntry;
 import com.gregtechceu.gtceu.api.sound.WrappedSoundEntry;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
@@ -16,16 +15,13 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class SoundEntryBuilder {
 
     public static class SoundEntryProvider implements DataProvider {
@@ -60,6 +56,7 @@ public class SoundEntryBuilder {
     }
 
     protected ResourceLocation id;
+    @Nullable
     protected String subtitle = "unregistered";
     protected SoundSource category = SoundSource.BLOCKS;
     protected List<ConfiguredSoundEvent> wrappedEvents;
@@ -118,7 +115,7 @@ public class SoundEntryBuilder {
         SoundEntry entry = wrappedEvents.isEmpty() ?
                 new CustomSoundEntry(id, variants, subtitle, category, attenuationDistance) :
                 new WrappedSoundEntry(id, subtitle, wrappedEvents, category, attenuationDistance);
-        GTRegistries.SOUNDS.register(entry.getId(), entry);
+        GTRegistries.register(GTRegistries.SOUNDS, entry.getId(), entry);
         return entry;
     }
 }

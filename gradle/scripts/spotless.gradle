@@ -3,7 +3,7 @@
 // Can be locally toggled via spotless:off/spotless:on comments
 spotless {
     encoding 'UTF-8'
-    ratchetFrom 'origin/1.20.1'
+    ratchetFrom 'origin/1.21.1'
 
     format 'misc', {
         target '.gitignore'
@@ -22,7 +22,7 @@ spotless {
         importOrderFile(orderFile)
         removeUnusedImports('cleanthat-javaparser-unnecessaryimport')
         endWithNewline()
-        eclipse('4.31').configFile(formatFile)
+        eclipse('4.36').configFile(formatFile)
     }
     kotlin {
         target 'src/test/java/**/*.kt'

@@ -1,16 +1,15 @@
 package com.gregtechceu.gtceu.data.recipe.misc;
 
-import com.gregtechceu.gtceu.common.data.GTBlocks;
+import com.gregtechceu.gtceu.data.block.GTBlocks;
 
-import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.item.Item;
 
 import java.util.function.BiConsumer;
 
 public class ComposterRecipes {
 
     // Add composter things here.
-    public static void addComposterRecipes(BiConsumer<ItemLike, Float> provider) {
-        provider.accept(GTBlocks.RUBBER_LEAVES.asItem(), 0.3F);
+    public static void addComposterRecipes(BiConsumer<Item, Float> provider) {
         provider.accept(GTBlocks.RUBBER_SAPLING.asItem(), 0.3F);
     }
 }

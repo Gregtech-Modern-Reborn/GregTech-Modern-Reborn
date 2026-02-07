@@ -2,19 +2,24 @@ package com.gregtechceu.gtceu.common.item.tool.behavior;
 
 import com.gregtechceu.gtceu.api.item.IGTTool;
 import com.gregtechceu.gtceu.api.item.tool.behavior.IToolBehavior;
+import com.gregtechceu.gtceu.api.item.tool.behavior.ToolBehaviorType;
+import com.gregtechceu.gtceu.data.tools.GTToolBehaviors;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 
+import com.mojang.serialization.Codec;
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -22,14 +27,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class ProspectingBehavior implements IToolBehavior {
+public class ProspectingBehavior implements IToolBehavior<ProspectingBehavior> {
 
     public static final ProspectingBehavior INSTANCE = new ProspectingBehavior();
+    public static final Codec<ProspectingBehavior> CODEC = Codec.unit(INSTANCE);
+    public static final StreamCodec<ByteBuf, ProspectingBehavior> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
     @Override
     public @NotNull InteractionResult onItemUse(UseOnContext context) {
         if (context.getItemInHand().getItem() instanceof IGTTool tool) {
-            int tier = tool.getTotalHarvestLevel(context.getItemInHand());
+            int tier = tool.getTotalHarvestLevel();
             int depth = tool.getProspectingDepth();
             findOres(context.getLevel(), context.getClickedPos(), context.getClickedFace(), depth).forEach(c -> {
                 if (context.getPlayer() != null && context.getLevel().isClientSide())
@@ -81,5 +88,10 @@ public class ProspectingBehavior implements IToolBehavior {
         }
         out.add(pos);
         return out;
+    }
+
+    @Override
+    public ToolBehaviorType<ProspectingBehavior> getType() {
+        return GTToolBehaviors.PROSPECTING;
     }
 }

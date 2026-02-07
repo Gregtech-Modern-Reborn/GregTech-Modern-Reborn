@@ -3,7 +3,7 @@ package com.gregtechceu.gtceu.api.capability;
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 
 import net.minecraft.core.BlockPos;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +17,7 @@ public interface IMonitorComponent {
 
     BlockPos getPos();
 
-    default @Nullable IItemHandler getDataItems() {
+    default @Nullable net.neoforged.neoforge.items.IItemHandler getDataItems() {
         return null;
     }
 }

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
+import snownee.jade.api.ui.IElementHelper;
 
 public class ExhaustVentBlockProvider extends BlockInfoProvider<IExhaustVentMachine> {
 
@@ -66,9 +67,9 @@ public class ExhaustVentBlockProvider extends BlockInfoProvider<IExhaustVentMach
             if (!compoundTag.getBoolean("ventBlocked")) return;
 
             if (blockAccessor.showDetails()) {
-                var block = BuiltInRegistries.BLOCK.get(new ResourceLocation(compoundTag.getString("ventBlock")))
+                var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(compoundTag.getString("ventBlock")))
                         .asItem().getDefaultInstance();
-                iTooltip.append(iTooltip.getElementHelper().smallItem(block));
+                iTooltip.append(IElementHelper.get().smallItem(block));
             }
 
             if (compoundTag.getBoolean("needsVenting")) {

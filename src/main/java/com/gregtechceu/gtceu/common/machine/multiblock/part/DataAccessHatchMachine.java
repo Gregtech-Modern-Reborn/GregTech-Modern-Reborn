@@ -15,11 +15,11 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.MultiblockPartMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredPartMachine;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
-import com.gregtechceu.gtceu.common.item.PortableScannerBehavior;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.common.item.behavior.PortableScannerBehavior;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.research.DataBankMachine;
 import com.gregtechceu.gtceu.common.recipe.condition.ResearchCondition;
+import com.gregtechceu.gtceu.data.item.GTDataComponents;
 import com.gregtechceu.gtceu.utils.ItemStackHashStrategy;
 import com.gregtechceu.gtceu.utils.ResearchManager;
 
@@ -30,13 +30,12 @@ import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -45,10 +44,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class DataAccessHatchMachine extends TieredPartMachine
                                     implements IMachineLife, IDataAccessHatch, IDataInfoProvider, IMonitorComponent {
 
@@ -82,7 +77,7 @@ public class DataAccessHatchMachine extends TieredPartMachine
             @Override
             public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
                 boolean isDataBank = isFormed() && getControllers().first() instanceof DataBankMachine;
-                if (ResearchManager.isStackDataItem(stack, isDataBank)) {
+                if (ResearchManager.isStackDataItem(stack, isDataBank) && stack.has(GTDataComponents.RESEARCH_ITEM)) {
                     return super.insertItem(slot, stack, simulate);
                 }
                 return stack;
@@ -131,7 +126,7 @@ public class DataAccessHatchMachine extends TieredPartMachine
         recipes.clear();
         for (int i = 0; i < this.importItems.getSlots(); i++) {
             ItemStack stack = this.importItems.getStackInSlot(i);
-            ResearchManager.ResearchItem researchData = ResearchManager.readResearchId(stack);
+            ResearchManager.ResearchItem researchData = stack.get(GTDataComponents.RESEARCH_ITEM);
             boolean isValid = ResearchManager.isStackDataItem(stack, isDataBank);
             if (researchData != null && isValid) {
                 Collection<GTRecipe> collection = researchData.recipeType()
@@ -158,16 +153,15 @@ public class DataAccessHatchMachine extends TieredPartMachine
                 return Collections.emptyList();
             List<Component> list = new ArrayList<>();
 
-            list.add(Component.translatable("behavior.data_item.title",
-                    Component.translatable(GTRecipeTypes.ASSEMBLY_LINE_RECIPES.registryName.toLanguageKey())));
+            list.add(Component.translatable("behavior.data_item.assemblyline.title"));
             list.add(Component.empty());
             Collection<ItemStack> itemsAdded = new ObjectOpenCustomHashSet<>(ItemStackHashStrategy.comparingAll());
             for (GTRecipe recipe : recipes) {
                 ItemStack stack = ItemRecipeCapability.CAP
-                        .of(recipe.getOutputContents(ItemRecipeCapability.CAP).get(0).content).getItems()[0];
+                        .of(recipe.getOutputContents(ItemRecipeCapability.CAP).getFirst().content).getItems()[0];
                 if (!itemsAdded.contains(stack)) {
                     itemsAdded.add(stack);
-                    list.add(Component.translatable("behavior.data_item.data", stack.getDisplayName()));
+                    list.add(Component.translatable("behavior.data_item.assemblyline.data", stack.getDisplayName()));
                 }
             }
             return list;

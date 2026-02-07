@@ -3,19 +3,20 @@ package com.gregtechceu.gtceu.api.recipe.lookup;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
-import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.AbstractMapIngredient;
 import com.gregtechceu.gtceu.api.recipe.lookup.ingredient.MapIngredientTypeManager;
-import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.gregtechceu.gtceu.common.item.armor.PowerlessJetpack;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
+import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 import com.mojang.datafixers.util.Either;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -120,13 +121,7 @@ public class GTRecipeLookup {
     public RecipeIterator getRecipeIterator(@NotNull IRecipeCapabilityHolder holder,
                                             @NotNull Predicate<GTRecipe> canHandle) {
         List<List<AbstractMapIngredient>> list = prepareRecipeFind(holder);
-        return new RecipeIterator(this.recipeType, list, canHandle, false);
-    }
-
-    public RecipeIterator getRecipeIterator(@NotNull IRecipeCapabilityHolder holder,
-                                            @NotNull Predicate<GTRecipe> canHandle, boolean isMultiParallelLogic) {
-        List<List<AbstractMapIngredient>> list = prepareRecipeFind(holder);
-        return new RecipeIterator(this.recipeType, list, canHandle, isMultiParallelLogic);
+        return new RecipeIterator(this.recipeType, list, canHandle);
     }
 
     /**
@@ -151,7 +146,7 @@ public class GTRecipeLookup {
             if (index > 0) {
                 for (ItemStack unique : uniqueItems) {
                     if (unique == null) break;
-                    else if (ItemStack.isSameItemSameTags(input, unique)) {
+                    else if (GTUtil.isSameItemSameTags(input, unique)) {
                         continue main;
                     }
                 }
@@ -191,27 +186,6 @@ public class GTRecipeLookup {
         return null;
     }
 
-    private GTRecipe diveIngredientTreeFindAllRecipes(
-                                                      List<List<AbstractMapIngredient>> ingredients,
-                                                      Branch branchMap,
-                                                      Predicate<GTRecipe> canHandle,
-                                                      int index,
-                                                      BitSet skip) {
-        if (index >= ingredients.size()) return null;
-
-        for (AbstractMapIngredient obj : ingredients.get(index)) {
-            Map<AbstractMapIngredient, Either<GTRecipe, Branch>> targetMap = determineRootNodes(obj, branchMap);
-            Either<GTRecipe, Branch> either = targetMap.get(obj);
-            if (either != null) {
-                GTRecipe r = either.map(
-                        recipe -> canHandle.test(recipe) ? recipe : null,
-                        branch -> diveIngredientTreeFindAllRecipes(ingredients, branch, canHandle, index + 1, skip));
-                if (r != null) return r;
-            }
-        }
-        return null;
-    }
-
     /**
      * Recursively finds a recipe
      *
@@ -223,51 +197,6 @@ public class GTRecipeLookup {
      * @param skip        bitmap of ingredients to skip, i.e. which ingredients are already used in the recursion.
      * @return a recipe
      */
-    public GTRecipe recurseIngredientTreeFindRecipe(@NotNull List<List<AbstractMapIngredient>> ingredients,
-                                                    @NotNull Branch branchMap,
-                                                    @NotNull Predicate<GTRecipe> canHandle,
-                                                    int index,
-                                                    int count,
-                                                    BitSet skip,
-                                                    boolean isMultiParallelLogic) {
-        // exhausted all the ingredients, and didn't find anything
-        if (count == ingredients.size()) return null;
-
-        GTRecipe firstFound = null;
-
-        // Iterate over current level of nodes.
-        for (AbstractMapIngredient obj : ingredients.get(index)) {
-            Map<AbstractMapIngredient, Either<GTRecipe, Branch>> targetMap = determineRootNodes(obj, branchMap);
-
-            Either<GTRecipe, Branch> result = targetMap.get(obj);
-            if (result != null) {
-                GTRecipe r = result.map(
-                        potentialRecipe -> canHandle.test(potentialRecipe) ? potentialRecipe : null,
-                        potentialBranch -> diveIngredientTreeFindRecipe(
-                                ingredients,
-                                potentialBranch,
-                                canHandle,
-                                index,
-                                count,
-                                skip) // 递归传递标志
-                );
-
-                if (r != null) {
-                    if (!isMultiParallelLogic) {
-                        // 原逻辑：短路返回
-                        return r;
-                    } else if (firstFound == null) {
-                        // 保存第一个找到的，用于兼容原返回类型
-                        firstFound = r;
-                    }
-                    // 如果是多并行逻辑，继续遍历，不短路
-                }
-            }
-        }
-
-        return firstFound; // 若是多并行逻辑，返回第一个找到的，同时遍历完所有
-    }
-
     @Nullable
     public GTRecipe recurseIngredientTreeFindRecipe(@NotNull List<List<AbstractMapIngredient>> ingredients,
                                                     @NotNull Branch branchMap, @NotNull Predicate<GTRecipe> canHandle,
@@ -307,10 +236,10 @@ public class GTRecipeLookup {
      * @return a recipe
      */
     @Nullable
-    public GTRecipe diveIngredientTreeFindRecipe(@NotNull List<List<AbstractMapIngredient>> ingredients,
-                                                 @NotNull Branch map,
-                                                 @NotNull Predicate<GTRecipe> canHandle, int currentIndex, int count,
-                                                 BitSet skip) {
+    private GTRecipe diveIngredientTreeFindRecipe(@NotNull List<List<AbstractMapIngredient>> ingredients,
+                                                  @NotNull Branch map,
+                                                  @NotNull Predicate<GTRecipe> canHandle, int currentIndex, int count,
+                                                  BitSet skip) {
         // We loop around ingredients.size() if we reach the end.
         // only end when all ingredients are exhausted, or a recipe is found
         int i = (currentIndex + 1) % ingredients.size();
@@ -545,8 +474,8 @@ public class GTRecipeLookup {
 
         // Add combustion fuels to the Powerless Jetpack
         if (recipe.getType() == GTRecipeTypes.COMBUSTION_GENERATOR_FUELS) {
-            Content content = recipe.getInputContents(FluidRecipeCapability.CAP).get(0);
-            FluidIngredient fluid = FluidRecipeCapability.CAP.of(content.content);
+            Content content = recipe.getInputContents(FluidRecipeCapability.CAP).getFirst();
+            SizedFluidIngredient fluid = FluidRecipeCapability.CAP.of(content.content);
             PowerlessJetpack.FUELS.putIfAbsent(fluid, recipe.duration);
         }
         List<List<AbstractMapIngredient>> items = fromRecipe(recipe);

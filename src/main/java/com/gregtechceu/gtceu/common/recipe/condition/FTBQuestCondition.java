@@ -1,16 +1,17 @@
 package com.gregtechceu.gtceu.common.recipe.condition;
 
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.api.recipe.RecipeCondition;
+import com.gregtechceu.gtceu.api.recipe.condition.RecipeCondition;
 import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType;
-import com.gregtechceu.gtceu.common.data.GTRecipeConditions;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.common.machine.owner.FTBOwner;
 import com.gregtechceu.gtceu.common.machine.owner.MachineOwner;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeConditions;
 
 import net.minecraft.network.chat.Component;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.ftb.mods.ftbquests.api.FTBQuestsAPI;
 import dev.ftb.mods.ftbquests.quest.BaseQuestFile;
@@ -21,11 +22,11 @@ import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 @NoArgsConstructor
-public class FTBQuestCondition extends RecipeCondition {
+public class FTBQuestCondition extends RecipeCondition<FTBQuestCondition> {
 
     private static final Long2ObjectMap<QuestObject> QUEST_CACHE = new Long2ObjectOpenHashMap<>();
-    public static final Codec<FTBQuestCondition> CODEC = RecordCodecBuilder
-            .create(instance -> RecipeCondition.isReverse(instance)
+    public static final MapCodec<FTBQuestCondition> CODEC = RecordCodecBuilder
+            .mapCodec(instance -> RecipeCondition.isReverse(instance)
                     .and(Codec.LONG.fieldOf("questId").forGetter(val -> val.parsedQuestId))
                     .apply(instance, FTBQuestCondition::new));
 
@@ -47,7 +48,7 @@ public class FTBQuestCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeConditionType<?> getType() {
+    public RecipeConditionType<FTBQuestCondition> getType() {
         return GTRecipeConditions.FTB_QUEST;
     }
 
@@ -73,7 +74,7 @@ public class FTBQuestCondition extends RecipeCondition {
     }
 
     @Override
-    public RecipeCondition createTemplate() {
+    public RecipeCondition<FTBQuestCondition> createTemplate() {
         return new FTBQuestCondition();
     }
 }

@@ -32,7 +32,7 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
@@ -131,7 +131,7 @@ public abstract class AbstractEnderLinkCover<T extends VirtualEntry> extends Cov
     }
 
     @Override
-    public Widget createUIWidget() {
+    public @NotNull Widget createUIWidget() {
         virtualEntryWidget = new VirtualEntryWidget(this);
         return virtualEntryWidget;
     }
@@ -471,7 +471,7 @@ public abstract class AbstractEnderLinkCover<T extends VirtualEntry> extends Cov
         }
 
         @Override
-        public void handleClientAction(int id, FriendlyByteBuf buffer) {
+        public void handleClientAction(int id, RegistryFriendlyByteBuf buffer) {
             super.handleClientAction(id, buffer);
             if (id == 0) {
                 String newChannelColorStr = buffer.readUtf();
@@ -486,7 +486,7 @@ public abstract class AbstractEnderLinkCover<T extends VirtualEntry> extends Cov
                     var list = entries.toList();
                     buf.writeVarInt(list.size());
                     for (var entry : list) {
-                        buf.writeNbt(entry.serializeNBT());
+                        buf.writeNbt(entry.serializeNBT(buf.registryAccess()));
                     }
                 });
             } else if (id == 200) {
@@ -497,14 +497,14 @@ public abstract class AbstractEnderLinkCover<T extends VirtualEntry> extends Cov
         }
 
         @Override
-        public void readUpdateInfo(int id, FriendlyByteBuf buffer) {
+        public void readUpdateInfo(int id, RegistryFriendlyByteBuf buffer) {
             super.readUpdateInfo(id, buffer);
             if (id == 101) {
                 int size = buffer.readVarInt();
                 List<VirtualEntry> entries = new ArrayList<>();
                 for (int i = 0; i < size; i++) {
                     VirtualEntry entry = cover.getEntryType().createInstance();
-                    entry.deserializeNBT(Objects.requireNonNull(buffer.readNbt()));
+                    entry.deserializeNBT(buffer.registryAccess(), Objects.requireNonNull(buffer.readNbt()));
                     entries.add(entry);
                 }
                 addChannelWidgets(entries);

@@ -4,29 +4,30 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.IRecipeCapabilityHolder;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.item.IGTTool;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.material.material.Material;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
-import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.data.GTMaterialItems;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
-import com.gregtechceu.gtceu.common.item.TurbineRotorBehaviour;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
+import com.gregtechceu.gtceu.common.item.behavior.TurbineRotorBehaviour;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.item.GTMaterialItems;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.dust;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.dustSmall;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.dustTiny;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.turbineBlade;
-import static com.gregtechceu.gtceu.common.data.GTRecipeCategories.MACERATOR_RECYCLING;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.MACERATOR_RECIPES;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.dust;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.dustSmall;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.dustTiny;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.turbineBlade;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeCategories.MACERATOR_RECYCLING;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.MACERATOR_RECIPES;
 
 public enum MaceratorLogic implements GTRecipeType.ICustomRecipeLogic {
 
@@ -46,7 +47,7 @@ public enum MaceratorLogic implements GTRecipeType.ICustomRecipeLogic {
         return null;
     }
 
-    private @Nullable GTRecipe search(ItemStack stack) {
+    public @Nullable GTRecipe search(ItemStack stack) {
         var turbineBehaviour = TurbineRotorBehaviour.getBehaviour(stack);
         if (turbineBehaviour != null) {
             float durability = 1.f - (float) turbineBehaviour.getPartDamage(stack) /
@@ -89,13 +90,13 @@ public enum MaceratorLogic implements GTRecipeType.ICustomRecipeLogic {
             builder.outputItems(tag, mat, leftAmount);
         }
 
-        return builder.buildRawRecipe();
+        return builder.build();
     }
 
     @Override
     public void buildRepresentativeRecipes() {
         ItemStack stack = GTItems.TURBINE_ROTOR.asStack();
-        stack.setHoverName(Component.translatable("gtceu.auto_decomp.rotor"));
+        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("gtceu.auto_decomp.rotor"));
         GTRecipe rotorRecipe;
         GTRecipe pickaxeRecipe;
         float durability = 0.75f;
@@ -111,7 +112,7 @@ public enum MaceratorLogic implements GTRecipeType.ICustomRecipeLogic {
 
         // noinspection DataFlowIssue
         stack = GTMaterialItems.TOOL_ITEMS.get(GTMaterials.Iron, GTToolType.PICKAXE).asStack();
-        stack.setHoverName(Component.translatable("gtceu.auto_decomp.tool"));
+        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("gtceu.auto_decomp.tool"));
         stack.setDamageValue(79);
         pickaxeRecipe = applyDurabilityRecipe("tool_decomp", stack, GTMaterials.Iron,
                 (float) (GTToolType.PICKAXE.materialAmount / GTValues.M), durability,

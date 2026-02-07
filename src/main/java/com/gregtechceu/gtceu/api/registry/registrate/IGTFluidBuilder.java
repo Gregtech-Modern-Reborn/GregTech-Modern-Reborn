@@ -1,6 +1,6 @@
 package com.gregtechceu.gtceu.api.registry.registrate;
 
-import com.gregtechceu.gtceu.api.fluids.FluidState;
+import com.gregtechceu.gtceu.api.fluid.FluidState;
 
 import net.minecraft.world.level.material.Fluid;
 
@@ -33,5 +33,5 @@ public interface IGTFluidBuilder {
 
     Supplier<? extends Fluid> registerFluid();
 
-    RegistryEntry<? extends Fluid> register();
+    RegistryEntry<Fluid, ? extends Fluid> register();
 }

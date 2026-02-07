@@ -5,7 +5,6 @@ import com.gregtechceu.gtceu.api.placeholder.exceptions.InvalidArgsException;
 import com.gregtechceu.gtceu.api.placeholder.exceptions.MissingItemException;
 import com.gregtechceu.gtceu.api.placeholder.exceptions.NotSupportedException;
 import com.gregtechceu.gtceu.api.placeholder.exceptions.PlaceholderException;
-import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.utils.GTStringUtils;
 
 import net.createmod.catnip.data.Couple;
@@ -23,6 +22,7 @@ import com.simibubi.create.api.registry.registrate.SimpleBuilder;
 import com.simibubi.create.content.redstone.link.IRedstoneLinkable;
 import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
+import com.tterrag.registrate.AbstractRegistrate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -120,12 +120,15 @@ public class GTCreateIntegration {
                 int freq_slot = PlaceholderUtils.toInt(args.get(3));
                 PlaceholderUtils.checkRange("slot index", 1, 8, slot);
                 if (ctx.itemStackHandler() == null) throw new NotSupportedException();
+
                 ItemStack item = ctx.itemStackHandler().getStackInSlot(slot - 1);
                 if (item.is(AllItems.LINKED_CONTROLLER.get())) {
                     Couple<RedstoneLinkNetworkHandler.Frequency> freq = LinkedControllerItem.toFrequency(item,
                             freq_slot);
                     return MultiLineComponent.literal(getRedstoneLinkPower(ctx, freq));
-                } else throw new MissingItemException("redstone link", slot);
+                } else {
+                    throw new MissingItemException("redstone link", slot);
+                }
             } else {
                 Direction direction = Direction.byName(args.get(1).toString());
                 if (direction == null)
@@ -142,13 +145,16 @@ public class GTCreateIntegration {
                 PlaceholderUtils.checkRange("redstone power", 0, 15, power);
                 PlaceholderUtils.checkRange("slot", 1, 8, slot);
                 if (ctx.itemStackHandler() == null) throw new NotSupportedException();
+
                 ItemStack item = ctx.itemStackHandler().getStackInSlot(slot - 1);
                 if (item.is(AllItems.LINKED_CONTROLLER.get())) {
                     Couple<RedstoneLinkNetworkHandler.Frequency> freq = LinkedControllerItem.toFrequency(item,
                             freq_slot);
                     setRedstoneLinkPower(ctx, freq, power);
                     return MultiLineComponent.empty();
-                } else throw new MissingItemException("redstone link", slot);
+                } else {
+                    throw new MissingItemException("redstone link", slot);
+                }
             } else {
                 int power = PlaceholderUtils.toInt(args.get(1));
                 PlaceholderUtils.checkRange("redstone power", 0, 15, power);
@@ -161,20 +167,18 @@ public class GTCreateIntegration {
         }
     }
 
-    public static <
-            T extends DisplaySource> SimpleBuilder<DisplaySource, T, GTRegistrate> displaySource(GTRegistrate registrate,
-                                                                                                 String name,
-                                                                                                 Supplier<T> supplier) {
+    public static <T extends DisplaySource,
+            P extends AbstractRegistrate<P>> SimpleBuilder<DisplaySource, T, P> displaySource(P registrate, String name,
+                                                                                              Supplier<T> supplier) {
         return registrate.entry(name, callback -> new SimpleBuilder<>(
                 registrate, registrate, name, callback, CreateRegistries.DISPLAY_SOURCE, supplier)
                 .byBlock(DisplaySource.BY_BLOCK)
                 .byBlockEntity(DisplaySource.BY_BLOCK_ENTITY));
     }
 
-    public static <
-            T extends DisplayTarget> SimpleBuilder<DisplayTarget, T, GTRegistrate> displayTarget(GTRegistrate registrate,
-                                                                                                 String name,
-                                                                                                 Supplier<T> supplier) {
+    public static <T extends DisplayTarget,
+            P extends AbstractRegistrate<P>> SimpleBuilder<DisplayTarget, T, P> displayTarget(P registrate, String name,
+                                                                                              Supplier<T> supplier) {
         return registrate.entry(name, callback -> new SimpleBuilder<>(
                 registrate, registrate, name, callback, CreateRegistries.DISPLAY_TARGET, supplier)
                 .byBlock(DisplayTarget.BY_BLOCK)
@@ -235,8 +239,8 @@ public class GTCreateIntegration {
 
         public static void destroyAll() {
             while (!transmitters.isEmpty()) {
-                transmitters.get(transmitters.size() - 1).destroy();
-                transmitters.remove(transmitters.size() - 1);
+                transmitters.getLast().destroy();
+                transmitters.removeLast();
             }
         }
     }

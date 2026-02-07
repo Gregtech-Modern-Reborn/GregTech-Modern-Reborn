@@ -11,7 +11,6 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 
 import appeng.api.networking.*;
@@ -21,11 +20,7 @@ import lombok.Setter;
 
 import java.util.EnumSet;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 @Getter
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public abstract class MEBusPartMachine extends ItemBusPartMachine implements IGridConnectedMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(MEBusPartMachine.class,

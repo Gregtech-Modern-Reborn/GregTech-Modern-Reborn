@@ -7,7 +7,7 @@ import com.gregtechceu.gtceu.api.gui.widget.TankWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableFluidTank;
-import com.gregtechceu.gtceu.common.data.GTMachines;
+import com.gregtechceu.gtceu.data.machine.GTMachines;
 import com.gregtechceu.gtceu.utils.GTTransferUtils;
 
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
@@ -17,17 +17,12 @@ import com.lowdragmc.lowdraglib.syncdata.ISubscription;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.FluidType;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class DualHatchPartMachine extends ItemBusPartMachine {
 
     public static final int INITIAL_TANK_CAPACITY = 16 * FluidType.BUCKET_VOLUME;
@@ -62,7 +57,7 @@ public class DualHatchPartMachine extends ItemBusPartMachine {
     }
 
     protected NotifiableFluidTank createTank(int initialCapacity, int slots, Object... args) {
-        return new NotifiableFluidTank(this, slots, getTankCapacity(initialCapacity, getTier() + 1), io);
+        return new NotifiableFluidTank(this, slots, getTankCapacity(initialCapacity, getTier()), io);
     }
 
     @Override
@@ -96,7 +91,7 @@ public class DualHatchPartMachine extends ItemBusPartMachine {
             this.hasFluidHandler = false;
         }
 
-        if (isWorkingEnabled() && (canOutput || io == IO.IN) && (hasItemHandler || hasFluidHandler)) {
+        if (isWorkingEnabled() && (canOutput || io.support(IO.IN)) && (hasItemHandler || hasFluidHandler)) {
             autoIOSubs = subscribeServerTick(autoIOSubs, this::autoIO);
         } else if (autoIOSubs != null) {
             autoIOSubs.unsubscribe();
@@ -108,14 +103,15 @@ public class DualHatchPartMachine extends ItemBusPartMachine {
     protected void autoIO() {
         if (getOffsetTimer() % 5 == 0) {
             if (isWorkingEnabled()) {
-                if (io == IO.OUT) {
+                if (io.support(IO.OUT)) {
                     if (hasItemHandler) {
                         getInventory().exportToNearby(getFrontFacing());
                     }
                     if (hasFluidHandler) {
                         tank.exportToNearby(getFrontFacing());
                     }
-                } else if (io == IO.IN) {
+                }
+                if (io.support(IO.IN)) {
                     if (hasItemHandler) {
                         getInventory().importFromNearby(getFrontFacing());
                     }
@@ -173,7 +169,8 @@ public class DualHatchPartMachine extends ItemBusPartMachine {
                 container.addWidget(new SlotWidget(
                         getInventory().storage, index++, 4 + x * 18, 4 + y * 18, true, io.support(IO.IN))
                         .setBackgroundTexture(GuiTextures.SLOT)
-                        .setIngredientIO(this.io == IO.IN ? IngredientIO.INPUT : IngredientIO.OUTPUT));
+                        .setIngredientIO(this.io == IO.IN ? IngredientIO.INPUT :
+                                this.io == IO.OUT ? IngredientIO.OUTPUT : IngredientIO.BOTH));
             }
         }
 

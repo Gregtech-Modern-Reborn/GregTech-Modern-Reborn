@@ -1,8 +1,8 @@
 package com.gregtechceu.gtceu.api.registry.registrate.provider;
 
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
-import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
+import com.gregtechceu.gtceu.api.machine.RotationState;
 import com.gregtechceu.gtceu.client.util.ExtendedBlockModelRotation;
 
 import net.minecraft.core.Direction;
@@ -11,21 +11,18 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.data.models.blockstates.*;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.model.generators.IGeneratedBlockState;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.common.data.ExistingFileHelper.ResourceType;
-import net.minecraftforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.client.model.generators.IGeneratedBlockState;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.ExistingFileHelper.ResourceType;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateBlockstateProvider;
-import com.tterrag.registrate.providers.RegistrateProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -40,11 +37,10 @@ public class GTBlockstateProvider extends RegistrateBlockstateProvider {
     public static final ResourceType TEXTURE = new ResourceType(PackType.CLIENT_RESOURCES, ".png", "textures");
     public static final ResourceType MODEL = new ResourceType(PackType.CLIENT_RESOURCES, ".json", "models");
 
-    public GTBlockstateProvider(AbstractRegistrate<?> parent, GatherDataEvent event,
-                                Map<ProviderType<?>, RegistrateProvider> existing) {
-        this(parent, event.getGenerator().getPackOutput(), event.getExistingFileHelper());
+    public GTBlockstateProvider(ProviderType.Context<GTBlockstateProvider> context) {
+        this(context.parent(), context.output(), context.fileHelper());
         // replace the default blockstate provider with this one
-        existing.put(ProviderType.BLOCKSTATE, this);
+        context.existing().put(ProviderType.BLOCKSTATE, this);
     }
 
     public GTBlockstateProvider(AbstractRegistrate<?> parent, PackOutput packOutput, ExistingFileHelper exFileHelper) {
@@ -166,7 +162,7 @@ public class GTBlockstateProvider extends RegistrateBlockstateProvider {
     public record BlockStateGeneratorWrapper(BlockStateGenerator generator) implements IGeneratedBlockState {
 
         @Override
-        public JsonObject toJson() {
+        public @NotNull JsonObject toJson() {
             return generator.get().getAsJsonObject();
         }
     }

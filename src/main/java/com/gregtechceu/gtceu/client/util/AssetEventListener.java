@@ -1,8 +1,8 @@
 package com.gregtechceu.gtceu.client.util;
 
-import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -15,12 +15,12 @@ public interface AssetEventListener<T extends Event> {
         return null;
     }
 
-    interface AtlasStitched extends AssetEventListener<TextureStitchEvent.Post> {
+    interface AtlasStitched extends AssetEventListener<TextureAtlasStitchedEvent> {
 
         @Override
         @Nullable
-        default Class<TextureStitchEvent.Post> eventClass() {
-            return TextureStitchEvent.Post.class;
+        default Class<TextureAtlasStitchedEvent> eventClass() {
+            return TextureAtlasStitchedEvent.class;
         }
     }
 

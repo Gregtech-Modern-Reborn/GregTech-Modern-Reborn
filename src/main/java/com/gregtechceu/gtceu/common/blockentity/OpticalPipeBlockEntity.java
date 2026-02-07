@@ -3,11 +3,11 @@ package com.gregtechceu.gtceu.common.blockentity;
 import com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity;
 import com.gregtechceu.gtceu.api.capability.IDataAccessHatch;
 import com.gregtechceu.gtceu.api.capability.IOpticalComputationProvider;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.common.pipelike.optical.*;
+import com.gregtechceu.gtceu.data.item.GTItemAbilities;
 import com.gregtechceu.gtceu.utils.GTUtil;
 import com.gregtechceu.gtceu.utils.TaskHandler;
 
@@ -19,15 +19,13 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.Collection;
@@ -38,11 +36,15 @@ public class OpticalPipeBlockEntity extends PipeBlockEntity<OpticalPipeType, Opt
     public static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(OpticalPipeBlockEntity.class,
             PipeBlockEntity.MANAGED_FIELD_HOLDER);
 
+    @Getter
     private final EnumMap<Direction, OpticalNetHandler> handlers = new EnumMap<>(Direction.class);
     // the OpticalNetHandler can only be created on the server, so we have an empty placeholder for the client
+    @Getter
     private final IDataAccessHatch clientDataHandler = new DefaultDataHandler();
+    @Getter
     private final IOpticalComputationProvider clientComputationHandler = new DefaultComputationHandler();
     private WeakReference<OpticalPipeNet> currentPipeNet = new WeakReference<>(null);
+    @Getter
     private OpticalNetHandler defaultHandler;
 
     @Getter
@@ -60,48 +62,13 @@ public class OpticalPipeBlockEntity extends PipeBlockEntity<OpticalPipeType, Opt
         return false;
     }
 
-    private void initHandlers() {
+    public void initHandlers() {
         OpticalPipeNet net = getOpticalPipeNet();
         if (net == null) return;
         for (Direction facing : GTUtil.DIRECTIONS) {
             handlers.put(facing, new OpticalNetHandler(net, this, facing));
         }
         defaultHandler = new OpticalNetHandler(net, this, null);
-    }
-
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
-        if (capability == GTCapability.CAPABILITY_DATA_ACCESS) {
-            if (level.isClientSide) {
-                return GTCapability.CAPABILITY_DATA_ACCESS.orEmpty(capability,
-                        LazyOptional.of(() -> clientDataHandler));
-            }
-
-            if (handlers.isEmpty()) initHandlers();
-
-            checkNetwork();
-            return GTCapability.CAPABILITY_DATA_ACCESS.orEmpty(capability,
-                    LazyOptional.of(() -> handlers.getOrDefault(facing, defaultHandler)));
-        }
-
-        if (capability == GTCapability.CAPABILITY_COMPUTATION_PROVIDER) {
-            if (level.isClientSide) {
-                return GTCapability.CAPABILITY_COMPUTATION_PROVIDER.orEmpty(capability,
-                        LazyOptional.of(() -> clientComputationHandler));
-            }
-
-            if (handlers.isEmpty()) initHandlers();
-
-            checkNetwork();
-            return GTCapability.CAPABILITY_COMPUTATION_PROVIDER.orEmpty(capability,
-                    LazyOptional.of(() -> handlers.getOrDefault(facing, defaultHandler)));
-        }
-
-        if (capability == GTCapability.CAPABILITY_COVERABLE) {
-            return GTCapability.CAPABILITY_COVERABLE.orEmpty(capability, LazyOptional.of(this::getCoverContainer));
-        }
-
-        return super.getCapability(capability, facing);
     }
 
     public void checkNetwork() {
@@ -182,6 +149,11 @@ public class OpticalPipeBlockEntity extends PipeBlockEntity<OpticalPipeType, Opt
     @Override
     public GTToolType getPipeTuneTool() {
         return GTToolType.WIRE_CUTTER;
+    }
+
+    @Override
+    public boolean hasCorrectAction(ItemStack stack) {
+        return stack.canPerformAction(GTItemAbilities.WIRE_CUTTER_CONNECT);
     }
 
     @Override

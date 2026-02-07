@@ -4,22 +4,19 @@ import com.gregtechceu.gtceu.config.ConfigHolder;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import com.lowdragmc.lowdraglib.gui.util.DrawerHelper;
-import com.lowdragmc.lowdraglib.side.fluid.forge.FluidHelperImpl;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.IItemDecorator;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.client.IItemDecorator;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Range;
-
-import java.util.Optional;
 
 /**
  * An Item Decorator to render including fluid icons for items with {@link ForgeCapabilities#FLUID_HANDLER_ITEM}.
@@ -85,24 +82,20 @@ public class GTTankItemFluidPreview implements IItemDecorator {
             return false;
         }
 
-        Optional<IFluidHandlerItem> optional = itemStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
-                .resolve();
-        if (optional.isEmpty()) {
-            return false;
-        }
+        IFluidHandlerItem optional = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
 
         if (isRenderOnTopOfItem()) {
             RenderSystem.disableDepthTest();
         }
 
-        IFluidHandlerItem fluidHandler = optional.get();
+        IFluidHandlerItem fluidHandler = optional;
         for (int index = 0, renderedCount = 0; index < fluidHandler.getTanks() &&
                 renderedCount < getMaxRenderCount(); index++) {
             FluidStack fluidInTank = fluidHandler.getFluidInTank(index);
             if (!fluidInTank.isEmpty()) {
                 DrawerHelper.drawFluidForGui(
                         guiGraphics,
-                        FluidHelperImpl.toFluidStack(fluidInTank),
+                        fluidInTank,
                         x + OFFSET[renderedCount][0],
                         y + OFFSET[renderedCount][1],
                         8.0F,

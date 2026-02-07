@@ -1,6 +1,6 @@
 package com.gregtechceu.gtceu.integration.xei.entry.fluid;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.ArrayList;
 import java.util.Collection;

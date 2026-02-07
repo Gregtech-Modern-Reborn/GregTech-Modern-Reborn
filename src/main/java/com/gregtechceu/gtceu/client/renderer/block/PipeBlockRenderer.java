@@ -1,12 +1,12 @@
 package com.gregtechceu.gtceu.client.renderer.block;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.client.model.PipeModel;
 import com.gregtechceu.gtceu.client.renderer.cover.ICoverableRenderer;
 import com.gregtechceu.gtceu.client.util.GTQuadTransformers;
-import com.gregtechceu.gtceu.common.data.GTMaterialBlocks;
+import com.gregtechceu.gtceu.data.block.GTMaterialBlocks;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import com.lowdragmc.lowdraglib.client.renderer.IRenderer;
@@ -27,9 +27,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.common.util.TriState;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import lombok.Getter;
@@ -65,8 +66,8 @@ public class PipeBlockRenderer implements IRenderer, ICoverableRenderer {
     }
 
     @Override
-    public boolean useAO() {
-        return true;
+    public TriState useAO() {
+        return TriState.DEFAULT;
     }
 
     @Override
@@ -78,16 +79,14 @@ public class PipeBlockRenderer implements IRenderer, ICoverableRenderer {
     @Override
     @OnlyIn(Dist.CLIENT)
     public List<BakedQuad> renderModel(BlockAndTintGetter level, BlockPos pos, BlockState state, Direction side,
-                                       RandomSource rand) {
+                                       @NotNull RandomSource rand, @NotNull ModelData modelData,
+                                       RenderType renderType) {
         if (level == null) {
             return pipeModel.bakeQuads(side, PipeModel.ITEM_CONNECTIONS, 0);
         }
         if (!(level.getBlockEntity(pos) instanceof IPipeNode<?, ?> pipeNode)) {
             return pipeModel.bakeQuads(side, 0, 0);
         }
-        RenderType renderType = CURRENT_RENDER_TYPE.get();
-        ModelData modelData = CURRENT_MODEL_DATA.get().get(MODEL_DATA);
-        if (modelData == null) modelData = ModelData.EMPTY;
 
         List<BakedQuad> quads = new LinkedList<>();
 

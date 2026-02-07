@@ -1,21 +1,17 @@
 package com.gregtechceu.gtceu.common.machine.multiblock.part;
 
+import com.gregtechceu.gtceu.api.capability.GTCapability;
 import com.gregtechceu.gtceu.api.capability.IDataAccessHatch;
 import com.gregtechceu.gtceu.api.capability.IOpticalDataAccessHatch;
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IWorkableMultiController;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.machine.multiblock.part.MultiblockPartMachine;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
-import com.gregtechceu.gtceu.common.blockentity.OpticalPipeBlockEntity;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 
 import lombok.Getter;
@@ -25,10 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class OpticalDataHatchMachine extends MultiblockPartMachine implements IOpticalDataAccessHatch {
 
     @Getter
@@ -54,7 +46,7 @@ public class OpticalDataHatchMachine extends MultiblockPartMachine implements IO
             List<IDataAccessHatch> dataAccesses = new ArrayList<>();
             List<IDataAccessHatch> transmitters = new ArrayList<>();
             for (var part : controller.getParts()) {
-                Block block = part.self().getBlockState().getBlock();
+                net.minecraft.world.level.block.Block block = part.self().getBlockState().getBlock();
                 if (part instanceof IDataAccessHatch hatch && PartAbility.DATA_ACCESS.isApplicable(block)) {
                     dataAccesses.add(hatch);
                 }
@@ -67,18 +59,10 @@ public class OpticalDataHatchMachine extends MultiblockPartMachine implements IO
             return isRecipeAvailable(dataAccesses, seen, recipe) ||
                     isRecipeAvailable(transmitters, seen, recipe);
         } else {
-            BlockEntity tileEntity = getLevel().getBlockEntity(getPos().relative(getFrontFacing()));
-            if (tileEntity == null) return false;
-
-            if (tileEntity instanceof OpticalPipeBlockEntity) {
-                // noinspection DataFlowIssue
-                IDataAccessHatch cap = tileEntity.getCapability(GTCapability.CAPABILITY_DATA_ACCESS,
-                        getFrontFacing().getOpposite()).orElse(null);
-                // noinspection ConstantValue
-                return cap != null && cap.isRecipeAvailable(recipe, seen);
-            }
+            IDataAccessHatch cap = getLevel().getCapability(GTCapability.CAPABILITY_DATA_ACCESS,
+                    getPos().relative(getFrontFacing()), getFrontFacing().getOpposite());
+            return cap != null && cap.isRecipeAvailable(recipe, seen);
         }
-        return false;
     }
 
     private static boolean isRecipeAvailable(@NotNull Iterable<? extends IDataAccessHatch> hatches,

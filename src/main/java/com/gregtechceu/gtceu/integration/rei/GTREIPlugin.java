@@ -1,15 +1,18 @@
 package com.gregtechceu.gtceu.integration.rei;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.recipe.category.GTRecipeCategory;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
-import com.gregtechceu.gtceu.common.data.*;
-import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.common.fluid.potion.PotionFluid;
 import com.gregtechceu.gtceu.common.fluid.potion.PotionFluidHelper;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.block.GTMaterialBlocks;
+import com.gregtechceu.gtceu.data.fluid.GTFluids;
+import com.gregtechceu.gtceu.data.item.GTItems;
+import com.gregtechceu.gtceu.data.machine.GTMultiMachines;
+import com.gregtechceu.gtceu.data.recipe.GTRecipeTypes;
 import com.gregtechceu.gtceu.integration.rei.circuit.GTProgrammedCircuitCategory;
 import com.gregtechceu.gtceu.integration.rei.multipage.MultiblockInfoDisplayCategory;
 import com.gregtechceu.gtceu.integration.rei.oreprocessing.GTOreProcessingDisplayCategory;
@@ -20,9 +23,8 @@ import com.gregtechceu.gtceu.integration.rei.recipe.GTRecipeREICategory;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.category.CategoryRegistry;
@@ -91,7 +93,7 @@ public class GTREIPlugin implements REIClientPlugin {
         for (GTToolType toolType : GTToolType.getTypes().values()) {
             registry.group(GTCEu.id("tool/" + toolType.name),
                     Component.translatable("gtceu.tool.class." + toolType.name),
-                    EntryIngredients.ofItemTag(toolType.itemTags.get(0)));
+                    EntryIngredients.ofItemTag(toolType.itemTags.getFirst()));
             // EntryIngredients.ofItemStacks(GTItems.TOOL_ITEMS.column(toolType).values().stream().filter(Objects::nonNull).map(ItemProviderEntry::get).map(IGTTool::get).collect(Collectors.toSet()))
         }
 
@@ -118,18 +120,19 @@ public class GTREIPlugin implements REIClientPlugin {
         }
 
         List<EntryStack<dev.architectury.fluid.FluidStack>> stacks = new ArrayList<>(BuiltInRegistries.POTION.size());
-        for (Potion potion : BuiltInRegistries.POTION) {
+        BuiltInRegistries.POTION.holders().forEach(potion -> {
             FluidStack stack = PotionFluidHelper.getFluidFromPotion(potion, PotionFluidHelper.BOTTLE_AMOUNT);
             stacks.add(EntryStacks
-                    .of(dev.architectury.fluid.FluidStack.create(stack.getFluid(), stack.getAmount(), stack.getTag())));
-        }
+                    .of(dev.architectury.fluid.FluidStack.create(stack.getFluid(), stack.getAmount(),
+                            stack.getComponentsPatch())));
+        });
         registry.group(GTCEu.id("potion_fluids"), Component.translatable("gtceu.rei.group.potion_fluids"), stacks);
     }
 
     @Override
     public void registerItemComparators(ItemComparatorRegistry registry) {
-        registry.registerNbt(GTItems.PROGRAMMED_CIRCUIT.asItem());
-        registry.registerNbt(GTItems.TURBINE_ROTOR.asItem());
+        registry.registerComponents(GTItems.PROGRAMMED_CIRCUIT.asItem());
+        registry.registerComponents(GTItems.TURBINE_ROTOR.asItem());
     }
 
     @Override
@@ -141,11 +144,12 @@ public class GTREIPlugin implements REIClientPlugin {
 
     @Override
     public void registerEntries(EntryRegistry registry) {
-        for (Potion potion : BuiltInRegistries.POTION) {
+        BuiltInRegistries.POTION.holders().forEach(potion -> {
             FluidStack stack = PotionFluidHelper.getFluidFromPotion(potion, PotionFluidHelper.BOTTLE_AMOUNT);
             registry.addEntry(EntryStacks.of(
-                    dev.architectury.fluid.FluidStack.create(stack.getFluid(), stack.getAmount(), stack.getTag())));
-        }
+                    dev.architectury.fluid.FluidStack.create(stack.getFluid(), stack.getAmount(),
+                            stack.getComponentsPatch())));
+        });
     }
 
     private static String toUpperAllWords(String text) {

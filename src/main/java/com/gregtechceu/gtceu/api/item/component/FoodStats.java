@@ -7,6 +7,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
@@ -53,11 +54,6 @@ public class FoodStats implements IEdibleItem, IInteractionItem, IAddInformation
     }
 
     @Override
-    public boolean isEdible() {
-        return true;
-    }
-
-    @Override
     public SoundEvent getEatingSound() {
         return isDrink ? getDrinkingSound() : IEdibleItem.super.getEatingSound();
     }
@@ -68,9 +64,9 @@ public class FoodStats implements IEdibleItem, IInteractionItem, IAddInformation
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
                                 TooltipFlag isAdvanced) {
-        GTUtil.addPotionTooltip(properties.getEffects(), tooltipComponents);
+        GTUtil.addPotionTooltip(properties.effects(), tooltipComponents);
     }
 
     @Override

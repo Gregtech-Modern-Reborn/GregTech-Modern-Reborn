@@ -1,16 +1,11 @@
 package com.gregtechceu.gtceu.api.transfer.fluid;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import lombok.Setter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public abstract class FluidHandlerDelegate implements IFluidHandlerModifiable {
 
     @Setter

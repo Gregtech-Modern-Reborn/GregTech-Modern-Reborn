@@ -1,20 +1,19 @@
 package com.gregtechceu.gtceu.common.block.explosive;
 
 import com.gregtechceu.gtceu.common.entity.GTExplosiveEntity;
-import com.gregtechceu.gtceu.data.recipe.CustomTags;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
@@ -27,6 +26,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.common.ItemAbilities;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,10 +34,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 @SuppressWarnings("deprecation")
 public abstract class GTExplosiveBlock extends Block {
 
@@ -82,8 +78,7 @@ public abstract class GTExplosiveBlock extends Block {
             GTExplosiveEntity entity = createEntity(level, pos, exploder);
             entity.setFuse(fuseLength);
             level.addFreshEntity(entity);
-            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.TNT_PRIMED,
-                    SoundSource.BLOCKS, 1.0f, 1.0f);
+            level.playSound(null, entity, SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0f, 1.0f);
             level.gameEvent(entity, GameEvent.PRIME_FUSE, pos);
         }
     }
@@ -98,28 +93,27 @@ public abstract class GTExplosiveBlock extends Block {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
-                                 BlockHitResult hit) {
-        ItemStack stack = player.getItemInHand(hand);
-        if (!stack.isEmpty() && stack.is(CustomTags.TOOLS_IGNITER)) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                              Player player, InteractionHand hand, BlockHitResult hit) {
+        if (stack.canPerformAction(ItemAbilities.FIRESTARTER_LIGHT)) {
             this.explode(level, pos, player);
             level.removeBlock(pos, false);
             if (stack.isDamageableItem()) {
-                stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
+                stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
             } else if (!player.isCreative()) {
                 stack.shrink(1);
             }
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
-        return super.use(state, level, pos, player, hand, hit);
+        return super.useItemOn(stack, state, level, pos, player, hand, hit);
     }
 
     @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (explodeOnMine && !player.isShiftKeyDown()) {
             this.explode(level, pos, player);
         }
-        super.playerWillDestroy(level, pos, state, player);
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override
@@ -168,9 +162,9 @@ public abstract class GTExplosiveBlock extends Block {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip,
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip,
                                 TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+        super.appendHoverText(stack, context, tooltip, flag);
         if (explodeOnMine) {
             tooltip.add(Component.translatable("block.gtceu.explosive.breaking_tooltip"));
         }

@@ -6,12 +6,12 @@ import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
-import com.gregtechceu.gtceu.api.pattern.BlockPattern;
-import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
-import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
-import com.gregtechceu.gtceu.api.pattern.predicates.SimplePredicate;
+import com.gregtechceu.gtceu.api.multiblock.BlockPattern;
+import com.gregtechceu.gtceu.api.multiblock.MultiblockShapeInfo;
+import com.gregtechceu.gtceu.api.multiblock.TraceabilityPredicate;
+import com.gregtechceu.gtceu.api.multiblock.predicates.SimplePredicate;
 import com.gregtechceu.gtceu.config.ConfigHolder;
-import com.gregtechceu.gtceu.integration.xei.handlers.item.CycleItemStackHandler;
+import com.gregtechceu.gtceu.integration.xei.handlers.item.CycleItemEntryHandler;
 
 import com.lowdragmc.lowdraglib.client.scene.WorldSceneRenderer;
 import com.lowdragmc.lowdraglib.client.utils.RenderUtils;
@@ -36,13 +36,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -55,6 +56,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,7 +71,7 @@ public class PatternPreviewWidget extends WidgetGroup {
     private final SceneWidget sceneWidget;
     private final DraggableScrollableWidgetGroup scrollableWidgetGroup;
     public final MultiblockMachineDefinition controllerDefinition;
-    public final MBPattern[] patterns;
+    private final MBPattern[] patterns;
     private final List<SimplePredicate> predicates;
     private int index;
     public int layer;
@@ -121,8 +123,8 @@ public class PatternPreviewWidget extends WidgetGroup {
                     }
                 }
                 if (hoverPosFace != null) {
-                    var state = getDummyWorld().getBlockState(hoverPosFace.pos);
-                    hoverItem = state.getBlock().getCloneItemStack(getDummyWorld(), hoverPosFace.pos, state);
+                    var state = getDummyWorld().getBlockState(hoverPosFace.pos());
+                    hoverItem = state.getBlock().getCloneItemStack(getDummyWorld(), hoverPosFace.pos(), state);
                 }
                 BlockPosFace tmp = dragging ? clickPosFace : hoverPosFace;
                 if (selectedPosFace != null || tmp != null) {
@@ -134,7 +136,7 @@ public class PatternPreviewWidget extends WidgetGroup {
                     }
                 }
                 if (selectedPosFace != null && renderSelect) {
-                    RenderUtils.renderBlockOverLay(poseStack, selectedPosFace.pos, 0.6f, 0, 0, 1.03f);
+                    RenderUtils.renderBlockOverLay(poseStack, selectedPosFace.pos(), 0.6f, 0, 0, 1.03f);
                 }
 
                 if (this.afterWorldRender != null) {
@@ -150,8 +152,8 @@ public class PatternPreviewWidget extends WidgetGroup {
                 .setXScrollBarHeight(4)
                 .setXBarStyle(GuiTextures.SLIDER_BACKGROUND, GuiTextures.BUTTON)
                 .setScrollable(true)
-                .setDraggable(true);
-        scrollableWidgetGroup.setScrollWheelDirection(DraggableScrollableWidgetGroup.ScrollWheelDirection.HORIZONTAL);
+                .setDraggable(true)
+                .setScrollWheelDirection(DraggableScrollableWidgetGroup.ScrollWheelDirection.HORIZONTAL);
         scrollableWidgetGroup.setScrollYOffset(0);
         addWidget(scrollableWidgetGroup);
 
@@ -246,7 +248,7 @@ public class PatternPreviewWidget extends WidgetGroup {
             }
         }
         slotWidgets = new SlotWidget[pattern.parts.size()];
-        var itemHandler = new CycleItemStackHandler(pattern.parts);
+        var itemHandler = CycleItemEntryHandler.createFromStacks(pattern.parts);
         int xOffset = 0;
         for (int i = 0; i < slotWidgets.length; i++) {
             int padding = 1;
@@ -291,7 +293,6 @@ public class PatternPreviewWidget extends WidgetGroup {
                     removeWidget(candidate);
                 }
             }
-
             List<List<ItemStack>> candidateStacks = new ArrayList<>();
             List<List<Component>> predicateTips = new ArrayList<>();
             for (SimplePredicate simplePredicate : predicates) {
@@ -302,7 +303,7 @@ public class PatternPreviewWidget extends WidgetGroup {
                 }
             }
             candidates = new SlotWidget[candidateStacks.size()];
-            CycleItemStackHandler itemHandler = new CycleItemStackHandler(candidateStacks);
+            CycleItemEntryHandler itemHandler = CycleItemEntryHandler.createFromStacks(candidateStacks);
             int maxCol = (160 - (((slotWidgets.length - 1) / 9 + 1) * 18) - 35) % 18;
             for (int i = 0; i < candidateStacks.size(); i++) {
                 int finalI = i;
@@ -378,6 +379,7 @@ public class PatternPreviewWidget extends WidgetGroup {
     private MBPattern initializePattern(MultiblockShapeInfo shapeInfo, HashSet<ItemStackKey> blockDrops) {
         Map<BlockPos, BlockInfo> blockMap = new HashMap<>();
         IMultiController controllerBase = null;
+        Set<BlockEntity> blockEntitiesToAdd = new HashSet<>();
         BlockPos multiPos = locateNextRegion();
 
         BlockInfo[][][] blocks = shapeInfo.getBlocks();
@@ -388,10 +390,12 @@ public class PatternPreviewWidget extends WidgetGroup {
                 for (int z = 0; z < column.length; z++) {
                     BlockState blockState = column[z].getBlockState();
                     BlockPos pos = multiPos.offset(x, y, z);
-                    if (column[z].getBlockEntity(pos) instanceof IMachineBlockEntity holder &&
-                            holder.getMetaMachine() instanceof IMultiController controller) {
+                    if (column[z].getBlockEntity(pos, LEVEL.registryAccess()) instanceof IMachineBlockEntity holder) {
                         holder.getSelf().setLevel(LEVEL);
-                        controllerBase = controller;
+                        blockEntitiesToAdd.add(holder.getSelf());
+                        if (holder.getMetaMachine() instanceof IMultiController controller) {
+                            controllerBase = controller;
+                        }
                     }
                     blockMap.put(pos, BlockInfo.fromBlockState(blockState));
                 }
@@ -399,8 +403,8 @@ public class PatternPreviewWidget extends WidgetGroup {
         }
 
         LEVEL.addBlocks(blockMap);
-        if (controllerBase != null) {
-            LEVEL.setInnerBlockEntity(controllerBase.self().holder.getSelf());
+        for (BlockEntity blockEntity : blockEntitiesToAdd) {
+            LEVEL.setInnerBlockEntity(blockEntity);
         }
 
         Map<ItemStackKey, PartInfo> parts = gatherBlockDrops(blockMap);
@@ -479,9 +483,11 @@ public class PatternPreviewWidget extends WidgetGroup {
 
         public List<ItemStack> getItemStack() {
             return Arrays.stream(itemStackKey.getItemStack())
-                    .map(stack -> stack.copyWithCount(amount))
-                    .filter(item -> !item.isEmpty())
-                    .toList();
+                    .map(itemStack -> {
+                        var item = itemStack.copy();
+                        item.setCount(amount);
+                        return item;
+                    }).filter((ItemStack item) -> !item.isEmpty()).toList();
         }
     }
 

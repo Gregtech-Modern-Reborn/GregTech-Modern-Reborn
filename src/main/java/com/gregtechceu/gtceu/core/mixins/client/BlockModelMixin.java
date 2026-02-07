@@ -14,6 +14,6 @@ public class BlockModelMixin {
 
     @ModifyReturnValue(method = "bakeFace", at = @At(value = "RETURN"))
     private static BakedQuad gtceu$addQuadTextureKeyBlock(BakedQuad quad, BlockElement part, BlockElementFace face) {
-        return quad.gtceu$setTextureKey(face.texture);
+        return quad.gtceu$setTextureKey(face.texture());
     }
 }

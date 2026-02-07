@@ -1,19 +1,17 @@
 package com.gregtechceu.gtceu.data.recipe.serialized.chemistry;
 
-import net.minecraft.data.recipes.FinishedRecipe;
-
-import java.util.function.Consumer;
+import net.minecraft.data.recipes.RecipeOutput;
 
 import static com.gregtechceu.gtceu.api.GTValues.*;
-import static com.gregtechceu.gtceu.api.data.tag.TagPrefix.*;
-import static com.gregtechceu.gtceu.common.data.GTItems.FERTILIZER;
-import static com.gregtechceu.gtceu.common.data.GTMaterials.*;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.DISTILLATION_RECIPES;
-import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.DISTILLERY_RECIPES;
+import static com.gregtechceu.gtceu.api.tag.TagPrefix.*;
+import static com.gregtechceu.gtceu.data.item.GTItems.FERTILIZER;
+import static com.gregtechceu.gtceu.data.material.GTMaterials.*;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.DISTILLATION_RECIPES;
+import static com.gregtechceu.gtceu.data.recipe.GTRecipeTypes.DISTILLERY_RECIPES;
 
 public class DistillationRecipes {
 
-    public static void init(Consumer<FinishedRecipe> provider) {
+    public static void init(RecipeOutput provider) {
         DISTILLATION_RECIPES.recipeBuilder("distill_creosote")
                 .inputFluids(Creosote.getFluid(24))
                 .outputFluids(Lubricant.getFluid(12))
@@ -21,8 +19,8 @@ public class DistillationRecipes {
 
         DISTILLATION_RECIPES.recipeBuilder("distill_dilute_hcl")
                 .inputFluids(DilutedHydrochloricAcid.getFluid(2000))
-                .outputFluids(Water.getFluid(1000))
                 .outputFluids(HydrochloricAcid.getFluid(1000))
+                .outputFluids(Water.getFluid(1000))
                 .duration(600).EUt(64).save(provider);
 
         DISTILLATION_RECIPES.recipeBuilder("distill_dilute_sulfuric")
@@ -33,7 +31,7 @@ public class DistillationRecipes {
 
         DISTILLATION_RECIPES.recipeBuilder("distill_charcoal_byproducts")
                 .inputFluids(CharcoalByproducts.getFluid(1000))
-                .chancedOutput(dust, Charcoal, 2500, 500)
+                .chancedOutput(dust, Charcoal, 2500, 0)
                 .outputFluids(WoodTar.getFluid(250))
                 .outputFluids(WoodVinegar.getFluid(400))
                 .outputFluids(WoodGas.getFluid(250))
@@ -117,14 +115,14 @@ public class DistillationRecipes {
 
         DISTILLATION_RECIPES.recipeBuilder("distill_biomass")
                 .inputFluids(Biomass.getFluid(1000))
-                .chancedOutput(dust, Wood, 5000, 500)
+                .chancedOutput(dust, Wood, 5000, 0)
                 .outputFluids(Ethanol.getFluid(600))
                 .outputFluids(Water.getFluid(300))
                 .duration(32).EUt(400).save(provider);
 
         DISTILLATION_RECIPES.recipeBuilder("distill_coal_gas")
                 .inputFluids(CoalGas.getFluid(1000))
-                .chancedOutput(dust, Coke, 2500, 500)
+                .chancedOutput(dust, Coke, 2500, 0)
                 .outputFluids(CoalTar.getFluid(200))
                 .outputFluids(Ammonia.getFluid(300))
                 .outputFluids(Ethylbenzene.getFluid(250))
@@ -134,7 +132,7 @@ public class DistillationRecipes {
 
         DISTILLATION_RECIPES.recipeBuilder("distill_coal_tar")
                 .inputFluids(CoalTar.getFluid(1000))
-                .chancedOutput(dust, Coke, 2500, 500)
+                .chancedOutput(dust, Coke, 2500, 0)
                 .outputFluids(Naphthalene.getFluid(400))
                 .outputFluids(HydrogenSulfide.getFluid(300))
                 .outputFluids(Creosote.getFluid(200))
@@ -149,7 +147,7 @@ public class DistillationRecipes {
                 .outputFluids(CarbonDioxide.getFluid(2500))
                 .outputFluids(Helium.getFluid(1000))
                 .outputFluids(Argon.getFluid(500))
-                .chancedOutput(dust, Ice, 9000, 500)
+                .chancedOutput(dust, Ice, 9000, 0)
                 .disableDistilleryRecipes(true)
                 .duration(2000).EUt(VA[HV]).save(provider);
 
@@ -161,7 +159,7 @@ public class DistillationRecipes {
                 .outputFluids(SulfurDioxide.getFluid(7500))
                 .outputFluids(Helium3.getFluid(2500))
                 .outputFluids(Neon.getFluid(500))
-                .chancedOutput(dust, Ash, 2250, 500)
+                .chancedOutput(dust, Ash, 2250, 0)
                 .disableDistilleryRecipes(true)
                 .duration(2000).EUt(VA[EV]).save(provider);
 
@@ -174,7 +172,7 @@ public class DistillationRecipes {
                 .outputFluids(Krypton.getFluid(1000))
                 .outputFluids(Xenon.getFluid(1000))
                 .outputFluids(Radon.getFluid(1000))
-                .chancedOutput(dust, EnderPearl, 1000, 500)
+                .chancedOutput(dust, EnderPearl, 1000, 0)
                 .disableDistilleryRecipes(true)
                 .duration(2000).EUt(VA[IV]).save(provider);
     }

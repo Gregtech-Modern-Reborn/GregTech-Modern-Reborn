@@ -7,7 +7,6 @@ import com.lowdragmc.lowdraglib.client.renderer.IRenderer;
 
 import net.minecraft.world.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class DuctPipeBlockItem extends PipeBlockItem implements IItemRendererProvider {
@@ -17,7 +16,6 @@ public class DuctPipeBlockItem extends PipeBlockItem implements IItemRendererPro
     }
 
     @Override
-    @NotNull
     public DuctPipeBlock getBlock() {
         return (DuctPipeBlock) super.getBlock();
     }

@@ -1,72 +1,58 @@
 package com.gregtechceu.gtceu.api.recipe.content;
 
-import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
-
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.tags.TagKey;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
-import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 
-public class SerializerIngredient implements IContentSerializer<Ingredient> {
+public class SerializerIngredient implements IContentSerializer<SizedIngredient> {
 
-    public static final Codec<Ingredient> CODEC = ExtraCodecs.JSON.xmap(Ingredient::fromJson, Ingredient::toJson);
-
+    public static final SizedIngredient EMPTY = new SizedIngredient(Ingredient.EMPTY, 1);
     public static SerializerIngredient INSTANCE = new SerializerIngredient();
 
     private SerializerIngredient() {}
 
     @Override
-    public void toNetwork(FriendlyByteBuf buf, Ingredient content) {
-        content.toNetwork(buf);
+    public void toNetwork(RegistryFriendlyByteBuf buf, SizedIngredient content) {
+        SizedIngredient.STREAM_CODEC.encode(buf, content);
     }
 
     @Override
-    public Ingredient fromNetwork(FriendlyByteBuf buf) {
-        return Ingredient.fromNetwork(buf);
-    }
-
-    @Override
-    public Ingredient fromJson(JsonElement json) {
-        return Ingredient.fromJson(json);
-    }
-
-    @Override
-    public JsonElement toJson(Ingredient content) {
-        return content.toJson();
+    public SizedIngredient fromNetwork(RegistryFriendlyByteBuf buf) {
+        return SizedIngredient.STREAM_CODEC.decode(buf);
     }
 
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public Ingredient of(Object o) {
-        if (o instanceof Ingredient ingredient) {
+    public SizedIngredient of(Object o) {
+        if (o instanceof SizedIngredient ingredient) {
             return ingredient;
         } else if (o instanceof ItemStack itemStack) {
-            return SizedIngredient.create(itemStack);
+            return new SizedIngredient(Ingredient.of(itemStack), itemStack.getCount());
         } else if (o instanceof ItemLike itemLike) {
-            return Ingredient.of(itemLike);
+            return SizedIngredient.of(itemLike, 1);
         } else if (o instanceof TagKey tag) {
-            return Ingredient.of(tag);
+            return SizedIngredient.of(tag, 1);
         }
-        return Ingredient.EMPTY;
+        return EMPTY;
     }
 
     @Override
-    public Ingredient defaultValue() {
-        return Ingredient.EMPTY;
+    public SizedIngredient defaultValue() {
+        return EMPTY;
     }
 
     @Override
-    public Class<Ingredient> contentClass() {
-        return Ingredient.class;
+    public Class<SizedIngredient> contentClass() {
+        return SizedIngredient.class;
     }
 
     @Override
-    public Codec<Ingredient> codec() {
-        return CODEC;
+    public Codec<SizedIngredient> codec() {
+        return SizedIngredient.NESTED_CODEC;
     }
 }

@@ -10,11 +10,11 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.BinaryOperator;
+import java.util.function.UnaryOperator;
 
 public final class DynamicRenderManager {
 
-    public static final BinaryOperator<String> MODEL_ID_FORMATTER = "/block/machine/%s/dynamic_render/%s"::formatted;
+    public static final UnaryOperator<String> MODEL_ID_FORMATTER = "/block/machine/%s/dynamic_render"::formatted;
 
     public static final Codec<DynamicRenderType<?, ?>> TYPE_CODEC = ResourceLocation.CODEC.flatXmap(
             id -> {

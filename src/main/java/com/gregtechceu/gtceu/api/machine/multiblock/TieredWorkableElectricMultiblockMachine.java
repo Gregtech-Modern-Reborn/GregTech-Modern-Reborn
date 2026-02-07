@@ -8,14 +8,13 @@ import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-
 import lombok.Getter;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+/**
+ * @author screret
+ * @date 2023/7/11
+ * @implNote TieredWorkableElectricMultiblockMachine
+ */
 public class TieredWorkableElectricMultiblockMachine extends WorkableElectricMultiblockMachine
                                                      implements ITieredMachine, IOverclockMachine {
 

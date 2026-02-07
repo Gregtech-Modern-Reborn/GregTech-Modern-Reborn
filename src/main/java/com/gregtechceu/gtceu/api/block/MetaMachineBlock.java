@@ -1,7 +1,6 @@
 package com.gregtechceu.gtceu.api.block;
 
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
-import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.item.IGTTool;
 import com.gregtechceu.gtceu.api.item.MetaMachineItem;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
@@ -10,25 +9,25 @@ import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
+import com.gregtechceu.gtceu.api.machine.RotationState;
 import com.gregtechceu.gtceu.api.machine.feature.*;
-import com.gregtechceu.gtceu.common.data.GTItems;
 import com.gregtechceu.gtceu.common.machine.owner.MachineOwner;
+import com.gregtechceu.gtceu.data.item.GTItems;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.locale.Language;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -36,6 +35,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
@@ -45,6 +45,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -121,12 +122,6 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
                     machine.markDirty();
                 }
             }
-            if (machine instanceof IDropSaveMachine dropSaveMachine) {
-                CompoundTag tag = pStack.getTag();
-                if (tag != null) {
-                    dropSaveMachine.loadFromItem(tag);
-                }
-            }
             if (machine instanceof IMachineLife machineLife) {
                 machineLife.onMachinePlaced(player, pStack);
             }
@@ -177,16 +172,18 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
-        ItemStack itemStack = super.getCloneItemStack(level, pos, state);
-        if (getMachine(level, pos) instanceof IDropSaveMachine dropSaveMachine && dropSaveMachine.savePickClone()) {
-            dropSaveMachine.saveToItem(itemStack.getOrCreateTag());
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos,
+                                       Player player) {
+        ItemStack itemStack = super.getCloneItemStack(state, target, level, pos, player);
+        MetaMachine machine = getMachine(level, pos);
+        if (machine instanceof IDropSaveMachine dropSaveMachine && dropSaveMachine.savePickClone()) {
+            dropSaveMachine.saveToItem(itemStack, level.registryAccess());
         }
         return itemStack;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip,
+    public void appendHoverText(ItemStack stack, @Nullable Item.TooltipContext level, List<Component> tooltip,
                                 TooltipFlag flag) {
         definition.getTooltipBuilder().accept(stack, tooltip);
         String mainKey = String.format("%s.machine.%s.tooltip", definition.getId().getNamespace(),
@@ -227,9 +224,9 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
 
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
-        BlockEntity tileEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         var drops = super.getDrops(state, builder);
-        if (tileEntity instanceof IMachineBlockEntity holder) {
+        if (blockEntity instanceof IMachineBlockEntity holder) {
             var machine = holder.getMetaMachine();
             if (machine instanceof IMachineModifyDrops machineModifyDrops) {
                 machineModifyDrops.onDrops(drops);
@@ -237,7 +234,7 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
             if (machine instanceof IDropSaveMachine dropSaveMachine && dropSaveMachine.saveBreak()) {
                 for (ItemStack drop : drops) {
                     if (drop.getItem() instanceof MetaMachineItem item && item.getBlock() == this) {
-                        dropSaveMachine.saveToItem(drop.getOrCreateTag());
+                        dropSaveMachine.saveToItem(drop, blockEntity.getLevel().registryAccess());
                         // break here to not dupe contents if a machine drops multiple of itself for whatever reason.
                         break;
                     }
@@ -277,10 +274,9 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand,
-                                 BlockHitResult hit) {
-        var machine = getMachine(world, pos);
-        ItemStack itemStack = player.getItemInHand(hand);
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                              Player player, InteractionHand hand, BlockHitResult hit) {
+        var machine = getMachine(level, pos);
         boolean shouldOpenUi = true;
 
         if (machine != null && machine.getOwnerUUID() == null && player instanceof ServerPlayer sPlayer) {
@@ -288,53 +284,65 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
             machine.markDirty();
         }
 
-        Set<GTToolType> types = ToolHelper.getToolTypes(itemStack);
+        Set<GTToolType> types = ToolHelper.getToolTypes(stack);
         if (machine != null &&
-                (!types.isEmpty() && ToolHelper.canUse(itemStack) || types.isEmpty() && player.isShiftKeyDown())) {
-            var result = machine.onToolClick(types, itemStack, new UseOnContext(player, hand, hit));
-            if (result.getSecond() == InteractionResult.CONSUME && player instanceof ServerPlayer serverPlayer) {
+                (!types.isEmpty() && ToolHelper.canUse(stack) || types.isEmpty() && player.isShiftKeyDown())) {
+            var result = machine.onToolClick(types, stack, new UseOnContext(player, hand, hit));
+            if (result.getSecond() == ItemInteractionResult.CONSUME && player instanceof ServerPlayer serverPlayer) {
                 ToolHelper.playToolSound(result.getFirst(), serverPlayer);
 
                 if (!serverPlayer.isCreative()) {
-                    ToolHelper.damageItem(itemStack, serverPlayer, 1);
+                    ToolHelper.damageItem(stack, serverPlayer, 1);
                 }
             }
-            if (result.getSecond() != InteractionResult.PASS) return result.getSecond();
+            if (result.getSecond().result() != InteractionResult.PASS) return result.getSecond();
         }
 
-        if (itemStack.is(GTItems.PORTABLE_SCANNER.get())) {
-            return itemStack.getItem().use(world, player, hand).getResult();
+        if (stack.is(GTItems.PORTABLE_SCANNER.get())) {
+            return getFromInteractionResult(stack.getItem().use(level, player, hand).getResult());
         }
 
-        if (itemStack.getItem() instanceof IGTTool gtToolItem) {
+        if (stack.getItem() instanceof IGTTool gtToolItem) {
             shouldOpenUi = gtToolItem.definition$shouldOpenUIAfterUse(new UseOnContext(player, hand, hit));
         }
 
         if (machine instanceof IInteractedMachine interactedMachine) {
-            var result = interactedMachine.onUse(state, world, pos, player, hand, hit);
-            if (result != InteractionResult.PASS) return result;
+            var result = interactedMachine.onUseWithItem(stack, state, level, pos, player, hand, hit);
+            if (result.result() != InteractionResult.PASS) return result;
         }
         if (shouldOpenUi && machine instanceof IUIMachine uiMachine &&
                 MachineOwner.canOpenOwnerMachine(player, machine)) {
             return uiMachine.tryToOpenUI(player, hand, hit);
         }
-        return shouldOpenUi ? InteractionResult.PASS : InteractionResult.CONSUME;
+        return shouldOpenUi ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION : ItemInteractionResult.CONSUME;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // This is fine to override, just not to be called.
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hit) {
+        var machine = getMachine(level, pos);
+        if (machine instanceof IUIMachine uiMachine &&
+                MachineOwner.canOpenOwnerMachine(player, machine)) {
+            return uiMachine.tryToOpenUI(player, InteractionHand.MAIN_HAND, hit).result();
+        }
+        return super.useWithoutItem(state, level, pos, player, hit);
+    }
+
+    public boolean canConnectRedstone(BlockGetter level, BlockPos pos, @Nullable Direction side) {
+        return getMachine(level, pos).canConnectRedstone(side);
+    }
+
+    @Override
     public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         return getMachine(level, pos).getOutputSignal(direction);
     }
 
     @Override
-    @SuppressWarnings("deprecation") // This is fine to override, just not to be called.
     public int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         return getMachine(level, pos).getOutputDirectSignal(direction);
     }
 
     @Override
-    @SuppressWarnings("deprecation") // This is fine to override, just not to be called.
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         return getMachine(level, pos).getAnalogOutputSignal();
     }
@@ -349,6 +357,7 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
         super.neighborChanged(state, level, pos, block, fromPos, isMoving);
     }
 
+    @Nullable
     @Override
     public BlockState getAppearance(BlockState state, BlockAndTintGetter level, BlockPos pos, Direction side,
                                     @Nullable BlockState sourceState, @Nullable BlockPos sourcePos) {
@@ -359,9 +368,13 @@ public class MetaMachineBlock extends Block implements IMachineBlock {
         return super.getAppearance(state, level, pos, side, sourceState, sourcePos);
     }
 
-    @Override
-    public boolean isValidSpawn(BlockState state, BlockGetter level, BlockPos pos, SpawnPlacements.Type type,
-                                EntityType<?> entityType) {
-        return false;
+    public static ItemInteractionResult getFromInteractionResult(InteractionResult result) {
+        return switch (result) {
+            case SUCCESS, SUCCESS_NO_ITEM_USED -> ItemInteractionResult.SUCCESS;
+            case CONSUME -> ItemInteractionResult.CONSUME;
+            case CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL;
+            case PASS -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            case FAIL -> ItemInteractionResult.FAIL;
+        };
     }
 }

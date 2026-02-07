@@ -6,8 +6,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.vertex.*;
 import org.joml.Matrix4f;
@@ -69,22 +69,22 @@ public class RenderBufferHelper {
 
                 switch (axis) {
                     case Y:
-                        buffer.vertex(mat, x + sinTheta * dist, y + tubeRadius * sinPhi, z + cosTheta * dist)
-                                .color(red, green, blue, alpha).endVertex();
-                        buffer.vertex(mat, x + sinTheta1 * dist, y + tubeRadius * sinPhi, z + cosTheta1 * dist)
-                                .color(red, green, blue, alpha).endVertex();
+                        buffer.addVertex(mat, x + sinTheta * dist, y + tubeRadius * sinPhi, z + cosTheta * dist)
+                                .setColor(red, green, blue, alpha);
+                        buffer.addVertex(mat, x + sinTheta1 * dist, y + tubeRadius * sinPhi, z + cosTheta1 * dist)
+                                .setColor(red, green, blue, alpha);
                         break;
                     case X:
-                        buffer.vertex(mat, x + tubeRadius * sinPhi, y + sinTheta * dist, z + cosTheta * dist)
-                                .color(red, green, blue, alpha).endVertex();
-                        buffer.vertex(mat, x + tubeRadius * sinPhi, y + sinTheta1 * dist, z + cosTheta1 * dist)
-                                .color(red, green, blue, alpha).endVertex();
+                        buffer.addVertex(mat, x + tubeRadius * sinPhi, y + sinTheta * dist, z + cosTheta * dist)
+                                .setColor(red, green, blue, alpha);
+                        buffer.addVertex(mat, x + tubeRadius * sinPhi, y + sinTheta1 * dist, z + cosTheta1 * dist)
+                                .setColor(red, green, blue, alpha);
                         break;
                     case Z:
-                        buffer.vertex(mat, x + cosTheta * dist, y + sinTheta * dist, z + tubeRadius * sinPhi)
-                                .color(red, green, blue, alpha).endVertex();
-                        buffer.vertex(mat, x + cosTheta1 * dist, y + sinTheta1 * dist, z + tubeRadius * sinPhi)
-                                .color(red, green, blue, alpha).endVertex();
+                        buffer.addVertex(mat, x + cosTheta * dist, y + sinTheta * dist, z + tubeRadius * sinPhi)
+                                .setColor(red, green, blue, alpha);
+                        buffer.addVertex(mat, x + cosTheta1 * dist, y + sinTheta1 * dist, z + tubeRadius * sinPhi)
+                                .setColor(red, green, blue, alpha);
                         break;
                 }
 
@@ -179,12 +179,11 @@ public class RenderBufferHelper {
                               float x, float y, float z, int color,
                               float texU, float texV, int overlayUV, int lightmapUV,
                               float normalX, float normalY, float normalZ) {
-        buffer.vertex(pose.pose(), x, y, z);
-        buffer.color(color);
-        buffer.uv(texU, texV);
-        buffer.overlayCoords(overlayUV);
-        buffer.uv2(lightmapUV);
-        buffer.normal(pose.normal(), normalX, normalY, normalZ);
-        buffer.endVertex();
+        buffer.addVertex(pose, x, y, z);
+        buffer.setColor(color);
+        buffer.setUv(texU, texV);
+        buffer.setOverlay(overlayUV);
+        buffer.setLight(lightmapUV);
+        buffer.setNormal(pose, normalX, normalY, normalZ);
     }
 }

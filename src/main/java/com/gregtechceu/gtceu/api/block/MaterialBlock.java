@@ -2,14 +2,14 @@ package com.gregtechceu.gtceu.api.block;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.item.PipeBlockItem;
 import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.item.tool.ToolHelper;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.client.renderer.block.MaterialBlockRenderer;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.data.material.GTMaterials;
 import com.gregtechceu.gtceu.data.recipe.VanillaRecipeHelper;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
@@ -25,7 +25,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
@@ -47,8 +47,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.Set;
 
@@ -96,7 +96,6 @@ public class MaterialBlock extends Block {
     }
 
     /** Start falling ore stuff */
-    @SuppressWarnings("deprecation")
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         if (TagPrefix.ORES.containsKey(this.tagPrefix) && TagPrefix.ORES.get(tagPrefix).isSand() &&
@@ -105,7 +104,6 @@ public class MaterialBlock extends Block {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
                                   BlockPos currentPos, BlockPos neighborPos) {
@@ -116,7 +114,6 @@ public class MaterialBlock extends Block {
         return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (!FallingBlock.isFree(level.getBlockState(pos.below())) || pos.getY() < level.getMinBuildHeight()) {
@@ -158,27 +155,27 @@ public class MaterialBlock extends Block {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
-                                 BlockHitResult hit) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                              Player player, InteractionHand hand, BlockHitResult hit) {
         if (this.tagPrefix != TagPrefix.frameGt) {
-            return super.use(state, level, pos, player, hand, hit);
+            return super.useItemOn(stack, state, level, pos, player, hand, hit);
         }
-        ItemStack stack = player.getItemInHand(hand);
         if (stack.isEmpty())
-            return InteractionResult.PASS;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         if (stack.getItem() instanceof PipeBlockItem) {
-            return replaceWithFramedPipe(level, pos, state, player, stack, hit) ? InteractionResult.SUCCESS :
-                    InteractionResult.PASS;
+            return replaceWithFramedPipe(level, pos, state, player, stack, hit) ? ItemInteractionResult.SUCCESS :
+                    ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
         Set<GTToolType> types = ToolHelper.getToolTypes(stack);
         if (!types.isEmpty() && ToolHelper.canUse(stack) && types.contains(GTToolType.CROWBAR)) {
-            return removeFrame(level, pos, player, stack) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+            return removeFrame(level, pos, player, stack) ? ItemInteractionResult.SUCCESS :
+                    ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
         var frameBlock = getFrameboxFromItem(stack);
-        if (frameBlock == null) return InteractionResult.PASS;
+        if (frameBlock == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         BlockPos.MutableBlockPos blockPos = pos.mutable();
         for (int i = 0; i < 32; i++) {
@@ -196,19 +193,19 @@ public class MaterialBlock extends Block {
                 level.setBlock(blockPos, frameBlock.defaultBlockState(), Block.UPDATE_ALL);
                 if (!player.isCreative())
                     stack.shrink(1);
-                return InteractionResult.SUCCESS;
+                return ItemInteractionResult.SUCCESS;
             } else if (te instanceof PipeBlockEntity<?, ?> pbe && pbe.getFrameMaterial().isNull()) {
                 pbe.setFrameMaterial(frameBlock.material);
 
                 if (!player.isCreative())
                     stack.shrink(1);
-                return InteractionResult.SUCCESS;
+                return ItemInteractionResult.SUCCESS;
             } else {
-                return InteractionResult.PASS;
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             }
         }
 
-        return InteractionResult.PASS;
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     @Nullable
@@ -240,7 +237,7 @@ public class MaterialBlock extends Block {
     @Override
     public boolean canBeReplaced(BlockState state, BlockPlaceContext useContext) {
         if (this.tagPrefix == TagPrefix.frameGt && useContext.getItemInHand().getItem() instanceof PipeBlockItem &&
-                !useContext.getPlayer().isCrouching())
+                !useContext.getPlayer().isShiftKeyDown())
             return true;
         return super.canBeReplaced(state, useContext);
     }
@@ -287,7 +284,7 @@ public class MaterialBlock extends Block {
             double d0 = Mth.clamp(deltaMovement.x, -f, f);
             double d1 = Mth.clamp(deltaMovement.z, -f, f);
             double d2 = Math.max(deltaMovement.y, -f);
-            if (d2 < 0.0 && !livingEntity.getFeetBlockState().isScaffolding(livingEntity) &&
+            if (d2 < 0.0 && !livingEntity.getBlockStateOn().isScaffolding(livingEntity) &&
                     livingEntity.isSuppressingSlidingDownLadder() &&
                     livingEntity instanceof Player) {
                 d2 = Math.min(deltaMovement.y + currentAccel, 0.0D);

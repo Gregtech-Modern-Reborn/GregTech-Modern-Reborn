@@ -5,7 +5,7 @@ import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyTooltip;
 import com.gregtechceu.gtceu.api.gui.fancy.TooltipsPanel;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
-import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.kind.GTRecipe;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 
 import net.minecraft.ChatFormatting;
@@ -142,7 +142,7 @@ public interface IMaintenanceMachine extends IMultiPart {
             var durationMultiplier = getDurationMultiplier();
             if (durationMultiplier != 1) {
                 recipe = recipe.copy();
-                recipe.duration = Math.max(1, (int) (recipe.duration * durationMultiplier));
+                recipe.duration = (int) (recipe.duration * durationMultiplier);
             }
         }
         return recipe;

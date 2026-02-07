@@ -2,15 +2,14 @@ package com.gregtechceu.gtceu.api.item;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.DustProperty;
-import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem;
+import com.gregtechceu.gtceu.api.material.material.Material;
+import com.gregtechceu.gtceu.api.material.material.properties.DustProperty;
+import com.gregtechceu.gtceu.api.material.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.tag.TagPrefix;
 import com.gregtechceu.gtceu.client.renderer.item.TagPrefixItemRenderer;
-import com.gregtechceu.gtceu.common.data.GTDamageTypes;
+import com.gregtechceu.gtceu.data.damagesource.GTDamageTypes;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
@@ -21,17 +20,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
 public class TagPrefixItem extends Item {
 
     public final TagPrefix tagPrefix;
@@ -57,9 +52,9 @@ public class TagPrefixItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents,
                                 TooltipFlag isAdvanced) {
-        super.appendHoverText(stack, level, tooltipComponents, isAdvanced);
+        super.appendHoverText(stack, context, tooltipComponents, isAdvanced);
         if (this.tagPrefix.tooltip() != null) {
             this.tagPrefix.tooltip().accept(material, tooltipComponents);
         }
@@ -99,7 +94,7 @@ public class TagPrefixItem extends Item {
                     heatDamage *= armorItem.getArmorLogic().getHeatResistance();
                 }
                 if (heatDamage > 0.0) {
-                    livingEntity.hurt(GTDamageTypes.HEAT.source(level), heatDamage);
+                    livingEntity.hurt(level.damageSources().source(GTDamageTypes.HEAT), heatDamage);
                 } else if (heatDamage < 0.0) {
                     livingEntity.hurt(livingEntity.damageSources().freeze(), -heatDamage);
                 }
@@ -111,7 +106,7 @@ public class TagPrefixItem extends Item {
         DustProperty property = material.isNull() ? null : material.getProperty(PropertyKey.DUST);
         if (property != null)
             return (int) (property.getBurnTime() * tagPrefix.getMaterialAmount(material) / GTValues.M);
-        return -1;
+        return 0;
     }
 
     // TODO BEACON PAYMENT

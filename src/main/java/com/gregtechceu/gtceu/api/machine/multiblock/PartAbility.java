@@ -18,6 +18,7 @@ public class PartAbility {
     public static final PartAbility IMPORT_ITEMS = new PartAbility("import_items");
     public static final PartAbility EXPORT_FLUIDS = new PartAbility("export_fluids");
     public static final PartAbility IMPORT_FLUIDS = new PartAbility("import_fluids");
+
     public static final PartAbility EXPORT_FLUIDS_1X = new PartAbility("export_fluids_1x");
     public static final PartAbility IMPORT_FLUIDS_1X = new PartAbility("import_fluids_1x");
     public static final PartAbility EXPORT_FLUIDS_4X = new PartAbility("export_fluids_4x");
@@ -39,7 +40,6 @@ public class PartAbility {
     public static final PartAbility TANK_VALVE = new PartAbility("tank_valve");
     public static final PartAbility PASSTHROUGH_HATCH = new PartAbility("passthrough_hatch");
     public static final PartAbility PARALLEL_HATCH = new PartAbility("parallel_hatch");
-    public static final PartAbility MULTI_PARALLEL_HATCH = new PartAbility("multi_parallel_hatch");
     public static final PartAbility INPUT_LASER = new PartAbility("input_laser");
     public static final PartAbility OUTPUT_LASER = new PartAbility("output_laser");
 

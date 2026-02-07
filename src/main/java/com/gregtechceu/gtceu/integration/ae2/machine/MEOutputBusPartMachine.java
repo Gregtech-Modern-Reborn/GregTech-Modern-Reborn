@@ -16,7 +16,6 @@ import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.item.ItemStack;
 
 import appeng.api.config.Actionable;
@@ -27,13 +26,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 /**
  * The Output Bus that can directly send its contents to ME storage network.
  */
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class MEOutputBusPartMachine extends MEBusPartMachine implements IMachineLife, IInteractedMachine {
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(

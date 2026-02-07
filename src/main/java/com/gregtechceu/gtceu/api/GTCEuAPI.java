@@ -5,17 +5,13 @@ import com.gregtechceu.gtceu.api.addon.AddonFinder;
 import com.gregtechceu.gtceu.api.addon.IGTAddon;
 import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.api.block.IFilterType;
-import com.gregtechceu.gtceu.api.data.chemical.material.IMaterialRegistryManager;
 import com.gregtechceu.gtceu.api.machine.multiblock.IBatteryData;
-import com.gregtechceu.gtceu.api.registry.GTRegistry;
+import com.gregtechceu.gtceu.api.material.material.IMaterialRegistry;
 import com.gregtechceu.gtceu.common.block.BatteryBlock;
 import com.gregtechceu.gtceu.common.block.CoilBlock;
 import com.gregtechceu.gtceu.config.ConfigHolder;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.eventbus.api.GenericEvent;
-import net.minecraftforge.fml.event.IModBusEvent;
 
 import lombok.Getter;
 import org.jetbrains.annotations.ApiStatus;
@@ -26,10 +22,13 @@ import java.util.function.Supplier;
 
 public class GTCEuAPI {
 
+    public static final int GT_DATA_VERSION = 4;
+    public static final String NETWORK_VERSION = "3";
+
     /** Will always be available */
     public static GTCEu instance;
     /** Will be available at the Construction stage */
-    public static IMaterialRegistryManager materialManager;
+    public static IMaterialRegistry materialManager;
 
     /** Will be available at the Pre-Initialization stage */
     @Getter
@@ -47,38 +46,10 @@ public class GTCEuAPI {
     public static void initializeHighTier() {
         if (highTierInitialized) throw new IllegalStateException("High-Tier is already initialized.");
         highTier = ConfigHolder.INSTANCE.machines.highTierContent ||
-                AddonFinder.getAddons().stream().anyMatch(IGTAddon::requiresHighTier) || GTCEu.isDev();
+                AddonFinder.getAddonList().stream().anyMatch(IGTAddon::requiresHighTier) || GTCEu.isDev();
         highTierInitialized = true;
 
         if (isHighTier()) GTCEu.LOGGER.info("High-Tier is Enabled.");
         else GTCEu.LOGGER.info("High-Tier is Disabled.");
-    }
-
-    public static class RegisterEvent<K, V> extends GenericEvent<V> implements IModBusEvent {
-
-        private final GTRegistry<K, V> registry;
-
-        public RegisterEvent(GTRegistry<K, V> registry, Class<V> clazz) {
-            super(clazz);
-            this.registry = registry;
-        }
-
-        public void register(K key, V value) {
-            if (registry != null) registry.register(key, value);
-        }
-
-        public static class RL<V> extends RegisterEvent<ResourceLocation, V> {
-
-            public RL(GTRegistry<ResourceLocation, V> registry, Class<V> clazz) {
-                super(registry, clazz);
-            }
-        }
-
-        public static class String<V> extends RegisterEvent<java.lang.String, V> {
-
-            public String(GTRegistry<java.lang.String, V> registry, Class<V> clazz) {
-                super(registry, clazz);
-            }
-        }
     }
 }

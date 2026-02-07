@@ -1,24 +1,31 @@
 package com.gregtechceu.gtceu.common.network.packets.hazard;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.client.EnvironmentalHazardClientHandler;
 import com.gregtechceu.gtceu.common.capability.EnvironmentalHazardSavedData;
-import com.gregtechceu.gtceu.common.network.GTNetwork;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@NoArgsConstructor
 @AllArgsConstructor
-public class SPacketSyncLevelHazards implements GTNetwork.INetPacket {
+public class SPacketSyncLevelHazards implements CustomPacketPayload {
+
+    public static final ResourceLocation ID = GTCEu.id("sync_level_hazards");
+    public static final Type<SPacketSyncLevelHazards> TYPE = new Type<>(ID);
+    public static final StreamCodec<FriendlyByteBuf, SPacketSyncLevelHazards> CODEC = StreamCodec
+            .ofMember(SPacketSyncLevelHazards::encode, SPacketSyncLevelHazards::new);
 
     private Map<ChunkPos, EnvironmentalHazardSavedData.HazardZone> map;
 
@@ -30,7 +37,6 @@ public class SPacketSyncLevelHazards implements GTNetwork.INetPacket {
         }).limit(buf.readVarInt()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    @Override
     public void encode(FriendlyByteBuf buf) {
         buf.writeVarInt(map.size());
         for (var entry : map.entrySet()) {
@@ -39,10 +45,14 @@ public class SPacketSyncLevelHazards implements GTNetwork.INetPacket {
         }
     }
 
-    @Override
-    public void execute(NetworkEvent.Context context) {
-        if (context.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
             EnvironmentalHazardClientHandler.INSTANCE.updateHazardMap(this.map);
         }
+    }
+
+    @Override
+    public @NotNull Type<SPacketSyncLevelHazards> type() {
+        return TYPE;
     }
 }
