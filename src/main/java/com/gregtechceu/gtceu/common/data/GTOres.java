@@ -390,7 +390,6 @@ public class GTOres {
                     .maxRichness(1.0f)
                     .veininessThreshold(0.01f)
                     .maxRichnessThreshold(0.05f))
-
             .surfaceIndicatorGenerator(indicator -> indicator
                     .surfaceRock(Coal)));
 

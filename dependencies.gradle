@@ -3,14 +3,14 @@ dependencies {
 
     // LDLib
     jarJar(modApi(forge.ldlib.get()))
-    api(forge.ldlib.get())
-    jarJar(forge.flywheel.forge)
+
     // Registrate
-    jarJar("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
     jarJar(modApi(forge.registrate.get()))
 
     // Configuration
     jarJar(modApi(forge.configuration.get()))
+    jarJar(forge.flywheel.forge)
+    jarJar(forge.ponder)
 
     // Mixin (& Extras)
     annotationProcessor(variantOf(libs.mixin) { classifier("processor") })
@@ -36,12 +36,12 @@ dependencies {
     modCompileOnly(forge.ae2wtlib)
 
     // Create
-    //modCompileOnly(forge.ponder)
+    modCompileOnly(forge.ponder)
     modCompileOnly(variantOf(forge.create) { classifier("slim") })
     modCompileOnly(forge.flywheel.forge.api)
 
     // KJS
-   modCompileOnly(forge.kubejs)
+    modCompileOnly(forge.kubejs)
     modCompileOnly(forge.architectury)
     modCompileOnly(forge.rhino)
 
@@ -66,8 +66,6 @@ dependencies {
     modCompileOnly(forge.journeymap.api)
     modCompileOnly(forge.journeymap.forge)
 
-    modCompileOnly("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
-
     // GameStages
     modCompileOnly(forge.gamestages)
 
@@ -83,12 +81,12 @@ dependencies {
 
     // Runtime Recipe Viewers - uncomment whichever one you want to use //
     modLocalRuntime(forge.emi)
-    modLocalRuntime(forge.jei.forge.impl)
+//    modLocalRuntime(forge.jei.forge.impl)
 //    modLocalRuntime(forge.bundles.rei.runtime)
 
     // Client-only runtime mods //
     modClientLocalRuntime(forge.embeddium)
-    //modClientLocalRuntime(forge.oculus)
+    modClientLocalRuntime(forge.oculus)
     renderNurseCfg(libs.renderNurse)
 
     //////////////////////////////////////////////////////
@@ -99,6 +97,7 @@ dependencies {
     modExtraLocalRuntime(forge.curios)
 //    modExtraLocalRuntime(forge.worldstripper)
 //    modExtraLocalRuntime(forge.cc.tweaked.forge.impl) for some reason this breaks create
+
     modExtraLocalRuntime(forge.bundles.kjs)
 
     modExtraLocalRuntime(forge.ftblibrary)
@@ -118,9 +117,8 @@ dependencies {
 
     modExtraLocalRuntime(forge.kotlinforforge)
     modExtraLocalRuntime(forge.observable)
-    modRuntimeOnly("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
-    //modRuntimeOnly(forge.ponder)
-    modRuntimeOnly(variantOf(forge.create) { classifier("slim") })
 
-    modRuntimeOnly(forge.flywheel.forge)
+    modLocalRuntime(forge.ponder)
+    modExtraLocalRuntime(variantOf(forge.create) { classifier("slim") })
+    modLocalRuntime(forge.flywheel.forge)
 }
