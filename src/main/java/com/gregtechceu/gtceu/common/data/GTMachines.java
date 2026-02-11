@@ -991,7 +991,7 @@ public class GTMachines {
                                     (int) Math.pow((tier + 1), 2)),
                             Component.translatable(
                                     "gtceu.universal.tooltip.fluid_storage_capacity_mult",
-                                    (int) Math.sqrt(Math.pow(tier + 1,2)),
+                                    (int) Math.sqrt(Math.pow(tier + 1, 2)),
                                     DualHatchPartMachine.getTankCapacity(DualHatchPartMachine.INITIAL_TANK_CAPACITY,
                                             tier)),
                             Component.translatable("gtceu.part_sharing.enabled"))
@@ -1014,7 +1014,7 @@ public class GTMachines {
                                     (int) Math.pow((tier + 1), 2)),
                             Component.translatable(
                                     "gtceu.universal.tooltip.fluid_storage_capacity_mult",
-                                    (int) Math.sqrt(Math.pow(tier + 1,2)),
+                                    (int) Math.sqrt(Math.pow(tier + 1, 2)),
                                     DualHatchPartMachine.getTankCapacity(
                                             DualHatchPartMachine.INITIAL_TANK_CAPACITY, tier + 1)),
                             Component.translatable("gtceu.part_sharing.enabled"))
