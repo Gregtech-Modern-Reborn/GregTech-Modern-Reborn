@@ -179,7 +179,9 @@ public final class MachineModel extends BaseBakedModel implements ICoverableRend
                 .with(MODEL_DATA_POS, pos);
         MetaMachine machine = MetaMachine.getMachine(level, pos);
         MachineRenderState renderState = machine == null ? definition.defaultRenderState() : machine.getRenderState();
-
+        if (!renderState.is(definition)) {
+            renderState = definition.defaultRenderState();
+        }
         // add the inner model's model data too
         if (multiPart != null) {
             multiPart.addMachineModelData(renderState, level, pos, state, modelData, builder);
@@ -266,6 +268,9 @@ public final class MachineModel extends BaseBakedModel implements ICoverableRend
         List<BakedQuad> quads = new LinkedList<>();
 
         MachineRenderState renderState = machine != null ? machine.getRenderState() : definition.defaultRenderState();
+        if (!renderState.is(definition)) {
+            renderState = definition.defaultRenderState();
+        }
         renderBaseModel(quads, renderState, blockState, side, rand, modelData, renderType);
 
         for (DynamicRender render : dynamicRenders) {

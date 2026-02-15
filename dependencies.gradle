@@ -77,7 +77,7 @@ dependencies {
     }
 
     // Runtime Recipe Viewers - uncomment whichever one you want to use //
-    localRuntime(forge.emi)
+   //localRuntime(forge.emi)
     localRuntime(forge.jei.neoforge.impl)
 //    localRuntime(forge.bundles.rei.runtime)
 
