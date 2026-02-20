@@ -1,6 +1,7 @@
 package com.gregtechceu.gtceu.api.gui.widget;
 
 import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -45,7 +46,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.*;
 import dev.emi.emi.screen.RecipeScreen;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
@@ -57,6 +58,9 @@ import org.joml.Vector3f;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.gregtechceu.gtceu.common.data.GTMachines.*;
+import static com.gregtechceu.gtceu.common.data.machines.GCYMMachines.PARALLEL_HATCH;
 
 @OnlyIn(Dist.CLIENT)
 public class PatternPreviewWidget extends WidgetGroup {
@@ -71,6 +75,7 @@ public class PatternPreviewWidget extends WidgetGroup {
     public final MultiblockMachineDefinition controllerDefinition;
     public final MBPattern[] patterns;
     private final List<SimplePredicate> predicates;
+    private boolean isHighLight;
     private int index;
     public int layer;
     private SlotWidget[] slotWidgets;
@@ -82,8 +87,96 @@ public class PatternPreviewWidget extends WidgetGroup {
         this.controllerDefinition = controllerDefinition;
         predicates = new ArrayList<>();
         layer = -1;
-
+        isHighLight = false;
         addWidget(sceneWidget = new SceneWidget(3, 3, 150, 150, LEVEL) {
+
+            private Map<BlockPos, Integer> colorCaches = new HashMap<>();
+            private BufferBuilder.RenderedBuffer cacheBuffer;
+
+            @Override
+            @OnlyIn(Dist.CLIENT)
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                if (super.mouseClicked(mouseX, mouseY, button)) {
+                    return true;
+                } else if (!this.intractable) {
+                    return false;
+                } else if (this.isMouseOverElement(mouseX, mouseY)) {
+                    if (this.draggable) {
+                        this.dragging = true;
+                    }
+                    this.clickPosFace = this.hoverPosFace;
+                    return true;
+                } else {
+                    this.dragging = false;
+                    return false;
+                }
+            }
+
+            @Override
+            @OnlyIn(Dist.CLIENT)
+            public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+                if (!this.intractable) {
+                    return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+                } else if (this.dragging && button == 0) {
+                    this.rotationPitch = (float) ((double) this.rotationPitch + dragX + 360.0);
+                    this.rotationPitch %= 360.0F;
+                    this.rotationYaw = (float) Mth.clamp((double) this.rotationYaw + dragY, -89.9, 89.9);
+                    if (this.renderer != null) {
+                        this.renderer.setCameraLookAt(this.center, (double) this.camZoom(),
+                                Math.toRadians((double) this.rotationPitch), Math.toRadians((double) this.rotationYaw));
+                    }
+                    return false;
+                } else if (this.dragging && button == 1) {// 右键情况下
+                    if (this.renderer == null) return false;
+
+                    Vector3f eyePos = new Vector3f(this.renderer.getEyePos());
+                    Vector3f lookAt = new Vector3f(this.renderer.getLookAt());
+                    Vector3f worldUp = new Vector3f(this.renderer.getWorldUp());
+
+                    float speed = 1f;
+                    speed *= (float) this.camZoom();
+                    Vector3f forward = new Vector3f(lookAt).sub(eyePos).normalize();
+                    Vector3f right = new Vector3f(forward).cross(worldUp).normalize();
+                    Vector3f up = new Vector3f(right).cross(forward).normalize();
+
+                    Vector3f move = new Vector3f();
+                    move.add(new Vector3f(right).mul((float) (-dragX / getSizeWidth() * speed)));
+                    move.add(new Vector3f(up).mul((float) (dragY / getSizeHeight() * speed)));
+                    eyePos.add(move);
+                    lookAt.add(move);
+                    this.center.add(move);
+                    this.renderer.setCameraLookAt(eyePos, lookAt, worldUp);
+
+                    return false;
+
+                } else {
+                    return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+                }
+            }
+
+            public static float[] intRGBAToFloatRGBA(int rgba) {
+                float[] result = new float[4];
+                result[0] = ((rgba >> 24) & 0xFF) / 255.0f; // R
+                result[1] = ((rgba >> 16) & 0xFF) / 255.0f; // G
+                result[2] = ((rgba >> 8) & 0xFF) / 255.0f;  // B
+                result[3] = (rgba & 0xFF) / 255.0f;         // A
+                return result;
+            }
+
+            public int rgbaToArgb(int rgba) {
+                return ((rgba & 0x000000ff) << 24) |
+                        ((rgba & 0xffffff00) >>> 8);
+            }
+
+            private void renderUtils(PoseStack poseStack, BlockPos pos, int color) {
+                int color2 = rgbaToArgb(color);
+                drawFacingBorder(poseStack, new BlockPosFace(pos, Direction.NORTH), color2, 0);
+                drawFacingBorder(poseStack, new BlockPosFace(pos, Direction.SOUTH), color2, 0);
+                drawFacingBorder(poseStack, new BlockPosFace(pos, Direction.EAST), color2, 0);
+                drawFacingBorder(poseStack, new BlockPosFace(pos, Direction.WEST), color2, 0);
+                drawFacingBorder(poseStack, new BlockPosFace(pos, Direction.NORTH), color2, 0);
+                drawFacingBorder(poseStack, new BlockPosFace(pos, Direction.SOUTH), color2, 0);
+            }
 
             @Override
             public void renderBlockOverLay(WorldSceneRenderer renderer) {
@@ -120,6 +213,7 @@ public class PatternPreviewWidget extends WidgetGroup {
                         }
                     }
                 }
+
                 if (hoverPosFace != null) {
                     var state = getDummyWorld().getBlockState(hoverPosFace.pos);
                     hoverItem = state.getBlock().getCloneItemStack(getDummyWorld(), hoverPosFace.pos, state);
@@ -136,7 +230,76 @@ public class PatternPreviewWidget extends WidgetGroup {
                 if (selectedPosFace != null && renderSelect) {
                     RenderUtils.renderBlockOverLay(poseStack, selectedPosFace.pos, 0.6f, 0, 0, 1.03f);
                 }
+                if (isHighLight) {
+                    Map<BlockPos, TraceabilityPredicate> predicateMap = patterns[index].controllerBase
+                            .getMultiblockState().getMatchContext().get("predicates");
+                    PoseStack poseStack2 = new PoseStack();
+                    if (core.size() > ConfigHolder.INSTANCE.client.maximumHighLightBlocks) return;
+                    core.forEach(x -> {
 
+                        if (selectedPosFace != null && x == selectedPosFace.pos) return;
+                        if (predicateMap.containsKey(x)) {
+
+                            var predicate = predicateMap.get(x);
+                            List<ItemStack> candidates = new ArrayList<ItemStack>();
+                            predicate.common.forEach(y -> candidates.addAll(y.getCandidates()));
+                            predicate.limited.forEach(y -> candidates.addAll(y.getCandidates()));
+                            int cnt = 0;
+                            int color = 0x00000000;
+                            if (!colorCaches.containsKey(x)) {
+                                for (var candidate : candidates) {
+                                    if (cnt > 1) break;
+                                    if (candidate.equals(ITEM_IMPORT_BUS[GTValues.LV].asStack(), false) ||
+                                            candidate.equals(FLUID_IMPORT_HATCH[GTValues.LV].asStack(), false) ||
+                                            candidate.equals(STEAM_IMPORT_BUS.asStack(), false)) {
+                                        cnt++;
+                                        color = 0x00ff00ff;// 绿色
+                                        continue;
+                                    }
+                                    if (candidate.equals(ITEM_EXPORT_BUS[GTValues.LV].asStack(), false) ||
+                                            candidate.equals(FLUID_EXPORT_HATCH[GTValues.LV].asStack(), false) ||
+                                            candidate.equals(STEAM_EXPORT_BUS.asStack(), false)) {
+                                        cnt++;
+                                        color = 0xff8000ff;// 橙色
+                                        continue;
+                                    }
+                                    if (candidate.equals(ENERGY_INPUT_HATCH[GTValues.LV].asStack(), false) ||
+                                            candidate.equals(ENERGY_OUTPUT_HATCH[GTValues.LV].asStack(), false) ||
+                                            candidate.equals(LASER_INPUT_HATCH_256[GTValues.IV].asStack(), false) ||
+                                            candidate.equals(LASER_OUTPUT_HATCH_256[GTValues.IV].asStack(), false) ||
+                                            candidate.equals(STEAM_HATCH.asStack())) {
+                                        cnt++;
+                                        color = 0xffff00ff;// 黄色
+                                        continue;
+                                    }
+                                    if (candidate.equals(MAINTENANCE_HATCH.asStack(), false)) {
+                                        cnt++;
+                                        color = 0x00ffffff;// 青色
+                                        continue;
+                                    }
+                                    if (candidate.equals(MUFFLER_HATCH[GTValues.LV].asStack(), false)) {
+                                        cnt++;
+                                        color = 0x800080ff;// 紫色
+                                        continue;
+                                    }
+                                    if (candidate.equals(PARALLEL_HATCH[GTValues.IV].asStack(), false)) {
+                                        cnt++;
+                                        color = 0xf0ffffff;// 蔚蓝色
+                                    }
+                                }
+
+                                if (cnt > 1) {
+                                    color = 0x3b2525ff;
+                                }
+                                colorCaches.put(x, color);
+                            } else {
+                                color = colorCaches.get(x);
+                            }
+                            renderUtils(poseStack, x, color);
+                            RenderUtils.renderBlockOverLay(poseStack, x, 0, 0, 0, 0);
+                        }
+                    });
+                }
                 if (this.afterWorldRender != null) {
                     this.afterWorldRender.accept(this);
                 }
@@ -145,7 +308,6 @@ public class PatternPreviewWidget extends WidgetGroup {
                 .setOnSelected(this::onPosSelected)
                 .setRenderFacing(false)
                 .setRenderFacing(false));
-
         scrollableWidgetGroup = new DraggableScrollableWidgetGroup(3, 132, 154, 22)
                 .setXScrollBarHeight(4)
                 .setXBarStyle(GuiTextures.SLIDER_BACKGROUND, GuiTextures.BUTTON)
@@ -189,8 +351,15 @@ public class PatternPreviewWidget extends WidgetGroup {
                 new TextTexture("1").setSupplier(() -> layer >= 0 ? "L:" + layer : "ALL")),
                 cd -> updateLayer())
                 .setHoverBorderTexture(1, -1));
-
+        addWidget(new ButtonWidget(138, 70, 18, 18, new GuiTextureGroup(
+                ColorPattern.T_GRAY.rectTexture(),
+                new TextTexture("1").setSupplier(() -> isHighLight ? "ON" : "OFF")),
+                cd -> updateHighLight()).setHoverBorderTexture(1, -1));
         setPage(0);
+    }
+
+    private void updateHighLight() {
+        isHighLight = !isHighLight;
     }
 
     private void updateLayer() {

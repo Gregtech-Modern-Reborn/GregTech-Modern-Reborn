@@ -775,6 +775,9 @@ public class ConfigHolder {
                 "Disable if you have issues with rendering multiblocks.", "Default: true" })
         public boolean useVBO = true;
         @Configurable
+        @Configurable.Comment({ "Multiblock Preview Maximum High Light Blocks" })
+        public int maximumHighLightBlocks = 500;
+        @Configurable
         @Configurable.Comment({ "Duration of the multiblock in-world preview (s)", "Default: 10" })
         @Configurable.Range(min = 1, max = 999)
         public int inWorldPreviewDuration = 10;
