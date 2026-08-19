@@ -7,6 +7,7 @@ import com.gregtechceu.gtceu.core.mixins.BlockBehaviourAccessor;
 import com.gregtechceu.gtceu.integration.kjs.built.KJSTagPrefix;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -49,9 +50,11 @@ public class OreTagPrefixBuilder extends TagPrefixBuilder {
         validate(this.id,
                 errorIfNull(stateSupplier, "stateSupplier"),
                 onlySetDefault(templateProperties, () -> {
-                    templateProperties = () -> GTBlocks.copy(
-                            ((BlockBehaviourAccessor) stateSupplier.get().getBlock()).getBlockProperties(),
-                            BlockBehaviour.Properties.of());
+                    Block block = stateSupplier.get().getBlock();
+                    BlockBehaviour.Properties source = block instanceof BlockBehaviourAccessor accessor
+                            ? accessor.getBlockProperties()
+                            : BlockBehaviour.Properties.of();
+                    templateProperties = () -> GTBlocks.copy(source, BlockBehaviour.Properties.of());
                 }),
                 errorIfNull(baseModelLocation, "baseModelLocation"));
 

@@ -2,7 +2,6 @@ package com.gregtechceu.gtceu.api.recipe;
 
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
 import com.gregtechceu.gtceu.api.capability.IElectricItem;
-import com.gregtechceu.gtceu.core.mixins.ShapedRecipeAccessor;
 
 import net.minecraft.FieldsAreNonnullByDefault;
 import net.minecraft.MethodsReturnNonnullByDefault;
@@ -91,11 +90,11 @@ public class ShapedEnergyTransferRecipe extends ShapedRecipe {
         @Override
         public ShapedEnergyTransferRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
             String group = GsonHelper.getAsString(json, "group", "");
-            Map<String, Ingredient> key = ShapedRecipeAccessor.callKeyFromJson(GsonHelper.getAsJsonObject(json, "key"));
-            String[] pattern = ShapedRecipeAccessor.callPatternFromJson(GsonHelper.getAsJsonArray(json, "pattern"));
+            Map<String, Ingredient> key = ShapedRecipeHelper.keyFromJson(GsonHelper.getAsJsonObject(json, "key"));
+            String[] pattern = ShapedRecipeHelper.patternFromJson(GsonHelper.getAsJsonArray(json, "pattern"));
             int xSize = pattern[0].length();
             int ySize = pattern.length;
-            NonNullList<Ingredient> dissolved = ShapedRecipeAccessor.callDissolvePattern(pattern, key, xSize, ySize);
+            NonNullList<Ingredient> dissolved = ShapedRecipeHelper.dissolvePattern(pattern, key, xSize, ySize);
             boolean overrideCharge = GsonHelper.getAsBoolean(json, "overrideCharge");
             boolean transferMaxCharge = GsonHelper.getAsBoolean(json, "transferMaxCharge");
             Ingredient chargeIngredient = Ingredient.fromJson(GsonHelper.getAsJsonObject(json, "chargeIngredient"));
@@ -130,7 +129,7 @@ public class ShapedEnergyTransferRecipe extends ShapedRecipe {
             for (Ingredient ingredient : recipe.getIngredients()) {
                 ingredient.toNetwork(buffer);
             }
-            buffer.writeItem(((ShapedRecipeAccessor) recipe).getResult());
+            buffer.writeItem(recipe.getResultItem(RegistryAccess.EMPTY));
         }
     }
 }

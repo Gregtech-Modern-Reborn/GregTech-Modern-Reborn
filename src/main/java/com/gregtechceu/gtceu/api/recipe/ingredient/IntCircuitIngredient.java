@@ -55,7 +55,11 @@ public class IntCircuitIngredient extends StrictNBTIngredient {
     @Override
     public ItemStack @NotNull [] getItems() {
         if (stacks == null) {
-            stacks = new ItemStack[] { ((StrictNBTIngredientAccessor) this).getStack() };
+            if (this instanceof StrictNBTIngredientAccessor accessor) {
+                stacks = new ItemStack[] { accessor.getStack() };
+            } else {
+                stacks = new ItemStack[] { IntCircuitBehaviour.stack(configuration) };
+            }
         }
         return stacks;
     }

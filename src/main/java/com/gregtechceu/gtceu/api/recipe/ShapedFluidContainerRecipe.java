@@ -1,9 +1,9 @@
 package com.gregtechceu.gtceu.api.recipe;
 
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidContainerIngredient;
-import com.gregtechceu.gtceu.core.mixins.ShapedRecipeAccessor;
 
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -115,12 +115,12 @@ public class ShapedFluidContainerRecipe extends ShapedRecipe {
             String group = GsonHelper.getAsString(json, "group", "");
             CraftingBookCategory category = CraftingBookCategory.CODEC
                     .byName(GsonHelper.getAsString(json, "category", null), CraftingBookCategory.MISC);
-            Map<String, Ingredient> key = ShapedRecipeAccessor.callKeyFromJson(GsonHelper.getAsJsonObject(json, "key"));
-            String[] pattern = ShapedRecipeAccessor
-                    .callShrink(ShapedRecipeAccessor.callPatternFromJson(GsonHelper.getAsJsonArray(json, "pattern")));
+            Map<String, Ingredient> key = ShapedRecipeHelper.keyFromJson(GsonHelper.getAsJsonObject(json, "key"));
+            String[] pattern = ShapedRecipeHelper
+                    .shrink(ShapedRecipeHelper.patternFromJson(GsonHelper.getAsJsonArray(json, "pattern")));
             int xSize = pattern[0].length();
             int ySize = pattern.length;
-            NonNullList<Ingredient> dissolved = ShapedRecipeAccessor.callDissolvePattern(pattern, key, xSize, ySize);
+            NonNullList<Ingredient> dissolved = ShapedRecipeHelper.dissolvePattern(pattern, key, xSize, ySize);
             ItemStack result = ShapedFluidContainerRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
             boolean showNotification = GsonHelper.getAsBoolean(json, "show_notification", true);
             return new ShapedFluidContainerRecipe(recipeId, group, category,
@@ -154,7 +154,7 @@ public class ShapedFluidContainerRecipe extends ShapedRecipe {
             for (Ingredient ingredient : recipe.getIngredients()) {
                 ingredient.toNetwork(buffer);
             }
-            buffer.writeItem(((ShapedRecipeAccessor) recipe).getResult());
+            buffer.writeItem(recipe.getResultItem(RegistryAccess.EMPTY));
             buffer.writeBoolean(recipe.showNotification());
         }
     }
