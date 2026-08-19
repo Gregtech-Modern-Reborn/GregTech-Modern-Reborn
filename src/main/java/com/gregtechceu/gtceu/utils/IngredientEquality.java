@@ -68,10 +68,14 @@ public class IngredientEquality {
 
             if (first instanceof IntersectionIngredient intersection1) {
                 if (second instanceof IntersectionIngredient intersection2) {
+                    if (!(intersection1 instanceof IntersectionIngredientAccessor acc1) ||
+                            !(intersection2 instanceof IntersectionIngredientAccessor acc2)) {
+                        return 1;
+                    }
                     List<Ingredient> ingredients1 = Lists
-                            .newArrayList(((IntersectionIngredientAccessor) intersection1).getChildren());
+                            .newArrayList(acc1.getChildren());
                     List<Ingredient> ingredients2 = Lists
-                            .newArrayList(((IntersectionIngredientAccessor) intersection2).getChildren());
+                            .newArrayList(acc2.getChildren());
                     if (ingredients1.size() != ingredients2.size()) return 1;
 
                     ingredients1.sort(this);
@@ -90,8 +94,18 @@ public class IngredientEquality {
                 return 1;
             }
 
-            Ingredient.Value[] firstValues = ((IngredientAccessor) first).getValues();
-            Ingredient.Value[] secondValues = ((IngredientAccessor) second).getValues();
+            if (!(first instanceof IngredientAccessor firstAccessor) ||
+                    !(second instanceof IngredientAccessor secondAccessor)) {
+                ItemStack[] firstStacks = first.getItems();
+                ItemStack[] secondStacks = second.getItems();
+                if (firstStacks.length != secondStacks.length) return 1;
+                for (int i = 0; i < firstStacks.length; i++) {
+                    if (!ItemStack.isSameItemSameTags(firstStacks[i], secondStacks[i])) return 1;
+                }
+                return 0;
+            }
+            Ingredient.Value[] firstValues = firstAccessor.getValues();
+            Ingredient.Value[] secondValues = secondAccessor.getValues();
             if (firstValues.length != secondValues.length) return 1;
 
             firstValues = firstValues.clone();

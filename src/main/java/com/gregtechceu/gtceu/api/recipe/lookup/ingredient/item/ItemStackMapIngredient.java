@@ -31,9 +31,15 @@ public class ItemStackMapIngredient extends AbstractMapIngredient {
     @NotNull
     public static List<AbstractMapIngredient> from(Ingredient ingredient) {
         List<AbstractMapIngredient> ingredients = new ObjectArrayList<>();
-        for (Ingredient.Value value : ((IngredientAccessor) ingredient).getValues()) {
-            if (value instanceof ItemValueAccessor itemValue) {
-                ingredients.add(new ItemStackMapIngredient(itemValue.getItem(), ingredient));
+        if (ingredient instanceof IngredientAccessor accessor) {
+            for (Ingredient.Value value : accessor.getValues()) {
+                if (value instanceof ItemValueAccessor itemValue) {
+                    ingredients.add(new ItemStackMapIngredient(itemValue.getItem(), ingredient));
+                }
+            }
+        } else {
+            for (ItemStack stack : ingredient.getItems()) {
+                ingredients.add(new ItemStackMapIngredient(stack, ingredient));
             }
         }
         return ingredients;

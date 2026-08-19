@@ -48,9 +48,11 @@ public class SizedIngredient extends Ingredient {
         this.isEmpty = inner.isEmpty();
         if (isEmpty || inner.getClass() != Ingredient.class) {
             this.value = null;
-        } else {
-            var values = ((IngredientAccessor) inner).getValues();
+        } else if (inner instanceof IngredientAccessor accessor) {
+            var values = accessor.getValues();
             this.value = values.length == 1 ? values[0] : null;
+        } else {
+            this.value = null;
         }
     }
 

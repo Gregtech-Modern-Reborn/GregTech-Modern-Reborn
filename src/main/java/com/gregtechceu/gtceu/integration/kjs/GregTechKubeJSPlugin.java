@@ -669,8 +669,10 @@ public class GregTechKubeJSPlugin extends KubeJSPlugin {
             if (inCount == 0) continue;
 
             var ingredient = entry.value().kjs$asIngredient();
-            var values = ((IngredientAccessor) ingredient).getValues();
-            if (values.length == 0 || values[0] instanceof Ingredient.TagValue) continue;
+            if (ingredient instanceof IngredientAccessor accessor) {
+                var values = accessor.getValues();
+                if (values.length == 0 || values[0] instanceof Ingredient.TagValue) continue;
+            }
 
             ItemStack[] stacks = ingredient.getItems();
             ItemStack stack;

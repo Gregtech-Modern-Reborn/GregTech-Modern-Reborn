@@ -33,7 +33,10 @@ public class IntersectionMapIngredient extends AbstractMapIngredient {
 
     @NotNull
     public static List<AbstractMapIngredient> from(IntersectionIngredient ingredient) {
-        List<Ingredient> originalChildren = ((IntersectionIngredientAccessor) ingredient).getChildren();
+        if (!(ingredient instanceof IntersectionIngredientAccessor accessor)) {
+            return Collections.emptyList();
+        }
+        List<Ingredient> originalChildren = accessor.getChildren();
         List<AbstractMapIngredient> mapChildren = new ObjectArrayList<>();
         for (var ing : originalChildren) {
             mapChildren.addAll(MapIngredientTypeManager.getFrom(ing, ItemRecipeCapability.CAP));

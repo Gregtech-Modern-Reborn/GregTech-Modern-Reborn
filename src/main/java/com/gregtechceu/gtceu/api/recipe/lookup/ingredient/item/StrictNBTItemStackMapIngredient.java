@@ -55,11 +55,9 @@ public class StrictNBTItemStackMapIngredient extends ItemStackMapIngredient {
             }
             if (this.nbtIngredient != null) {
                 if (other.nbtIngredient != null) {
-                    return ItemStack.isSameItemSameTags(((StrictNBTIngredientAccessor) nbtIngredient).getStack(),
-                            ((StrictNBTIngredientAccessor) other.nbtIngredient).getStack());
-                } else {
-                    this.nbtIngredient.test(other.stack);
+                    return ItemStack.isSameItemSameTags(this.stack, other.stack);
                 }
+                return this.nbtIngredient.test(other.stack);
             } else if (other.nbtIngredient != null) {
                 return other.nbtIngredient.test(this.stack);
             }

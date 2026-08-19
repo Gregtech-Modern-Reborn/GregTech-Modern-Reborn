@@ -541,7 +541,8 @@ public class ItemRecipeCapability extends RecipeCapability<Ingredient> {
 
     // Map intersection ingredients to the items inside, as recipe viewers don't support them.
     private static ItemEntryList mapIntersection(final IntersectionIngredient intersection, int amount) {
-        List<Ingredient> children = ((IntersectionIngredientAccessor) intersection).getChildren();
+        if (!(intersection instanceof IntersectionIngredientAccessor accessor)) return new ItemStackList();
+        List<Ingredient> children = accessor.getChildren();
         if (children.isEmpty()) return new ItemStackList();
 
         var childList = mapItem(children.get(0));
@@ -556,9 +557,12 @@ public class ItemRecipeCapability extends RecipeCapability<Ingredient> {
     }
 
     private static @Nullable ItemTagList tryMapTag(final Ingredient ingredient, int amount) {
-        var values = ((IngredientAccessor) ingredient).getValues();
+        if (!(ingredient instanceof IngredientAccessor accessor)) return null;
+        var values = accessor.getValues();
         if (values.length > 0 && values[0] instanceof Ingredient.TagValue tagValue) {
-            return ItemTagList.of(((TagValueAccessor) tagValue).getTag(), amount, null);
+            if (tagValue instanceof TagValueAccessor tag) {
+                return ItemTagList.of(tag.getTag(), amount, null);
+            }
         }
         return null;
     }

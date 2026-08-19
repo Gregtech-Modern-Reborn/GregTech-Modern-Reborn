@@ -25,9 +25,15 @@ public class ItemTagMapIngredient extends AbstractMapIngredient {
     @NotNull
     public static List<AbstractMapIngredient> from(Ingredient ingredient) {
         List<AbstractMapIngredient> ingredients = new ObjectArrayList<>();
-        for (Ingredient.Value value : ((IngredientAccessor) ingredient).getValues()) {
-            if (value instanceof TagValueAccessor tagValue) {
-                ingredients.add(new ItemTagMapIngredient(tagValue.getTag()));
+        if (ingredient instanceof IngredientAccessor accessor) {
+            for (Ingredient.Value value : accessor.getValues()) {
+                if (value instanceof TagValueAccessor tagValue) {
+                    ingredients.add(new ItemTagMapIngredient(tagValue.getTag()));
+                }
+            }
+        } else {
+            for (ItemStack stack : ingredient.getItems()) {
+                stack.getTags().forEach(tag -> ingredients.add(new ItemTagMapIngredient(tag)));
             }
         }
         return ingredients;
