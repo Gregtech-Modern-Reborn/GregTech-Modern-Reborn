@@ -1418,31 +1418,33 @@ public class GTBlocks {
         if (props == null) {
             return newProps;
         }
-        newProps.destroyTime(((BlockPropertiesAccessor) props).getDestroyTime());
-        newProps.explosionResistance(((BlockPropertiesAccessor) props).getExplosionResistance());
-        if (!((BlockPropertiesAccessor) props).isHasCollision()) newProps.noCollission();
-        if (((BlockPropertiesAccessor) props).isIsRandomlyTicking()) newProps.randomTicks();
-        newProps.lightLevel(((BlockPropertiesAccessor) props).getLightEmission());
-        newProps.mapColor(((BlockPropertiesAccessor) props).getMapColor());
-        newProps.sound(((BlockPropertiesAccessor) props).getSoundType());
-        newProps.friction(((BlockPropertiesAccessor) props).getFriction());
-        newProps.speedFactor(((BlockPropertiesAccessor) props).getSpeedFactor());
-        if (((BlockPropertiesAccessor) props).isDynamicShape()) newProps.dynamicShape();
-        if (!((BlockPropertiesAccessor) props).isCanOcclude()) newProps.noOcclusion();
-        if (((BlockPropertiesAccessor) props).isIsAir()) newProps.air();
-        if (((BlockPropertiesAccessor) props).isIgnitedByLava()) newProps.ignitedByLava();
-        if (((BlockPropertiesAccessor) props).isLiquid()) newProps.liquid();
-        if (((BlockPropertiesAccessor) props).isForceSolidOff()) newProps.forceSolidOff();
-        if (((BlockPropertiesAccessor) props).isForceSolidOn()) newProps.forceSolidOn();
-        newProps.pushReaction(((BlockPropertiesAccessor) props).getPushReaction());
-        if (((BlockPropertiesAccessor) props).isRequiresCorrectToolForDrops()) newProps.requiresCorrectToolForDrops();
-        ((BlockPropertiesAccessor) newProps).setOffsetFunction(((BlockPropertiesAccessor) props).getOffsetFunction());
-        if (!((BlockPropertiesAccessor) props).isSpawnParticlesOnBreak()) newProps.noParticlesOnBreak();
-        ((BlockPropertiesAccessor) newProps)
-                .setRequiredFeatures(((BlockPropertiesAccessor) props).getRequiredFeatures());
-        newProps.emissiveRendering(((BlockPropertiesAccessor) props).getEmissiveRendering());
-        newProps.instrument(((BlockPropertiesAccessor) props).getInstrument());
-        if (((BlockPropertiesAccessor) props).isReplaceable()) newProps.replaceable();
+        if (props instanceof BlockPropertiesAccessor acc) {
+            newProps.destroyTime(acc.getDestroyTime());
+            newProps.explosionResistance(acc.getExplosionResistance());
+            if (!acc.isHasCollision()) newProps.noCollission();
+            if (acc.isIsRandomlyTicking()) newProps.randomTicks();
+            newProps.lightLevel(acc.getLightEmission());
+            newProps.mapColor(acc.getMapColor());
+            newProps.sound(acc.getSoundType());
+            newProps.friction(acc.getFriction());
+            newProps.speedFactor(acc.getSpeedFactor());
+            if (acc.isDynamicShape()) newProps.dynamicShape();
+            if (!acc.isCanOcclude()) newProps.noOcclusion();
+            if (acc.isIsAir()) newProps.air();
+            if (acc.isIgnitedByLava()) newProps.ignitedByLava();
+            if (acc.isLiquid()) newProps.liquid();
+            if (acc.isForceSolidOff()) newProps.forceSolidOff();
+            if (acc.isForceSolidOn()) newProps.forceSolidOn();
+            newProps.pushReaction(acc.getPushReaction());
+            if (acc.isRequiresCorrectToolForDrops()) newProps.requiresCorrectToolForDrops();
+            if (newProps instanceof BlockPropertiesAccessor newAcc) {
+                newAcc.setOffsetFunction(acc.getOffsetFunction());
+                newAcc.setRequiredFeatures(acc.getRequiredFeatures());
+            }
+            newProps.emissiveRendering(acc.getEmissiveRendering());
+            newProps.instrument(acc.getInstrument());
+            if (acc.isReplaceable()) newProps.replaceable();
+        }
         return newProps;
     }
 }
