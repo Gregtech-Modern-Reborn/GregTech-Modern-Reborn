@@ -19,8 +19,7 @@ public class GregTechDatagen {
         try {
             // replace some default providers with ours
             RegistrateDataProviderAccessor.gtceu$getTypes().forcePut("blockstate", BLOCKSTATE_PROVIDER);
-        } catch (Throwable ignored) {
-        }
+        } catch (Throwable ignored) {}
 
         GTRegistration.REGISTRATE.addDataGenerator(ProviderType.BLOCKSTATE,
                 p -> BlockstateModelLoader.init((GTBlockstateProvider) p));
@@ -33,7 +32,6 @@ public class GregTechDatagen {
             GTRegistration.REGISTRATE.addDataGenerator(ProviderType.FLUID_TAGS, FluidTagLoader::init);
             GTRegistration.REGISTRATE.addDataGenerator(ProviderType.ENTITY_TAGS, EntityTypeTagLoader::init);
             GTRegistration.REGISTRATE.addDataGenerator(ProviderType.LANG, LangHandler::init);
-        } catch (Throwable ignored) {
-        }
+        } catch (Throwable ignored) {}
     }
 }

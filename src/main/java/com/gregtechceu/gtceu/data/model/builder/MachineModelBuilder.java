@@ -281,7 +281,8 @@ public class MachineModelBuilder<T extends ModelBuilder<T>> extends CustomLoader
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static <T> ConfiguredModel.Builder<T> newConfiguredModelBuilder(
-            Function<ConfiguredModel[], T> callback, List<ConfiguredModel> otherModels) {
+                                                                            Function<ConfiguredModel[], T> callback,
+                                                                            List<ConfiguredModel> otherModels) {
         try {
             Constructor<ConfiguredModel.Builder<T>> constructor = (Constructor) ConfiguredModel.Builder.class
                     .getDeclaredConstructor(Function.class, List.class);

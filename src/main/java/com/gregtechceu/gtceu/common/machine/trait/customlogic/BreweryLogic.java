@@ -255,9 +255,8 @@ public enum BreweryLogic implements GTRecipeType.ICustomRecipeLogic {
     @SuppressWarnings("unchecked")
     private static List<PotionBrewing.Mix<Potion>> getPotionMixes() {
         for (Field field : PotionBrewing.class.getDeclaredFields()) {
-            if (Modifier.isStatic(field.getModifiers())
-                    && List.class.isAssignableFrom(field.getType())
-                    && field.getGenericType().getTypeName().contains("PotionBrewing$Mix")) {
+            if (Modifier.isStatic(field.getModifiers()) && List.class.isAssignableFrom(field.getType()) &&
+                    field.getGenericType().getTypeName().contains("PotionBrewing$Mix")) {
                 field.setAccessible(true);
                 try {
                     return (List<PotionBrewing.Mix<Potion>>) field.get(null);

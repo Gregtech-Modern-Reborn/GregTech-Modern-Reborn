@@ -1,10 +1,11 @@
 package com.gregtechceu.gtceu.api.recipe;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.ShapedRecipe;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -19,8 +20,7 @@ public final class ShapedRecipeHelper {
             NonNullList.class, String[].class, Map.class, int.class, int.class);
     private static final Method SHRINK = find(String[].class, String[].class);
 
-    private ShapedRecipeHelper() {
-    }
+    private ShapedRecipeHelper() {}
 
     @SuppressWarnings("unchecked")
     public static Map<String, Ingredient> keyFromJson(JsonObject keyEntry) {
@@ -33,7 +33,8 @@ public final class ShapedRecipeHelper {
 
     @SuppressWarnings("unchecked")
     public static NonNullList<Ingredient> dissolvePattern(
-            String[] pattern, Map<String, Ingredient> keys, int patternWidth, int patternHeight) {
+                                                          String[] pattern, Map<String, Ingredient> keys,
+                                                          int patternWidth, int patternHeight) {
         return (NonNullList<Ingredient>) invoke(DISSOLVE_PATTERN, pattern, keys, patternWidth, patternHeight);
     }
 
@@ -43,9 +44,8 @@ public final class ShapedRecipeHelper {
 
     private static Method find(Class<?> returnType, Class<?>... parameterTypes) {
         for (Method method : ShapedRecipe.class.getDeclaredMethods()) {
-            if (Modifier.isStatic(method.getModifiers())
-                    && method.getReturnType() == returnType
-                    && Arrays.equals(method.getParameterTypes(), parameterTypes)) {
+            if (Modifier.isStatic(method.getModifiers()) && method.getReturnType() == returnType &&
+                    Arrays.equals(method.getParameterTypes(), parameterTypes)) {
                 method.setAccessible(true);
                 return method;
             }
