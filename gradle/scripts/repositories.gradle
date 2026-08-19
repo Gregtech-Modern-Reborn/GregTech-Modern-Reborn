@@ -1,6 +1,9 @@
 repositories {
     mavenLocal()
     mavenCentral()
+    flatDir {
+        dir "${rootDir}/modules/gtecore/gradle/libs"
+    }
     maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" }
     maven { url = "https://maven.createmod.net" }
     maven { // JEI
@@ -17,6 +20,21 @@ repositories {
         name = "FirstDarkDev Maven"
         url = "https://maven.firstdark.dev/snapshots"
     }
+    maven {
+        name = "FirstDarkDev XYZ Maven"
+        url = "https://maven.firstdarkdev.xyz/snapshots"
+    }
+
+    maven { // Configuration (Toma)
+        name = 'Configuration'
+        url = 'https://api.repsy.io/mvn/toma/public/'
+    }
+
+    maven { // TeamResourceful
+        name = 'TeamResourceful'
+        url = 'https://maven.teamresourceful.com/repository/maven-public/'
+    }
+
     exclusiveContent { // Create, Ponder, Flywheel
         forRepository { maven { url = "https://maven.createmod.net" } }
         filter {

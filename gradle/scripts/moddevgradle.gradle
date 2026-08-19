@@ -160,7 +160,14 @@ legacyForge {
     }
 }
 
-// IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
+tasks.matching { it.name == 'runData' || it.name == 'prepareDataRun' }.configureEach {
+    dependsOn(tasks.named('processResources'))
+    doFirst {
+        file('src/generated/resources').mkdirs()
+        file('run/data').mkdirs()
+    }
+}
+
 idea {
     module {
         downloadSources = true

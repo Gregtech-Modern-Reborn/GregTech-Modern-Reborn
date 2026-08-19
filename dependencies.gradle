@@ -18,11 +18,12 @@ dependencies {
     jarJar(api(forge.mixinExtras.forge.get())).version {
         require("[${forge.versions.mixinExtras.get()},)")
     }
-
+    modCompileOnly(modApi(forge.ldlib.get()))
     // Recipe Viewers
     modCompileOnly(forge.bundles.jei)
     modCompileOnly(forge.bundles.rei)
     modCompileOnly(forge.emi)
+
 
     // WAILA-likes
     modCompileOnly(forge.theoneprobe)
@@ -74,7 +75,8 @@ dependencies {
     modCompileOnly(forge.cc.tweaked.forge.api)
 
     // Standard runtime mods //
-    modLocalRuntime(forge.jade)
+    modClientLocalRuntime(forge.jade)
+    modLocalRuntime(forge.guideme)
     modLocalRuntime(forge.ae2)
     modLocalRuntime(forge.spark)
     modLocalRuntime(forge.modernfix)
