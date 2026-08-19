@@ -176,12 +176,13 @@ public class CommonProxy {
                     // noinspection UnstableApiUsage
                     List<NonNullConsumer<? extends RegistrateProvider>> providers = Multimaps.asMap(accessor.getDatagens())
                             .get(ProviderType.LANG);
-                NonNullConsumer<? extends RegistrateProvider> generator = (provider) -> MaterialLangGenerator
-                        .generate((RegistrateLangProvider) provider, registry);
-                if (providers == null) {
-                    accessor.getDatagens().put(ProviderType.LANG, generator);
-                } else {
-                    providers.add(0, generator);
+                    NonNullConsumer<? extends RegistrateProvider> generator = (provider) -> MaterialLangGenerator
+                            .generate((RegistrateLangProvider) provider, registry);
+                    if (providers == null) {
+                        accessor.getDatagens().put(ProviderType.LANG, generator);
+                    } else {
+                        providers.add(0, generator);
+                    }
                 }
             }
 
