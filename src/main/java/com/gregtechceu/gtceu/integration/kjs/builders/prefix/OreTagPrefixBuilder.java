@@ -51,9 +51,8 @@ public class OreTagPrefixBuilder extends TagPrefixBuilder {
                 errorIfNull(stateSupplier, "stateSupplier"),
                 onlySetDefault(templateProperties, () -> {
                     Block block = stateSupplier.get().getBlock();
-                    BlockBehaviour.Properties source = block instanceof BlockBehaviourAccessor accessor
-                            ? accessor.getBlockProperties()
-                            : BlockBehaviour.Properties.of();
+                    BlockBehaviour.Properties source = block instanceof BlockBehaviourAccessor accessor ?
+                            accessor.getBlockProperties() : BlockBehaviour.Properties.of();
                     templateProperties = () -> GTBlocks.copy(source, BlockBehaviour.Properties.of());
                 }),
                 errorIfNull(baseModelLocation, "baseModelLocation"));

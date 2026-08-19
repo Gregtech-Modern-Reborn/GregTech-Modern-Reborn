@@ -174,7 +174,8 @@ public class CommonProxy {
             if (registry.getRegistrate() instanceof AbstractRegistrateAccessor accessor) {
                 if (accessor.getDoDatagen().get()) {
                     // noinspection UnstableApiUsage
-                    List<NonNullConsumer<? extends RegistrateProvider>> providers = Multimaps.asMap(accessor.getDatagens())
+                    List<NonNullConsumer<? extends RegistrateProvider>> providers = Multimaps
+                            .asMap(accessor.getDatagens())
                             .get(ProviderType.LANG);
                     NonNullConsumer<? extends RegistrateProvider> generator = (provider) -> MaterialLangGenerator
                             .generate((RegistrateLangProvider) provider, registry);
