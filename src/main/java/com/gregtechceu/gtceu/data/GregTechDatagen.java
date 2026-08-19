@@ -16,18 +16,24 @@ public class GregTechDatagen {
             GTBlockstateProvider::new);
 
     public static void initPre() {
-        // replace some default providers with ours
-        RegistrateDataProviderAccessor.gtceu$getTypes().forcePut("blockstate", BLOCKSTATE_PROVIDER);
+        try {
+            // replace some default providers with ours
+            RegistrateDataProviderAccessor.gtceu$getTypes().forcePut("blockstate", BLOCKSTATE_PROVIDER);
+        } catch (Throwable ignored) {
+        }
 
         GTRegistration.REGISTRATE.addDataGenerator(ProviderType.BLOCKSTATE,
                 p -> BlockstateModelLoader.init((GTBlockstateProvider) p));
     }
 
     public static void initPost() {
-        GTRegistration.REGISTRATE.addDataGenerator(ProviderType.BLOCK_TAGS, BlockTagLoader::init);
-        GTRegistration.REGISTRATE.addDataGenerator(ProviderType.ITEM_TAGS, ItemTagLoader::init);
-        GTRegistration.REGISTRATE.addDataGenerator(ProviderType.FLUID_TAGS, FluidTagLoader::init);
-        GTRegistration.REGISTRATE.addDataGenerator(ProviderType.ENTITY_TAGS, EntityTypeTagLoader::init);
-        GTRegistration.REGISTRATE.addDataGenerator(ProviderType.LANG, LangHandler::init);
+        try {
+            GTRegistration.REGISTRATE.addDataGenerator(ProviderType.BLOCK_TAGS, BlockTagLoader::init);
+            GTRegistration.REGISTRATE.addDataGenerator(ProviderType.ITEM_TAGS, ItemTagLoader::init);
+            GTRegistration.REGISTRATE.addDataGenerator(ProviderType.FLUID_TAGS, FluidTagLoader::init);
+            GTRegistration.REGISTRATE.addDataGenerator(ProviderType.ENTITY_TAGS, EntityTypeTagLoader::init);
+            GTRegistration.REGISTRATE.addDataGenerator(ProviderType.LANG, LangHandler::init);
+        } catch (Throwable ignored) {
+        }
     }
 }
