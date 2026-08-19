@@ -103,7 +103,11 @@ public class GTRegistrate extends AbstractRegistrate<GTRegistrate> {
                 OneTimeEventReceiver.unregister(this, onRegister, RegisterEvent.class);
                 OneTimeEventReceiver.unregister(this, onRegisterLate, RegisterEvent.class);
             });
-            if (((AbstractRegistrateAccessor) this).getDoDatagen().get()) {
+            if (this instanceof AbstractRegistrateAccessor acc) {
+                if (acc.getDoDatagen().get()) {
+                    OneTimeEventReceiver.addModListener(this, GatherDataEvent.class, this::onData);
+                }
+            } else {
                 OneTimeEventReceiver.addModListener(this, GatherDataEvent.class, this::onData);
             }
         }

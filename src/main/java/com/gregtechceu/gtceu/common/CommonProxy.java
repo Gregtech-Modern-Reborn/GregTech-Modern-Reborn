@@ -171,12 +171,11 @@ public class CommonProxy {
         GregTechDatagen.initPost();
         // Register all material manager registries, for materials with mod ids.
         GTCEuAPI.materialManager.getRegistries().forEach(registry -> {
-            // Force the material lang generator to be at index 0, so that addons' lang generators can override it.
-            AbstractRegistrateAccessor accessor = (AbstractRegistrateAccessor) registry.getRegistrate();
-            if (accessor.getDoDatagen().get()) {
-                // noinspection UnstableApiUsage
-                List<NonNullConsumer<? extends RegistrateProvider>> providers = Multimaps.asMap(accessor.getDatagens())
-                        .get(ProviderType.LANG);
+            if (registry.getRegistrate() instanceof AbstractRegistrateAccessor accessor) {
+                if (accessor.getDoDatagen().get()) {
+                    // noinspection UnstableApiUsage
+                    List<NonNullConsumer<? extends RegistrateProvider>> providers = Multimaps.asMap(accessor.getDatagens())
+                            .get(ProviderType.LANG);
                 NonNullConsumer<? extends RegistrateProvider> generator = (provider) -> MaterialLangGenerator
                         .generate((RegistrateLangProvider) provider, registry);
                 if (providers == null) {
