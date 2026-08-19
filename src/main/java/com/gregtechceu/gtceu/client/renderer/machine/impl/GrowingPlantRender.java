@@ -375,9 +375,9 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
                     BlockState headState = accessor.gtceu$getHeadBlock().defaultBlockState();
                     IntegerProperty ageProp = findAgeProperty(headState.getProperties());
                     if (ageProp != null) {
-                        IntegerPropertyAccessor prop = (IntegerPropertyAccessor) ageProp;
-                        int minValue = prop.gtceu$getMin();
-                        int maxValue = prop.gtceu$getMax();
+                        var values = ageProp.getPossibleValues();
+                        int minValue = values.stream().min(Integer::compare).orElse(0);
+                        int maxValue = values.stream().max(Integer::compare).orElse(0);
 
                         int stage = GTMath.lerpInt(progress, minValue, maxValue + 1);
                         headState = headState.trySetValue(ageProp, Math.min(stage, maxValue));
@@ -392,7 +392,8 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
                     BlockState headState = accessor.gtceu$getHeadBlock().defaultBlockState();
                     IntegerProperty ageProp = findAgeProperty(headState.getProperties());
                     if (ageProp != null) {
-                        headState = headState.trySetValue(ageProp, ((IntegerPropertyAccessor) ageProp).gtceu$getMax());
+                        int maxValue = ageProp.getPossibleValues().stream().max(Integer::compare).orElse(0);
+                        headState = headState.trySetValue(ageProp, maxValue);
                     }
                     if (headState.hasProperty(BlockStateProperties.BERRIES)) {
                         headState = headState.trySetValue(CaveVines.BERRIES, true);
@@ -412,9 +413,9 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
 
         TriFunction<IntegerProperty, Integer, Integer, ConfigureOnly> PROPERTY_FUNCTION_CACHE = GTMemoizer
                 .memoize((property, min, max) -> {
-                    IntegerPropertyAccessor accessor = (IntegerPropertyAccessor) property;
-                    final int minValue = accessor.gtceu$getMin();
-                    final int maxValue = accessor.gtceu$getMax();
+                    var values = property.getPossibleValues();
+                    final int minValue = values.stream().min(Integer::compare).orElse(0);
+                    final int maxValue = values.stream().max(Integer::compare).orElse(0);
                     return (level, state, progress) -> {
                         int growthStage = GTMath.lerpInt(progress, min, max + 1);
                         if (growthStage < minValue) {
