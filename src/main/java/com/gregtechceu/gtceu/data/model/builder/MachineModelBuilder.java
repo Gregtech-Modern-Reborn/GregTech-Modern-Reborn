@@ -6,7 +6,6 @@ import com.gregtechceu.gtceu.api.registry.registrate.provider.GTBlockstateProvid
 import com.gregtechceu.gtceu.client.model.machine.MachineModelLoader;
 import com.gregtechceu.gtceu.client.model.machine.MachineRenderState;
 import com.gregtechceu.gtceu.client.renderer.machine.DynamicRender;
-import com.gregtechceu.gtceu.core.mixins.forge.ConfiguredModelBuilderAccessor;
 import com.gregtechceu.gtceu.core.mixins.forge.ConfiguredModelListAccessor;
 
 import net.minecraft.resources.ResourceLocation;
@@ -27,6 +26,7 @@ import com.mojang.serialization.JsonOps;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -272,11 +272,24 @@ public class MachineModelBuilder<T extends ModelBuilder<T>> extends CustomLoader
      * @see ConfiguredModel.Builder
      */
     public ConfiguredModel.Builder<PartBuilder> part() {
-        return ConfiguredModelBuilderAccessor.builder(models -> {
+        return newConfiguredModelBuilder(models -> {
             PartBuilder part = new PartBuilder(new ConfiguredModelList(models));
             this.parts.add(part);
             return part;
         }, ImmutableList.of());
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static <T> ConfiguredModel.Builder<T> newConfiguredModelBuilder(
+            Function<ConfiguredModel[], T> callback, List<ConfiguredModel> otherModels) {
+        try {
+            Constructor<ConfiguredModel.Builder<T>> constructor = (Constructor) ConfiguredModel.Builder.class
+                    .getDeclaredConstructor(Function.class, List.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(callback, otherModels);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

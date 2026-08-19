@@ -44,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -178,12 +179,28 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
             poseStack.translate(0, 1 + EPSILON, 0);
             poseStack.translate(0.0, (progress * 2) % (1 + EPSILON) - 1, 0.0);
             if (mode == GrowthMode.GROWING_PLANT && state.getBlock() instanceof GrowingPlantBlock gp) {
-                poseStack.last().pose().rotateAround(
-                        ((GrowingPlantBlockAccessor) gp).gtceu$getGrowthDirection().getRotation(), 0.5f, 0.5f, 0.5f);
+                Direction growthDirection = getGrowthDirection(gp);
+                if (growthDirection != null) {
+                    poseStack.last().pose().rotateAround(
+                            growthDirection.getRotation(), 0.5f, 0.5f, 0.5f);
+                }
             }
             RenderUtil.drawBlock(level, machinePos, state, bufferSource, poseStack);
 
             poseStack.popPose();
+        }
+    }
+
+    private static Direction getGrowthDirection(GrowingPlantBlock gp) {
+        if (gp instanceof GrowingPlantBlockAccessor accessor) {
+            return accessor.gtceu$getGrowthDirection();
+        }
+        try {
+            Field field = GrowingPlantBlock.class.getDeclaredField("growthDirection");
+            field.setAccessible(true);
+            return (Direction) field.get(gp);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
         }
     }
 

@@ -1,9 +1,8 @@
 package com.gregtechceu.gtceu.api.recipe;
 
-import com.gregtechceu.gtceu.core.mixins.ShapedRecipeAccessor;
-
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -76,11 +75,11 @@ public class StrictShapedRecipe extends ShapedRecipe {
             String string = GsonHelper.getAsString(json, "group", "");
             CraftingBookCategory craftingBookCategory = CraftingBookCategory.CODEC
                     .byName(GsonHelper.getAsString(json, "category", null), CraftingBookCategory.MISC);
-            Map<String, Ingredient> map = ShapedRecipeAccessor.callKeyFromJson(GsonHelper.getAsJsonObject(json, "key"));
-            String[] strings = ShapedRecipeAccessor.callPatternFromJson(GsonHelper.getAsJsonArray(json, "pattern"));
+            Map<String, Ingredient> map = ShapedRecipeHelper.keyFromJson(GsonHelper.getAsJsonObject(json, "key"));
+            String[] strings = ShapedRecipeHelper.patternFromJson(GsonHelper.getAsJsonArray(json, "pattern"));
             int i = strings[0].length();
             int j = strings.length;
-            NonNullList<Ingredient> nonNullList = ShapedRecipeAccessor.callDissolvePattern(strings, map, i, j);
+            NonNullList<Ingredient> nonNullList = ShapedRecipeHelper.dissolvePattern(strings, map, i, j);
             ItemStack itemStack = StrictShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
             return new StrictShapedRecipe(recipeId, string, craftingBookCategory, i, j, nonNullList, itemStack);
         }
@@ -106,7 +105,7 @@ public class StrictShapedRecipe extends ShapedRecipe {
             for (Ingredient ingredient : recipe.getIngredients()) {
                 ingredient.toNetwork(buffer);
             }
-            buffer.writeItem(((ShapedRecipeAccessor) recipe).getResult());
+            buffer.writeItem(recipe.getResultItem(RegistryAccess.EMPTY));
         }
     }
 }

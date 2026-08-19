@@ -305,7 +305,9 @@ public class MixinHelpers {
                         builder.withPool(pool);
                     }
                     lootTables.put(lootTableId, builder.setParamSet(LootContextParamSets.BLOCK).build());
-                    ((BlockBehaviourAccessor) blockEntry.get()).setDrops(lootTableId);
+                    if (blockEntry.get() instanceof BlockBehaviourAccessor accessor) {
+                        accessor.setDrops(lootTableId);
+                    }
                 });
             } else {
                 MixinHelpers.addMaterialBlockLootTables(lootTables, prefix, map);
@@ -328,13 +330,17 @@ public class MixinHelpers {
                             UniformGenerator.between(3, 5))
                     .apply(ApplyBonusCount.addUniformBonusCount(Enchantments.BLOCK_FORTUNE));
             lootTables.put(lootTableId, builder.setParamSet(LootContextParamSets.BLOCK).build());
-            ((BlockBehaviourAccessor) blockEntry.get()).setDrops(lootTableId);
+            if (blockEntry.get() instanceof BlockBehaviourAccessor accessor) {
+                accessor.setDrops(lootTableId);
+            }
         });
         GTRegistries.MACHINES.forEach(machine -> {
             Block block = machine.getBlock();
             ResourceLocation id = machine.getId();
             ResourceLocation lootTableId = new ResourceLocation(id.getNamespace(), "blocks/" + id.getPath());
-            ((BlockBehaviourAccessor) block).setDrops(lootTableId);
+            if (block instanceof BlockBehaviourAccessor accessor) {
+                accessor.setDrops(lootTableId);
+            }
             lootTables.put(lootTableId,
                     BLOCK_LOOT.createSingleItemTable(block).setParamSet(LootContextParamSets.BLOCK).build());
         });
@@ -345,7 +351,9 @@ public class MixinHelpers {
         map.forEach((material, blockEntry) -> {
             ResourceLocation lootTableId = new ResourceLocation(blockEntry.getId().getNamespace(),
                     "blocks/" + blockEntry.getId().getPath());
-            ((BlockBehaviourAccessor) blockEntry.get()).setDrops(lootTableId);
+            if (blockEntry.get() instanceof BlockBehaviourAccessor accessor) {
+                accessor.setDrops(lootTableId);
+            }
             lootTables.put(lootTableId,
                     BLOCK_LOOT.createSingleItemTable(blockEntry.get()).setParamSet(LootContextParamSets.BLOCK).build());
         });
