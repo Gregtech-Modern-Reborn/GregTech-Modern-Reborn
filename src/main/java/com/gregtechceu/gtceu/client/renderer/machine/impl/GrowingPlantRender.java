@@ -287,9 +287,9 @@ public class GrowingPlantRender extends DynamicRender<IRecipeLogicMachine, Growi
         }
 
         public static GrowthMode ofIntegerProperty(String name, IntegerProperty property) {
-            IntegerPropertyAccessor accessor = (IntegerPropertyAccessor) property;
-            final int min = accessor.gtceu$getMin();
-            final int max = accessor.gtceu$getMax();
+            var values = property.getPossibleValues();
+            final int min = values.stream().min(Integer::compare).orElse(0);
+            final int max = values.stream().max(Integer::compare).orElse(0);
             return ofIntegerProperty(name, property, min, max);
         }
 
