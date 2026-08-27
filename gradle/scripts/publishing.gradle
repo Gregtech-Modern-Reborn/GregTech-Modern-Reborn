@@ -23,22 +23,41 @@ publishing {
     }
 }
 
-curseforge {
-    apiKey = project.findProperty("curseApiKey") ?: System.getenv("CURSEFORGE_TOKEN")
+// CurseForge upload is only wired up when a token is actually present. The
+// placeholder project id "000000" would otherwise make `curseforge` a task that
+// looks runnable but always fails, and cursegradle warns on a null apiKey during
+// configuration of every build — including plain `compileJava`.
+def curseToken = project.findProperty("curseApiKey") ?: System.getenv("CURSEFORGE_TOKEN")
+def curseProject = project.findProperty("curseProjectId")
 
-    project {
-        id = project.findProperty("curseProjectId") ?: "000000"
-        releaseType = "release"
-        addGameVersion(project.findProperty("minecraftVersion") ?: "1.20.1")
+if (curseToken && curseProject) {
+    curseforge {
+        apiKey = curseToken
 
-        mainArtifact(tasks.findByName("remapJar") ?: tasks.jar) {
-            displayName = "GTM gregtechceu ${project.findProperty("mod_version") ?: "1.0.0"}"
+        project {
+            id = curseProject
+            releaseType = "release"
+            addGameVersion(project.findProperty("minecraftVersion") ?: "1.20.1")
+
+            mainArtifact(tasks.findByName("reobfJar") ?: tasks.jar) {
+                displayName = "GTM gregtechceu ${project.findProperty("mod_version") ?: "1.0.0"}"
+            }
         }
     }
-}
 
-tasks.register("publishCurseForge") {
-    group = "publishing"
-    description = "Build and upload the mod to CurseForge (syncs to Curse Maven)."
-    dependsOn("build", "curseforge")
+    tasks.register("publishCurseForge") {
+        group = "publishing"
+        description = "Build and upload the mod to CurseForge (syncs to Curse Maven)."
+        dependsOn("build", "curseforge")
+    }
+} else {
+    tasks.register("publishCurseForge") {
+        group = "publishing"
+        description = "Disabled: set -PcurseApiKey/CURSEFORGE_TOKEN and -PcurseProjectId to enable."
+        doLast {
+            throw new GradleException(
+                "CurseForge upload is not configured. Provide CURSEFORGE_TOKEN (or -PcurseApiKey) " +
+                "and -PcurseProjectId=<id> before running publishCurseForge.")
+        }
+    }
 }
