@@ -87,7 +87,7 @@ apply from: "$projectDir/gradle/scripts/moddevgradle.gradle"
 apply from: "$projectDir/gradle/scripts/repositories.gradle"
 apply from: "$projectDir/dependencies.gradle"
 apply from: "$projectDir/gradle/scripts/resources.gradle"
-//apply from: "$projectDir/gradle/scripts/publishing.gradle"
+apply from: "$projectDir/gradle/scripts/publishing.gradle"
 apply from: "$projectDir/gradle/scripts/spotless.gradle"
 apply from: "$projectDir/gradle/scripts/docs.gradle"
 
