@@ -22,8 +22,38 @@ base {
     archivesName = "${project.name}-${libs.versions.minecraft.get()}"
 }
 
+// ---------------------------------------------------------------------------
+// JarJar embeds vs. dev runs
+// ---------------------------------------------------------------------------
+// The jarJar configuration resolves production-mapped (SRG) jars, which is
+// what the published jar must ship. FML extracts embedded jars verbatim, so
+// when the dev jar is loaded in a named (mojmap) dev runtime, the SRG copies
+// crash mod construction with NoSuchFieldError (e.g. Registrate ->
+// CreativeModeTabs.f_256750_). Whether a run survived depended on FML's
+// JarSelector happening to prefer a named standalone copy, which made
+// runData/runClient fail probabilistically.
+//
+// The dev jar therefore ships WITHOUT embeds; dev runs load named standalone
+// copies from each module's modLocalRuntime instead. The production reobfJar
+// still embeds the SRG jars through jarWithEmbeds below.
+tasks.named('jar', Jar) {
+    exclude('META-INF/jarjar/**')
+}
+
+// Intermediate jar identical to the old dev jar (named classes + SRG embeds).
+// It only feeds reobfuscation so the published jar keeps its jarJar embeds.
+def jarWithEmbeds = tasks.register('jarWithEmbeds', Jar) {
+    archiveClassifier = 'dev-embeds'
+    from(zipTree(tasks.named('jar', Jar).flatMap { jarTask -> jarTask.archiveFile }))
+    from(tasks.named('jarJar'))
+}
+
 afterEvaluate {
     reobfJar.archiveClassifier = ""
+    // The legacyForge plugin auto-registers reobfJar with the plain dev jar as
+    // input; repoint it at jarWithEmbeds so the production jar keeps the SRG
+    // jarJar embeds that the dev jar no longer carries.
+    reobfJar.input.set(jarWithEmbeds.flatMap { embedTask -> embedTask.archiveFile })
     tasks.withType(org.gradle.jvm.tasks.Jar).configureEach {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         destinationDirectory = file('build/libs/')
