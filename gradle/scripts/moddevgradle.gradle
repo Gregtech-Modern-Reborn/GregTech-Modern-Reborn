@@ -49,32 +49,30 @@ legacyForge {
     }
 
     runs {
-        if (rootProject == project) {
-            client {
-                client()
-                sourceSet = sourceSets.clientExtra
-                ideName = "Client 1"
+        client {
+            client()
+            sourceSet = sourceSets.clientExtra
+            ideName = "GTM Client 1"
 
-                systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
-            }
+            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+        }
 
-            client2 {
-                client()
-                sourceSet = sourceSets.clientExtra
-                ideName = "Client 2"
+        client2 {
+            client()
+            sourceSet = sourceSets.clientExtra
+            ideName = "GTM Client 2"
 
-                programArguments.addAll('--username', 'YoungOnion', '--uuid', '3a27782d-6864-4814-a9fe-7c6931f29a8a')
-                systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
-            }
+            programArguments.addAll('--username', 'YoungOnion', '--uuid', '3a27782d-6864-4814-a9fe-7c6931f29a8a')
+            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+        }
 
-            // Client with GTM + Jade, EMI, AE2
-            cleanClient {
-                client()
-                sourceSet = sourceSets.client
-                ideName = "Clean Client"
+        // Client with GTM + Jade, EMI, AE2
+        cleanClient {
+            client()
+            sourceSet = sourceSets.client
+            ideName = "Clean Client"
 
-                systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
-            }
+            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
         }
 
         server {
