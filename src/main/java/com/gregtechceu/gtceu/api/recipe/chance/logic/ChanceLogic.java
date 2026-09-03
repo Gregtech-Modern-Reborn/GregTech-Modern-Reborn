@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
+import com.gregtechceu.gtceu.utils.GTMath;
 
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.fml.ModLoader;
@@ -49,10 +50,12 @@ public abstract class ChanceLogic {
                 // If a large batch is being done we can calculate how many we expect to get.
                 // Add the guaranteed part of that to the list, then roll for the remaining chanced part.
                 int newChance = getChance(entry, boostFunction, recipeTier, chanceTier);
-                int totalChance = times * newChance;
-                int guaranteed = totalChance / maxChance;
+                // times can reach hundreds of thousands with parallels and batches, so this product has to
+                // be computed as a long: an int would wrap around and silently swallow the outputs
+                long totalChance = (long) times * newChance;
+                int guaranteed = GTMath.saturatedCast(totalChance / maxChance);
                 if (guaranteed > 0) builder.addAll(Collections.nCopies(guaranteed, entry));
-                newChance = totalChance % maxChance;
+                newChance = (int) (totalChance % maxChance);
 
                 int cached = getCachedChance(entry, cache);
                 int chance = newChance + cached;

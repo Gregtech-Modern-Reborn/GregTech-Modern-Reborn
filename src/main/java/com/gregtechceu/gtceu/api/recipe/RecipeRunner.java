@@ -8,6 +8,7 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
 import com.gregtechceu.gtceu.api.recipe.chance.boost.ChanceBoostFunction;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
+import com.gregtechceu.gtceu.utils.GTMath;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -95,7 +96,7 @@ public class RecipeRunner {
             if (!chancedContents.isEmpty()) {
                 var cache = this.chanceCaches.get(cap);
                 chancedContents = logic.roll(chancedContents, function, recipeTier, chanceTier, cache,
-                        recipe.parallels * recipe.batchParallels);
+                        GTMath.saturatedCast((long) recipe.parallels * recipe.batchParallels));
 
                 for (Content cont : chancedContents) {
                     contentList.add(cont.content);

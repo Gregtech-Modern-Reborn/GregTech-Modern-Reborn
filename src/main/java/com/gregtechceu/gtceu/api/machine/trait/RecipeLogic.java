@@ -18,10 +18,8 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
-import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
-import com.gregtechceu.gtceu.api.recipe.modifier.ParallelLogic;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.api.sound.AutoReleasedSound;
 import com.gregtechceu.gtceu.common.cover.MachineControllerCover;
@@ -415,36 +413,23 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             for (int i = 0; i < machine.getRecipeTypes().length; ++i) {
                 if (!ActiveModesList.get(i)) continue;
                 List<GTRecipe> Recipe_List = new ArrayList<>();
-                int sumOfParallelsCount = 0;
+                // MultiParallelCount is a thread count: how many recipes may run side by side.
+                // Every thread keeps whatever parallels its own recipe modifiers granted it, so
+                // per-recipe parallels must never be charged against this budget.
+                int threadCount = 0;
                 int LoopCount = 0;
                 int FailesCount = 0;
                 while (true) {
                     machine.setActiveRecipeType(i);
-                    if (sumOfParallelsCount >= MultiParallelCount) break;
-                    int remainingParallels = MultiParallelCount - sumOfParallelsCount;
+                    if (threadCount >= MultiParallelCount) break;
 
                     handleSearchingRecipes(searchRecipe());
                     if (lastRecipe == null) break;
 
-                    int recipeParallels = Math.max(1, lastRecipe.parallels);
-                    if (recipeParallels <= 1 && remainingParallels > 1) {
-                        int canParallel = ParallelLogic.getParallelAmount(machine.self(), lastRecipe,
-                                remainingParallels);
-                        if (canParallel > 1) {
-                            lastRecipe = lastRecipe.copy();
-                            lastRecipe.inputs = ContentModifier.multiplier(canParallel)
-                                    .applyContents(lastRecipe.inputs);
-                            lastRecipe.outputs = ContentModifier.multiplier(canParallel)
-                                    .applyContents(lastRecipe.outputs);
-                            lastRecipe.parallels = canParallel;
-                            recipeParallels = canParallel;
-                        }
-                    }
-
                     var handledIO = handleRecipeIO(lastRecipe, IO.IN);
                     if (handledIO.isSuccess()) {
                         Recipe_List.add(lastRecipe);
-                        sumOfParallelsCount += recipeParallels;
+                        threadCount++;
                         lastRecipe = null;
                         lastOriginRecipe = null;
                         lastFailedMatches = null;
@@ -454,7 +439,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                     if (FailesCount > 2) break;
                     LoopCount++;
                     if (LoopCount > maxLoopCount) break;
-                    if (sumOfParallelsCount >= MultiParallelCount) break;
                 }
                 GTRecipe recipe = mergeAllRecipes(Recipe_List);
                 if (recipe == null) continue;
@@ -530,13 +514,9 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         }
 
         afterMergeRecipe.duration = max(afterMergeRecipe.duration, recipe.duration);
-        afterMergeRecipe.getInputEUt();// Calculate the input EU and the output EU
-        afterMergeRecipe.getOutputEUt();
-        boolean isOutputEU = false;
-        if (afterMergeRecipe.getOutputEUt().getTotalEU() > 0) {
-            isOutputEU = true;
-        }
-        afterMergeRecipe.parallels = afterMergeRecipe.parallels + recipe.parallels;
+        // Do not touch getInputEUt()/getOutputEUt() here: they are Lombok lazy fields, so reading them
+        // before the tick contents below are merged would freeze the pre-merge EU/t for good.
+        afterMergeRecipe.parallels = GTMath.saturatedCast((long) afterMergeRecipe.parallels + recipe.parallels);
         afterMergeRecipe.batchParallels = max(afterMergeRecipe.batchParallels, recipe.batchParallels);
         afterMergeRecipe.inputs = makeValuesMutable(afterMergeRecipe.inputs);
         afterMergeRecipe.outputs = makeValuesMutable(afterMergeRecipe.outputs);
