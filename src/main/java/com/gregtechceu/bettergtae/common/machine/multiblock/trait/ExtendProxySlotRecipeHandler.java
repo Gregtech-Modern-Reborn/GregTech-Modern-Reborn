@@ -26,15 +26,29 @@ public final class ExtendProxySlotRecipeHandler {
 
     @Getter
     private final List<RecipeHandlerList> proxySlotHandlers;
+    @Getter
+    private final RecipeHandlerList proxySharedHandlerList;
+    private final ProxyItemRecipeHandler proxySharedCircuit;
+    private final ProxyItemRecipeHandler proxySharedItem;
+    private final ProxyFluidRecipeHandler proxySharedFluid;
 
     public ExtendProxySlotRecipeHandler(ExtendMEPatternBufferProxyPartMachine machine, int slots) {
         proxySlotHandlers = new ArrayList<>(slots);
         for (int i = 0; i < slots; ++i) {
             proxySlotHandlers.add(new ProxyRHL(machine));
         }
+        proxySharedCircuit = new ProxyItemRecipeHandler(machine);
+        proxySharedItem = new ProxyItemRecipeHandler(machine);
+        proxySharedFluid = new ProxyFluidRecipeHandler(machine);
+        proxySharedHandlerList = RecipeHandlerList.of(IO.IN, proxySharedCircuit, proxySharedItem, proxySharedFluid);
+        proxySharedHandlerList.setGroup(RecipeHandlerGroupDistinctness.BYPASS_DISTINCT);
     }
 
     public void updateProxy(ExtendMEPatternBufferPartMachine patternBuffer) {
+        proxySharedCircuit.setProxy(patternBuffer.getCircuitInventory());
+        proxySharedItem.setProxy(patternBuffer.getShareInventory());
+        proxySharedFluid.setProxy(patternBuffer.getShareTank());
+
         var slotHandlers = patternBuffer.getInternalRecipeHandler().getSlotHandlers();
         for (int i = 0; i < proxySlotHandlers.size(); ++i) {
             ProxyRHL proxyRHL = (ProxyRHL) proxySlotHandlers.get(i);
@@ -45,6 +59,9 @@ public final class ExtendProxySlotRecipeHandler {
     }
 
     public void clearProxy() {
+        proxySharedCircuit.setProxy(null);
+        proxySharedItem.setProxy(null);
+        proxySharedFluid.setProxy(null);
         for (var slotHandler : proxySlotHandlers) {
             ((ProxyRHL) slotHandler).clearBuffer();
         }
@@ -52,36 +69,24 @@ public final class ExtendProxySlotRecipeHandler {
 
     private static class ProxyRHL extends RecipeHandlerList {
 
-        private final ProxyItemRecipeHandler circuit;
-        private final ProxyItemRecipeHandler sharedItem;
         private final ProxyItemRecipeHandler slotItem;
-        private final ProxyFluidRecipeHandler sharedFluid;
         private final ProxyFluidRecipeHandler slotFluid;
 
         public ProxyRHL(ExtendMEPatternBufferProxyPartMachine machine) {
             super(IO.IN);
-            circuit = new ProxyItemRecipeHandler(machine);
-            sharedItem = new ProxyItemRecipeHandler(machine);
             slotItem = new ProxyItemRecipeHandler(machine);
-            sharedFluid = new ProxyFluidRecipeHandler(machine);
             slotFluid = new ProxyFluidRecipeHandler(machine);
-            addHandlers(circuit, sharedItem, slotItem, sharedFluid, slotFluid);
+            addHandlers(slotItem, slotFluid);
             this.setGroup(RecipeHandlerGroupDistinctness.BUS_DISTINCT);
         }
 
         public void setBuffer(ExtendMEPatternBufferPartMachine buffer,
                               ExtendInternalSlotRecipeHandler.SlotRHL slotRHL) {
-            circuit.setProxy(buffer.getCircuitInventory());
-            sharedItem.setProxy(buffer.getShareInventory());
-            sharedFluid.setProxy(buffer.getShareTank());
             slotItem.setProxy(slotRHL.getItemRecipeHandler());
             slotFluid.setProxy(slotRHL.getFluidRecipeHandler());
         }
 
         public void clearBuffer() {
-            circuit.setProxy(null);
-            sharedItem.setProxy(null);
-            sharedFluid.setProxy(null);
             slotItem.setProxy(null);
             slotFluid.setProxy(null);
         }

@@ -174,7 +174,11 @@ public class ExtendMEPatternBufferPartMachine extends MEBusPartMachine
 
     @Override
     public List<RecipeHandlerList> getRecipeHandlers() {
-        return internalRecipeHandler.getSlotHandlers();
+        var slotHandlers = internalRecipeHandler.getSlotHandlers();
+        List<RecipeHandlerList> allHandlers = new ArrayList<>(slotHandlers.size() + 1);
+        allHandlers.addAll(slotHandlers);
+        allHandlers.add(internalRecipeHandler.getSharedHandlerList());
+        return allHandlers;
     }
 
     @Override
@@ -439,17 +443,33 @@ public class ExtendMEPatternBufferPartMachine extends MEBusPartMachine
         var items = new Object2LongOpenCustomHashMap<>(ItemStackHashStrategy.comparingAllButCount());
         var fluids = new Object2LongOpenHashMap<FluidStack>();
         for (InternalSlot slot : internalInventory) {
-            slot.itemInventory.object2LongEntrySet().fastForEach(e -> items.addTo(e.getKey(), e.getLongValue()));
-            slot.fluidInventory.object2LongEntrySet().fastForEach(e -> fluids.addTo(e.getKey(), e.getLongValue()));
+            if (!slot.isItemEmpty()) {
+                slot.itemInventory.object2LongEntrySet().fastForEach(e -> items.addTo(e.getKey(), e.getLongValue()));
+            }
+            if (!slot.isFluidEmpty()) {
+                slot.fluidInventory.object2LongEntrySet().fastForEach(e -> fluids.addTo(e.getKey(), e.getLongValue()));
+            }
         }
         return new BufferData(items, fluids);
     }
 
     public class InternalSlot implements ITagSerializable<CompoundTag>, IContentChangeAware {
 
-        @Getter
-        @Setter
-        private Runnable onContentsChanged = () -> {};
+        private final List<Runnable> listeners = new ArrayList<>(2);
+
+        public void addListener(Runnable listener) {
+            listeners.add(listener);
+        }
+
+        @Override
+        public Runnable getOnContentsChanged() {
+            return this::onContentsChanged;
+        }
+
+        @Override
+        public void setOnContentsChanged(Runnable listener) {
+            listeners.add(listener);
+        }
 
         private final Object2LongOpenCustomHashMap<ItemStack> itemInventory = new Object2LongOpenCustomHashMap<>(
                 ItemStackHashStrategy.comparingAllButCount());
@@ -484,10 +504,30 @@ public class ExtendMEPatternBufferPartMachine extends MEBusPartMachine
             return fluidInventory.isEmpty();
         }
 
+        public long getTotalItemCount() {
+            if (itemInventory.isEmpty()) return 0;
+            long sum = 0;
+            for (long count : itemInventory.values()) {
+                sum += count;
+            }
+            return sum;
+        }
+
+        public long getTotalFluidAmount() {
+            if (fluidInventory.isEmpty()) return 0;
+            long sum = 0;
+            for (long amount : fluidInventory.values()) {
+                sum += amount;
+            }
+            return sum;
+        }
+
         public void onContentsChanged() {
             itemStacks = null;
             fluidStacks = null;
-            onContentsChanged.run();
+            for (int i = 0; i < listeners.size(); i++) {
+                listeners.get(i).run();
+            }
         }
 
         public void add(AEKey what, long amount) {

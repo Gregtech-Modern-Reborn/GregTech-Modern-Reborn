@@ -29,6 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -68,7 +69,11 @@ public class ExtendMEPatternBufferProxyPartMachine extends TieredIOPartMachine
 
     @Override
     public List<RecipeHandlerList> getRecipeHandlers() {
-        return proxySlotRecipeHandler.getProxySlotHandlers();
+        var slotHandlers = proxySlotRecipeHandler.getProxySlotHandlers();
+        List<RecipeHandlerList> allHandlers = new ArrayList<>(slotHandlers.size() + 1);
+        allHandlers.addAll(slotHandlers);
+        allHandlers.add(proxySlotRecipeHandler.getProxySharedHandlerList());
+        return allHandlers;
     }
 
     public void setBuffer(@Nullable BlockPos pos) {

@@ -8,21 +8,21 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerGroupDistinctness;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
-
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.fluids.FluidStack;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class ExtendInternalSlotRecipeHandler {
 
     @Getter
     private final List<RecipeHandlerList> slotHandlers;
+    @Getter
+    private final RecipeHandlerList sharedHandlerList;
 
     public ExtendInternalSlotRecipeHandler(ExtendMEPatternBufferPartMachine buffer, InternalSlot[] slots) {
         this.slotHandlers = new ArrayList<>(slots.length);
@@ -30,6 +30,8 @@ public final class ExtendInternalSlotRecipeHandler {
             var rhl = new SlotRHL(buffer, slots[i], i);
             slotHandlers.add(rhl);
         }
+        this.sharedHandlerList = RecipeHandlerList.of(IO.IN, buffer.getShareInventory(), buffer.getShareTank());
+        this.sharedHandlerList.setGroup(RecipeHandlerGroupDistinctness.BYPASS_DISTINCT);
     }
 
     @Getter
@@ -42,8 +44,7 @@ public final class ExtendInternalSlotRecipeHandler {
             super(IO.IN);
             itemRecipeHandler = new SlotItemRecipeHandler(buffer, slot, idx);
             fluidRecipeHandler = new SlotFluidRecipeHandler(buffer, slot, idx);
-            addHandlers(slot.getCircuitInventory(), buffer.getShareInventory(), buffer.getShareTank(),
-                    itemRecipeHandler, fluidRecipeHandler);
+            addHandlers(slot.getCircuitInventory(), itemRecipeHandler, fluidRecipeHandler);
             this.setGroup(RecipeHandlerGroupDistinctness.BUS_DISTINCT);
         }
 
@@ -57,12 +58,11 @@ public final class ExtendInternalSlotRecipeHandler {
     }
 
     @Getter
-    private static class SlotItemRecipeHandler extends NotifiableRecipeHandlerTrait<Ingredient> {
+    protected static class SlotItemRecipeHandler extends NotifiableRecipeHandlerTrait<Ingredient> {
 
         private final InternalSlot slot;
         private final int priority;
 
-        private final int size = 81;
         private final RecipeCapability<Ingredient> capability = ItemRecipeCapability.CAP;
         private final IO handlerIO = IO.IN;
         private final boolean isDistinct = true;
@@ -71,7 +71,12 @@ public final class ExtendInternalSlotRecipeHandler {
             super(buffer);
             this.slot = slot;
             this.priority = IFilteredHandler.HIGH + index + 1;
-            slot.setOnContentsChanged(this::notifyListeners);
+            slot.addListener(this::notifyListeners);
+        }
+
+        @Override
+        public int getSize() {
+            return slot.isItemEmpty() ? 0 : Math.max(1, slot.getItems().size());
         }
 
         @Override
@@ -82,22 +87,22 @@ public final class ExtendInternalSlotRecipeHandler {
 
         @Override
         public @NotNull List<Object> getContents() {
+            if (slot.isItemEmpty()) return Collections.emptyList();
             return new ArrayList<>(slot.getItems());
         }
 
         @Override
         public double getTotalContentAmount() {
-            return slot.getItems().stream().mapToLong(ItemStack::getCount).sum();
+            return slot.getTotalItemCount();
         }
     }
 
     @Getter
-    private static class SlotFluidRecipeHandler extends NotifiableRecipeHandlerTrait<FluidIngredient> {
+    protected static class SlotFluidRecipeHandler extends NotifiableRecipeHandlerTrait<FluidIngredient> {
 
         private final InternalSlot slot;
         private final int priority;
 
-        private final int size = 81;
         private final RecipeCapability<FluidIngredient> capability = FluidRecipeCapability.CAP;
         private final IO handlerIO = IO.IN;
         private final boolean isDistinct = true;
@@ -106,7 +111,12 @@ public final class ExtendInternalSlotRecipeHandler {
             super(buffer);
             this.slot = slot;
             this.priority = IFilteredHandler.HIGH + index + 1;
-            slot.setOnContentsChanged(this::notifyListeners);
+            slot.addListener(this::notifyListeners);
+        }
+
+        @Override
+        public int getSize() {
+            return slot.isFluidEmpty() ? 0 : Math.max(1, slot.getFluids().size());
         }
 
         @Override
@@ -118,12 +128,13 @@ public final class ExtendInternalSlotRecipeHandler {
 
         @Override
         public @NotNull List<Object> getContents() {
+            if (slot.isFluidEmpty()) return Collections.emptyList();
             return new ArrayList<>(slot.getFluids());
         }
 
         @Override
         public double getTotalContentAmount() {
-            return slot.getFluids().stream().mapToLong(FluidStack::getAmount).sum();
+            return slot.getTotalFluidAmount();
         }
     }
 }
