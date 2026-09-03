@@ -8,6 +8,7 @@ import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
 import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
+import com.gregtechceu.gtceu.utils.GTMath;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -165,9 +166,9 @@ public interface ModifierFunction {
                         new HashMap<>(recipe.tickInputChanceLogics), new HashMap<>(recipe.tickOutputChanceLogics),
                         newConditions, new ArrayList<>(recipe.ingredientActions),
                         recipe.data, recipe.duration, recipe.recipeCategory);
-                copied.parallels = recipe.parallels * parallels;
+                copied.parallels = GTMath.saturatedCast((long) recipe.parallels * parallels);
                 copied.ocLevel = recipe.ocLevel + addOCs;
-                copied.batchParallels = recipe.batchParallels * batchParallels;
+                copied.batchParallels = GTMath.saturatedCast((long) recipe.batchParallels * batchParallels);
                 if (recipe.data.getBoolean("duration_is_total_cwu")) {
                     copied.duration = (int) Math.max(1, (recipe.duration * (1f - 0.025f * addOCs)));
                 } else {

@@ -24,16 +24,17 @@ public class AdvancedActivityDetectorCover extends ActivityDetectorCover {
             return;
 
         var workable = GTCapabilityHelper.getWorkable(coverHolder.getLevel(), coverHolder.getPos(), attachedSide);
-        if (workable == null || workable.getMaxProgress() == 0)
+        if (workable == null)
             return;
 
-        int outputAmount = RedstoneUtil.computeRedstoneValue(workable.getProgress(), workable.getMaxProgress(),
-                isInverted());
+        // nonstandard logic for handling off state: an idle machine reports no progress at all, so the
+        // signal has to be cleared here instead of keeping the last value of the finished recipe
+        int maxProgress = workable.getMaxProgress();
+        if (maxProgress <= 0 || !workable.isWorkingEnabled() || !workable.isActive()) {
+            setRedstoneSignalOutput(0);
+            return;
+        }
 
-        // nonstandard logic for handling off state
-        if (!workable.isWorkingEnabled() || !workable.isActive())
-            outputAmount = 0;
-
-        setRedstoneSignalOutput(outputAmount);
+        setRedstoneSignalOutput(RedstoneUtil.computeRedstoneValue(workable.getProgress(), maxProgress, isInverted()));
     }
 }

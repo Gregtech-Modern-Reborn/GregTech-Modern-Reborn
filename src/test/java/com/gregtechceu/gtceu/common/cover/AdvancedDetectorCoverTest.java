@@ -1,8 +1,10 @@
 package com.gregtechceu.gtceu.common.cover;
 
 import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
+import com.gregtechceu.gtceu.api.machine.feature.IOverclockMachine;
 import com.gregtechceu.gtceu.common.cover.detector.AdvancedFluidDetectorCover;
 import com.gregtechceu.gtceu.common.cover.detector.AdvancedItemDetectorCover;
 import com.gregtechceu.gtceu.common.data.GTItems;
@@ -14,6 +16,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -27,28 +30,47 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(GTCEu.MOD_ID)
 public class AdvancedDetectorCoverTest {
 
-    @GameTest(template = "electrolyzer", batch = "coverTests", required = false)
-    public static void BLOCKED_BY_LDLIB_WEIRDNESS_PROBABLY_testAdvancedActivityDetectorCover(GameTestHelper helper) {
+    @GameTest(template = "electrolyzer", batch = "coverTests")
+    public static void testAdvancedActivityDetectorCover(GameTestHelper helper) {
         helper.pullLever(new BlockPos(2, 2, 2));
         MetaMachine machine = ((IMachineBlockEntity) helper.getBlockEntity(new BlockPos(1, 2, 1))).getMetaMachine();
+        // The template's electrolyzer is UEV, which overclocks water electrolysis down to a couple of ticks,
+        // making progress (and with it this cover's output) flicker between 0 and 15. Pinning the overclock
+        // tier to LV keeps the recipe at its base duration so the reported progress is stable.
+        ((IOverclockMachine) machine).setOverclockTier(GTValues.LV);
         TestUtils.placeCover(helper, machine, GTItems.COVER_ACTIVITY_DETECTOR_ADVANCED.asStack(), Direction.WEST);
-        helper.runAtTickTime(30, () -> helper.assertRedstoneSignal(
+        // Minecraft asks a block for its signal from the opposite side (see MetaMachine#getOutputSignal),
+        // so the cover attached to WEST answers a query for Direction.EAST.
+        // The cover only refreshes every 20 ticks, so wait for the signal instead of probing a fixed tick.
+        helper.succeedWhen(() -> helper.assertRedstoneSignal(
                 new BlockPos(1, 2, 1),
-                Direction.WEST,
+                Direction.EAST,
                 signal -> signal > 0,
                 () -> "expected redstone signal"));
     }
 
-    @GameTest(template = "electrolyzer", batch = "coverTests", required = false)
-    public static void BLOCKED_BY_LDLIB_WEIRDNESS_TOO_PROBABLY_testAdvancedActivityDetectorCover(GameTestHelper helper) {
+    @GameTest(template = "electrolyzer", batch = "coverTests", timeoutTicks = 200)
+    public static void testAdvancedActivityDetectorCoverGoesOffWhenIdle(GameTestHelper helper) {
         helper.pullLever(new BlockPos(2, 2, 2));
         MetaMachine machine = ((IMachineBlockEntity) helper.getBlockEntity(new BlockPos(1, 2, 1))).getMetaMachine();
+        // ZPM keeps water electrolysis at 23 ticks: long enough that the cover's 20 tick sampling sees
+        // progress instead of only catching the tick a recipe starts on, short enough for the machine to
+        // reach the end of its recipe - and with it idle - inside the test.
+        ((IOverclockMachine) machine).setOverclockTier(GTValues.ZPM);
         TestUtils.placeCover(helper, machine, GTItems.COVER_ACTIVITY_DETECTOR_ADVANCED.asStack(), Direction.WEST);
-        helper.runAtTickTime(35, () -> helper.pullLever(2, 2, 2));
-        helper.runAtTickTime(40, () -> {
-            TestUtils.assertLampOff(helper, new BlockPos(0, 2, 1));
-            helper.succeed();
-        });
+        helper.startSequence()
+                .thenWaitUntil(() -> TestUtils.assertLampOn(helper, new BlockPos(0, 2, 1)))
+                // Cut the water supply and drop the buffered water, so the machine falls back to idle
+                // instead of chewing through the water it already pulled in.
+                .thenExecute(() -> {
+                    helper.pullLever(2, 2, 2);
+                    var tanks = machine.getFluidHandlerCap(null, false);
+                    for (int i = 0; i < tanks.getTanks(); i++) {
+                        tanks.setFluidInTank(i, FluidStack.EMPTY);
+                    }
+                })
+                .thenWaitUntil(() -> TestUtils.assertLampOff(helper, new BlockPos(0, 2, 1)))
+                .thenSucceed();
     }
 
     @GameTest(template = "electrolyzer", batch = "coverTests")
