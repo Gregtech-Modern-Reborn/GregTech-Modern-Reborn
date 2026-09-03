@@ -18,8 +18,10 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
 import com.gregtechceu.gtceu.api.recipe.chance.logic.ChanceLogic;
 import com.gregtechceu.gtceu.api.recipe.content.Content;
+import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
+import com.gregtechceu.gtceu.api.recipe.modifier.ParallelLogic;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.api.sound.AutoReleasedSound;
 import com.gregtechceu.gtceu.common.cover.MachineControllerCover;
@@ -418,15 +420,31 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 int FailesCount = 0;
                 while (true) {
                     machine.setActiveRecipeType(i);
-                    sumOfParallelsCount++;
-                    if (sumOfParallelsCount > MultiParallelCount) break;
+                    if (sumOfParallelsCount >= MultiParallelCount) break;
+                    int remainingParallels = MultiParallelCount - sumOfParallelsCount;
+
                     handleSearchingRecipes(searchRecipe());
                     if (lastRecipe == null) break;
-                    // First Find A Recipe
+
+                    int recipeParallels = Math.max(1, lastRecipe.parallels);
+                    if (recipeParallels <= 1 && remainingParallels > 1) {
+                        int canParallel = ParallelLogic.getParallelAmount(machine.self(), lastRecipe,
+                                remainingParallels);
+                        if (canParallel > 1) {
+                            lastRecipe = lastRecipe.copy();
+                            lastRecipe.inputs = ContentModifier.multiplier(canParallel)
+                                    .applyContents(lastRecipe.inputs);
+                            lastRecipe.outputs = ContentModifier.multiplier(canParallel)
+                                    .applyContents(lastRecipe.outputs);
+                            lastRecipe.parallels = canParallel;
+                            recipeParallels = canParallel;
+                        }
+                    }
 
                     var handledIO = handleRecipeIO(lastRecipe, IO.IN);
                     if (handledIO.isSuccess()) {
                         Recipe_List.add(lastRecipe);
+                        sumOfParallelsCount += recipeParallels;
                         lastRecipe = null;
                         lastOriginRecipe = null;
                         lastFailedMatches = null;
@@ -435,7 +453,8 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                     }
                     if (FailesCount > 2) break;
                     LoopCount++;
-                    if (LoopCount > maxLoopCount) break;;
+                    if (LoopCount > maxLoopCount) break;
+                    if (sumOfParallelsCount >= MultiParallelCount) break;
                 }
                 GTRecipe recipe = mergeAllRecipes(Recipe_List);
                 if (recipe == null) continue;
@@ -517,8 +536,8 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         if (afterMergeRecipe.getOutputEUt().getTotalEU() > 0) {
             isOutputEU = true;
         }
-        afterMergeRecipe.parallels = min(afterMergeRecipe.parallels, recipe.parallels);
-        afterMergeRecipe.batchParallels = min(afterMergeRecipe.batchParallels, recipe.batchParallels);
+        afterMergeRecipe.parallels = afterMergeRecipe.parallels + recipe.parallels;
+        afterMergeRecipe.batchParallels = max(afterMergeRecipe.batchParallels, recipe.batchParallels);
         afterMergeRecipe.inputs = makeValuesMutable(afterMergeRecipe.inputs);
         afterMergeRecipe.outputs = makeValuesMutable(afterMergeRecipe.outputs);
         afterMergeRecipe.tickInputs = makeValuesMutable(afterMergeRecipe.tickInputs);
@@ -547,14 +566,10 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             afterMergeRecipe.outputChanceLogics = recipe.outputChanceLogics;
         }
         if (recipe.tickInputs != null && afterMergeRecipe.tickInputs != null) {
-            if (isOutputEU) {
-                RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickInputs, recipe.tickInputs);
-            }
+            RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickInputs, recipe.tickInputs);
         }
         if (recipe.tickOutputs != null && afterMergeRecipe.tickOutputs != null) {
-            if (isOutputEU) {
-                RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickOutputs, recipe.tickOutputs);
-            }
+            RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickOutputs, recipe.tickOutputs);
         }
         if (recipe.tickInputChanceLogics != null && afterMergeRecipe.tickInputChanceLogics != null) {
             afterMergeRecipe.tickInputChanceLogics = RecipeUtils
