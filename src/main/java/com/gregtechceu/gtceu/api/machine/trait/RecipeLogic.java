@@ -397,9 +397,10 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             // NormalMode
             if (!recipeDirty && lastRecipe != null && checkRecipe(lastRecipe).isSuccess()) {
                 GTRecipe recipe = lastRecipe;
+                GTRecipe origin = lastOriginRecipe;
                 lastRecipe = null;
-                lastOriginRecipe = null;
                 setupRecipe(recipe);
+                lastOriginRecipe = origin;
             } else {
                 lastRecipe = null;
                 lastOriginRecipe = null;
@@ -688,6 +689,28 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             consecutiveRecipes++;
             modifyChanceRecipes(lastRecipe);
             handleRecipeIO(lastRecipe, IO.OUT);
+
+            if (isMultiParallelLogic) {
+                lastRecipe = null;
+                lastOriginRecipe = null;
+                lastFailedMatches = null;
+                if (!suspendAfterFinish) {
+                    findAndHandleRecipe();
+                }
+                if (lastRecipe == null || getStatus() != Status.WORKING) {
+                    if (suspendAfterFinish) {
+                        setStatus(Status.SUSPEND);
+                    } else {
+                        setStatus(Status.IDLE);
+                    }
+                    consecutiveRecipes = 0;
+                    progress = 0;
+                    duration = 0;
+                    isActive = false;
+                }
+                return;
+            }
+
             if (machine.alwaysTryModifyRecipe()) {
                 if (lastOriginRecipe != null) {
                     var modified = machine.fullModifyRecipe(lastOriginRecipe.copy());
@@ -704,7 +727,12 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             var recipeCheck = checkRecipe(lastRecipe);
             if (!recipeDirty && !suspendAfterFinish && recipeCheck.isSuccess()) {
                 setupRecipe(lastRecipe);
-            } else {
+            } else if (!suspendAfterFinish) {
+                lastRecipe = null;
+                lastOriginRecipe = null;
+                findAndHandleRecipe();
+            }
+            if (lastRecipe == null || getStatus() != Status.WORKING) {
                 if (suspendAfterFinish) {
                     setStatus(Status.SUSPEND);
                 } else {
@@ -718,11 +746,6 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 duration = 0;
                 isActive = false;
             }
-        }
-        if (isMultiParallelLogic) {
-            lastRecipe = null;
-            lastOriginRecipe = null;
-            lastFailedMatches = null;
         }
     }
 
