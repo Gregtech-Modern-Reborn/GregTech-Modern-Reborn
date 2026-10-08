@@ -97,6 +97,11 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << "-Aquiet=true" // Suppress mixin notes
 }
 
+// Tests have no Mixin processor; its unused option must not break strict compilation.
+tasks.named('compileTestJava', JavaCompile).configure {
+    options.compilerArgs.removeAll { it.startsWith('-Aquiet=') }
+}
+
 lombok {
     version = "1.18.38"
 }

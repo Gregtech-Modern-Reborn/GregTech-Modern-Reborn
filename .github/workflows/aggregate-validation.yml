@@ -46,6 +46,8 @@ jobs:
             21
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
       - name: Compile and run required GTM GameTests
         run: |
           .\gradlew.bat :modules:gtm-reborn:compileJava :modules:gtm-reborn:runGameTestServer -Pwerror --console=plain
