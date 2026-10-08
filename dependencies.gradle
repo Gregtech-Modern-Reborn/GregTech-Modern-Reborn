@@ -75,6 +75,8 @@ dependencies {
     modCompileOnly(forge.cc.tweaked.forge.api)
 
     // Standard runtime mods //
+    // The dev jar excludes jarJar embeds; Configuration must also be a named runtime mod.
+    modLocalRuntime(forge.configuration)
     modClientLocalRuntime(forge.jade)
     modLocalRuntime(forge.guideme)
     modLocalRuntime(forge.ae2)
