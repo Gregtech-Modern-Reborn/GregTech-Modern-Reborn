@@ -732,7 +732,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 lastOriginRecipe = null;
                 findAndHandleRecipe();
             }
-            if (lastRecipe == null || getStatus() != Status.WORKING) {
+            if (suspendAfterFinish || lastRecipe == null || getStatus() != Status.WORKING) {
                 if (suspendAfterFinish) {
                     setStatus(Status.SUSPEND);
                 } else {
