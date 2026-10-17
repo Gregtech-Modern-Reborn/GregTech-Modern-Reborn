@@ -2,6 +2,7 @@ package com.gregtechceu.gtceu.api.machine.trait;
 
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.item.tool.GTToolType;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
@@ -9,15 +10,23 @@ import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
 import com.gregtechceu.gtceu.gametest.util.TestUtils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+
+import java.util.Set;
 
 import static com.gregtechceu.gtceu.gametest.util.TestUtils.getMetaMachine;
 
@@ -225,6 +234,93 @@ public class RecipeLogicTest {
     }
      */
     // spotless:on
+
+    @GameTest(template = "lcr_input_separation", batch = "RecipeLogic")
+    public static void softMalletStopsAfterRecipeTest(GameTestHelper helper) {
+        testSoftMalletStopsAfterRecipe(helper, false);
+    }
+
+    @GameTest(template = "lcr_input_separation", batch = "RecipeLogic")
+    public static void softMalletStopsMultiParallelAfterRecipeTest(GameTestHelper helper) {
+        testSoftMalletStopsAfterRecipe(helper, true);
+    }
+
+    private static void testSoftMalletStopsAfterRecipe(GameTestHelper helper, boolean multiParallel) {
+        BusHolder buses = getBussesAndForm(helper);
+        RecipeLogic logic = buses.controller.getRecipeLogic();
+        logic.setMultiParallelLogic(multiParallel);
+        logic.setMultiParallelCount(1);
+        NotifiableItemStackHandler inputs = buses.inputBus1.getInventory();
+        NotifiableItemStackHandler outputs = buses.outputBus1.getInventory();
+        inputs.setStackInSlot(0, new ItemStack(Blocks.COBBLESTONE, 16));
+        logic.findAndHandleRecipe();
+        int consumed = 1;
+        helper.assertTrue(logic.isWorking(), "Recipe did not start");
+        helper.assertTrue(inputs.getStackInSlot(0).getCount() == 16 - consumed,
+                "Recipe consumed an unexpected amount of input");
+
+        clickSoftMallet(helper, buses.controller);
+        helper.assertFalse(logic.isWorkingEnabled(), "Soft mallet did not schedule a stop");
+        helper.assertTrue(logic.isWorking(), "Soft mallet stopped the current recipe before completion");
+        logic.serverTick();
+
+        helper.assertTrue(logic.isSuspend(), "Machine stayed working at 100% instead of stopping");
+        helper.assertFalse(logic.isActive(), "Completed recipe left the suspended machine active");
+        helper.assertTrue(logic.getProgress() == 0 && logic.getDuration() == 0,
+                "Completed recipe progress was not cleared");
+        helper.assertFalse(logic.isSuspendAfterFinish(), "Scheduled stop was not cleared");
+        TestUtils.assertEqual(helper, outputs.getStackInSlot(0), new ItemStack(Blocks.STONE, consumed));
+        helper.assertTrue(inputs.getStackInSlot(0).getCount() == 16 - consumed,
+                "Machine consumed the next recipe's inputs before stopping");
+
+        for (int tick = 0; tick < 5; tick++) {
+            logic.serverTick();
+        }
+        TestUtils.assertEqual(helper, outputs.getStackInSlot(0), new ItemStack(Blocks.STONE, consumed));
+        helper.assertTrue(inputs.getStackInSlot(0).getCount() == 16 - consumed,
+                "Suspended machine consumed more inputs");
+
+        clickSoftMallet(helper, buses.controller);
+        helper.assertTrue(logic.isWorkingEnabled() && logic.isIdle(), "Soft mallet did not re-enable the machine");
+        logic.serverTick();
+        helper.assertTrue(logic.isWorking(), "Re-enabled machine did not start a new recipe");
+        TestUtils.assertEqual(helper, outputs.getStackInSlot(0), new ItemStack(Blocks.STONE, consumed));
+        helper.assertTrue(inputs.getStackInSlot(0).getCount() == 16 - 2 * consumed,
+                "Re-enabled machine did not consume fresh inputs");
+
+        clickSoftMallet(helper, buses.controller);
+        logic.serverTick();
+        helper.assertTrue(logic.isSuspend(), "Second scheduled stop did not finish");
+        TestUtils.assertEqual(helper, outputs.getStackInSlot(0), new ItemStack(Blocks.STONE, 2 * consumed));
+        helper.succeed();
+    }
+
+    @GameTest(template = "lcr_input_separation", batch = "RecipeLogic")
+    public static void softMalletCancelsScheduledStopTest(GameTestHelper helper) {
+        BusHolder buses = getBussesAndForm(helper);
+        RecipeLogic logic = buses.controller.getRecipeLogic();
+        buses.inputBus1.getInventory().setStackInSlot(0, new ItemStack(Blocks.COBBLESTONE, 16));
+        logic.findAndHandleRecipe();
+
+        clickSoftMallet(helper, buses.controller);
+        clickSoftMallet(helper, buses.controller);
+        helper.assertFalse(logic.isSuspendAfterFinish(), "Second soft mallet click did not cancel the stop");
+        logic.serverTick();
+        helper.assertTrue(logic.isWorking(), "Machine stopped after the scheduled stop was cancelled");
+        TestUtils.assertEqual(helper, buses.outputBus1.getInventory().getStackInSlot(0), new ItemStack(Blocks.STONE));
+        helper.assertTrue(buses.inputBus1.getInventory().getStackInSlot(0).getCount() == 14,
+                "Machine did not start the next recipe after cancelling the stop");
+        helper.succeed();
+    }
+
+    private static void clickSoftMallet(GameTestHelper helper, WorkableMultiblockMachine machine) {
+        var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+        var hit = new BlockHitResult(Vec3.atCenterOf(machine.getPos()).add(0, 0, -0.5), Direction.NORTH,
+                machine.getPos(), false);
+        var result = machine.onToolClick(Set.of(GTToolType.SOFT_MALLET), ItemStack.EMPTY,
+                new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
+        helper.assertTrue(result.getSecond().consumesAction(), "Machine did not accept the soft mallet click");
+    }
 
     // Test for putting both ingredients in the same bus in 2 stacks.
     @GameTest(template = "lcr_input_separation", batch = "RecipeLogicTest")
