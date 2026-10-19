@@ -455,19 +455,14 @@ public class ExtendMEPatternBufferPartMachine extends MEBusPartMachine
 
     public class InternalSlot implements ITagSerializable<CompoundTag>, IContentChangeAware {
 
+        // LDLib wraps and replaces this callback; keep it separate from listener dispatch.
+        @Getter
+        @Setter
+        private Runnable onContentsChanged = () -> {};
+
         private final List<Runnable> listeners = new ArrayList<>(2);
 
         public void addListener(Runnable listener) {
-            listeners.add(listener);
-        }
-
-        @Override
-        public Runnable getOnContentsChanged() {
-            return this::onContentsChanged;
-        }
-
-        @Override
-        public void setOnContentsChanged(Runnable listener) {
             listeners.add(listener);
         }
 
@@ -525,6 +520,7 @@ public class ExtendMEPatternBufferPartMachine extends MEBusPartMachine
         public void onContentsChanged() {
             itemStacks = null;
             fluidStacks = null;
+            onContentsChanged.run();
             for (int i = 0; i < listeners.size(); i++) {
                 listeners.get(i).run();
             }
