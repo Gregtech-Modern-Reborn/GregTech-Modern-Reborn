@@ -95,12 +95,14 @@ public class RecipeRunner {
             // add chanced contents to the recipe content map
             if (!chancedContents.isEmpty()) {
                 var cache = this.chanceCaches.get(cap);
-                chancedContents = logic.roll(chancedContents, function, recipeTier, chanceTier, cache,
-                        GTMath.saturatedCast((long) recipe.parallels * recipe.batchParallels));
-
-                for (Content cont : chancedContents) {
-                    contentList.add(cont.content);
-                }
+                logic.roll(chancedContents, function, recipeTier, chanceTier, cache,
+                        GTMath.saturatedCast((long) recipe.parallels * recipe.batchParallels),
+                        (cont, count) -> {
+                            // Ingredient actions run per entry and must keep their original invocation count.
+                            if (io == IO.OUT && recipe.ingredientActions.isEmpty()) {
+                                cap.addRepeatedOutput(contentList, cont.content, count);
+                            } else contentList.addAll(Collections.nCopies(count, cont.content));
+                        });
             }
 
             if (contentList.isEmpty()) recipeContents.remove(cap);

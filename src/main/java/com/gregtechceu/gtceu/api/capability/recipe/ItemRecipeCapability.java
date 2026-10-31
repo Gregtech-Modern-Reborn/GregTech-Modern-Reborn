@@ -40,6 +40,7 @@ import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.common.crafting.IntersectionIngredient;
+import net.minecraftforge.common.crafting.StrictNBTIngredient;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
 import it.unimi.dsi.fastutil.objects.*;
@@ -75,6 +76,19 @@ public class ItemRecipeCapability extends RecipeCapability<Ingredient> {
                     ModifiedIntProvider.of(provider.getCountProvider(), modifier));
         }
         return SizedIngredient.create(content, modifier.apply(1));
+    }
+
+    @Override
+    public void addRepeatedOutput(List<Object> outputs, Object content, int count) {
+        if (content instanceof SizedIngredient sized && content.getClass() == SizedIngredient.class &&
+                (sized.getInner().getClass() == Ingredient.class ||
+                        sized.getInner().getClass() == StrictNBTIngredient.class)) {
+            addRepeatedOutput(outputs, content, count, sized.getAmount());
+        } else if (content.getClass() == Ingredient.class || content.getClass() == StrictNBTIngredient.class) {
+            addRepeatedOutput(outputs, content, count, 1);
+        } else {
+            super.addRepeatedOutput(outputs, content, count);
+        }
     }
 
     @Override

@@ -72,6 +72,15 @@ public class FluidRecipeCapability extends RecipeCapability<FluidIngredient> {
     }
 
     @Override
+    public void addRepeatedOutput(List<Object> outputs, Object content, int count) {
+        if (content.getClass() == FluidIngredient.class) {
+            addRepeatedOutput(outputs, content, count, ((FluidIngredient) content).getAmount());
+        } else {
+            super.addRepeatedOutput(outputs, content, count);
+        }
+    }
+
+    @Override
     public List<Object> compressIngredients(Collection<Object> ingredients) {
         List<Object> list = new ObjectArrayList<>(ingredients.size());
         for (Object item : ingredients) {
