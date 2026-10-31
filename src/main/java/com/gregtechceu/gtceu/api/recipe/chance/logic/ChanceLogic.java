@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.ObjIntConsumer;
 
 /**
  * Logic for determining which chanced outputs should be produced from a list
@@ -43,6 +44,15 @@ public abstract class ChanceLogic {
                                                          int recipeTier, int chanceTier,
                                                          @Nullable Object2IntMap<?> cache, int times) {
             ImmutableList.Builder<Content> builder = ImmutableList.builder();
+            roll(chancedEntries, boostFunction, recipeTier, chanceTier, cache, times,
+                    (entry, count) -> builder.addAll(Collections.nCopies(count, entry)));
+            return builder.build();
+        }
+
+        @Override
+        public void roll(@NotNull List<Content> chancedEntries, @NotNull ChanceBoostFunction boostFunction,
+                         int recipeTier, int chanceTier, @Nullable Object2IntMap<?> cache, int times,
+                         ObjIntConsumer<Content> output) {
             for (Content entry : chancedEntries) {
                 int maxChance = entry.maxChance;
 
@@ -54,19 +64,18 @@ public abstract class ChanceLogic {
                 // be computed as a long: an int would wrap around and silently swallow the outputs
                 long totalChance = (long) times * newChance;
                 int guaranteed = GTMath.saturatedCast(totalChance / maxChance);
-                if (guaranteed > 0) builder.addAll(Collections.nCopies(guaranteed, entry));
+                if (guaranteed > 0) output.accept(entry, guaranteed);
                 newChance = (int) (totalChance % maxChance);
 
                 int cached = getCachedChance(entry, cache);
                 int chance = newChance + cached;
                 while (passesChance(chance, maxChance)) {
-                    builder.add(entry);
+                    output.accept(entry, 1);
                     chance -= maxChance;
                     newChance -= maxChance;
                 }
                 updateCachedChance(entry.content, cache, newChance / 2 + cached);
             }
-            return builder.build();
         }
 
         @Override
@@ -355,6 +364,18 @@ public abstract class ChanceLogic {
 
     @NotNull
     public abstract Component getTranslation();
+
+    /**
+     * Emits consecutive successful entries with their repetition count, without requiring an expanded list.
+     * Custom logics retain their existing roll implementation and output order.
+     */
+    public void roll(@NotNull List<Content> chancedEntries, @NotNull ChanceBoostFunction boostFunction,
+                     int recipeTier, int chanceTier, @Nullable Object2IntMap<?> cache, int times,
+                     ObjIntConsumer<Content> output) {
+        for (Content entry : roll(chancedEntries, boostFunction, recipeTier, chanceTier, cache, times)) {
+            output.accept(entry, 1);
+        }
+    }
 
     @ApiStatus.Internal
     public static void init() {

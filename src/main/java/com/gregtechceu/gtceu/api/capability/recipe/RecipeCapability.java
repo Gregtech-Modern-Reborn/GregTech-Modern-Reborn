@@ -78,6 +78,25 @@ public abstract class RecipeCapability<T> {
         return copyInner(content);
     }
 
+    /** Adds repeated outputs in order. Capabilities with fixed quantities may combine them. */
+    public void addRepeatedOutput(List<Object> outputs, Object content, int count) {
+        outputs.addAll(Collections.nCopies(count, content));
+    }
+
+    /** Combines fixed quantities, splitting at the per-content integer quantity limit. */
+    protected final void addRepeatedOutput(List<Object> outputs, Object content, int count, int amount) {
+        if (amount <= 0) {
+            outputs.addAll(Collections.nCopies(count, content));
+            return;
+        }
+        int maxCopies = Integer.MAX_VALUE / amount;
+        while (count > 0) {
+            int copies = Math.min(count, maxCopies);
+            outputs.add(copies == 1 ? content : copyContent(content, ContentModifier.multiplier(copies)));
+            count -= copies;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public final T copyContent(Object content) {
         return copyInner((T) content);
