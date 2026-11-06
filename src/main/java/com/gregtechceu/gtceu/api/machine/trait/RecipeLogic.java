@@ -515,10 +515,14 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         }
 
         afterMergeRecipe.duration = max(afterMergeRecipe.duration, recipe.duration);
-        // Do not touch getInputEUt()/getOutputEUt() here: they are Lombok lazy fields, so reading them
-        // before the tick contents below are merged would freeze the pre-merge EU/t for good.
-        afterMergeRecipe.parallels = GTMath.saturatedCast((long) afterMergeRecipe.parallels + recipe.parallels);
-        afterMergeRecipe.batchParallels = max(afterMergeRecipe.batchParallels, recipe.batchParallels);
+        afterMergeRecipe.getInputEUt();// Calculate the input EU and the output EU
+        afterMergeRecipe.getOutputEUt();
+        boolean isOutputEU = false;
+        if (afterMergeRecipe.getOutputEUt().getTotalEU() > 0) {
+            isOutputEU = true;
+        }
+        afterMergeRecipe.parallels = min(afterMergeRecipe.parallels, recipe.parallels);
+        afterMergeRecipe.batchParallels = min(afterMergeRecipe.batchParallels, recipe.batchParallels);
         afterMergeRecipe.inputs = makeValuesMutable(afterMergeRecipe.inputs);
         afterMergeRecipe.outputs = makeValuesMutable(afterMergeRecipe.outputs);
         afterMergeRecipe.tickInputs = makeValuesMutable(afterMergeRecipe.tickInputs);
@@ -547,10 +551,14 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             afterMergeRecipe.outputChanceLogics = recipe.outputChanceLogics;
         }
         if (recipe.tickInputs != null && afterMergeRecipe.tickInputs != null) {
-            RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickInputs, recipe.tickInputs);
+            if (isOutputEU) {
+                RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickInputs, recipe.tickInputs);
+            }
         }
         if (recipe.tickOutputs != null && afterMergeRecipe.tickOutputs != null) {
-            RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickOutputs, recipe.tickOutputs);
+            if (isOutputEU) {
+                RecipeUtils.mergeMapOfLists(afterMergeRecipe.tickOutputs, recipe.tickOutputs);
+            }
         }
         if (recipe.tickInputChanceLogics != null && afterMergeRecipe.tickInputChanceLogics != null) {
             afterMergeRecipe.tickInputChanceLogics = RecipeUtils
