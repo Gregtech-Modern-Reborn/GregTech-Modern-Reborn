@@ -17,9 +17,11 @@ import com.gregtechceu.gtceu.api.recipe.modifier.ParallelLogic;
 import com.gregtechceu.gtceu.api.recipe.modifier.RecipeModifier;
 import com.gregtechceu.gtceu.common.capability.EnvironmentalHazardSavedData;
 import com.gregtechceu.gtceu.config.ConfigHolder;
+import com.gregtechceu.gtceu.utils.FormattingUtil;
 
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 
 import org.jetbrains.annotations.NotNull;
@@ -37,8 +39,10 @@ public class GTRecipeModifiers {
     public static final Function<OverclockingLogic, RecipeModifier> ELECTRIC_OVERCLOCK = Util
             .memoize(logic -> (machine, recipe) -> {
                 if (!(machine instanceof IOverclockMachine overclockMachine)) return ModifierFunction.IDENTITY;
-                if (RecipeHelper.getRecipeEUtTier(recipe) > overclockMachine.getMaxOverclockTier()) {
-                    return ModifierFunction.NULL;
+                int recipeTier = RecipeHelper.getRecipeEUtTier(recipe);
+                if (recipeTier > overclockMachine.getMaxOverclockTier()) {
+                    return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                            Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)])));
                 }
                 return logic.getModifier(machine, recipe, overclockMachine.getOverclockVoltage());
             });
@@ -60,10 +64,14 @@ public class GTRecipeModifiers {
                 if (zone == null) return ModifierFunction.IDENTITY;
 
                 float strength = zone.strength();
-                if (strength > maxAllowedStrength) return ModifierFunction.NULL;
+                if (strength > maxAllowedStrength) {
+                    return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.environment_hazard"));
+                }
 
                 int multiplier = (1 + (int) (strength * 5 / maxAllowedStrength));
-                if (multiplier > 5) return ModifierFunction.NULL;
+                if (multiplier > 5) {
+                    return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.environment_hazard"));
+                }
 
                 return ModifierFunction.builder()
                         .durationMultiplier(multiplier)
@@ -108,7 +116,9 @@ public class GTRecipeModifiers {
                 int parallel = ConfigHolder.INSTANCE.machines.batchDuration / recipe.duration;
                 parallel = ParallelLogic.getParallelAmountWithoutEU(machine, recipe, parallel);
 
-                if (parallel == 0) return ModifierFunction.NULL;
+                if (parallel == 0) {
+                    return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_parallel"));
+                }
                 if (parallel == 1) return ModifierFunction.IDENTITY;
 
                 return ModifierFunction.builder()
@@ -137,7 +147,11 @@ public class GTRecipeModifiers {
         if (!(machine instanceof CoilWorkableElectricMultiblockMachine coilMachine)) {
             return RecipeModifier.nullWrongType(CoilWorkableElectricMultiblockMachine.class, machine);
         }
-        if (RecipeHelper.getRecipeEUtTier(recipe) > coilMachine.getTier()) return ModifierFunction.NULL;
+        int recipeTier = RecipeHelper.getRecipeEUtTier(recipe);
+        if (recipeTier > coilMachine.getTier()) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                    Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)])));
+        }
 
         var oc = OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK.getModifier(machine, recipe,
                 coilMachine.getOverclockVoltage());
@@ -174,11 +188,14 @@ public class GTRecipeModifiers {
                 (100 * Math.max(0, coilMachine.getTier() - GTValues.MV));
         int recipeTemp = recipe.data.getInt("ebf_temp");
         if (!recipe.data.contains("ebf_temp") || recipeTemp > blastFurnaceTemperature) {
-            return ModifierFunction.NULL;
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_temperature",
+                    FormattingUtil.formatNumbers(recipeTemp)));
         }
 
-        if (RecipeHelper.getRecipeEUtTier(recipe) > coilMachine.getTier()) {
-            return ModifierFunction.NULL;
+        int recipeTier = RecipeHelper.getRecipeEUtTier(recipe);
+        if (recipeTier > coilMachine.getTier()) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                    Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)])));
         }
 
         var discount = ModifierFunction.builder()
@@ -208,7 +225,11 @@ public class GTRecipeModifiers {
         if (!(machine instanceof CoilWorkableElectricMultiblockMachine coilMachine)) {
             return RecipeModifier.nullWrongType(CoilWorkableElectricMultiblockMachine.class, machine);
         }
-        if (RecipeHelper.getRecipeEUtTier(recipe) > coilMachine.getTier()) return ModifierFunction.NULL;
+        int recipeTier = RecipeHelper.getRecipeEUtTier(recipe);
+        if (recipeTier > coilMachine.getTier()) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                    Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)])));
+        }
 
         int tier = coilMachine.getCoilTier();
         double durationMultiplier = (tier == 0) ? (4.0 / 3.0) : (2.0 / (tier + 1)); // 75% speed with cupro coils
@@ -246,7 +267,9 @@ public class GTRecipeModifiers {
 
         int maxParallel = 32 * coilMachine.getCoilType().getLevel();
         int parallels = ParallelLogic.getParallelAmount(machine, recipe, maxParallel);
-        if (parallels == 0) return ModifierFunction.NULL;
+        if (parallels == 0) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_parallel"));
+        }
 
         int duration = (int) (128 * 2.0 * parallels / maxParallel);
         long eut = (long) (4 * maxParallel / (8.0 * coilMachine.getCoilType().getEnergyDiscount()));

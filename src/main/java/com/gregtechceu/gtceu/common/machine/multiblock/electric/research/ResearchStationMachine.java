@@ -116,6 +116,7 @@ public class ResearchStationMachine extends WorkableElectricMultiblockMachine
                 .addEnergyUsageLine(energyContainer)
                 .addEnergyTierLine(tier)
                 .addWorkingStatusLine()
+                .addWaitingReasonLine(recipeLogic.getWaitingReason())
                 // .addComputationUsageExactLine(computationProvider.getMaxCWUt()) // TODO: (Onion)
                 .addProgressLineOnlyPercent(recipeLogic.getProgressPercent());
     }

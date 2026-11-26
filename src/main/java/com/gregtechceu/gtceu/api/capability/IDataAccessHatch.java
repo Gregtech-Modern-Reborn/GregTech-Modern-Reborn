@@ -2,7 +2,10 @@ package com.gregtechceu.gtceu.api.capability;
 
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
+import net.minecraft.network.chat.Component;
+
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +40,12 @@ public interface IDataAccessHatch {
         // hatches need to have the recipe available
         if (this.isRecipeAvailable(recipe)) return recipe;
         return null;
+    }
+
+    @Nullable
+    default Component getModifyRecipeFailReason(GTRecipe recipe) {
+        if (this.isCreative() || this.isRecipeAvailable(recipe)) return null;
+        return Component.translatable("gtceu.recipe_logic.missing_research");
     }
 
     /**

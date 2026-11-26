@@ -6,6 +6,7 @@ import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.UITemplate;
+import com.gregtechceu.gtceu.api.gui.fancy.TooltipsPanel;
 import com.gregtechceu.gtceu.api.gui.widget.PredicatedImageWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -32,6 +33,7 @@ import com.lowdragmc.lowdraglib.utils.Position;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.fluids.FluidType;
 
@@ -190,8 +192,13 @@ public class SimpleSteamMachine extends SteamWorkableMachine implements IExhaust
         if (!(machine instanceof SimpleSteamMachine steamMachine)) {
             return RecipeModifier.nullWrongType(SimpleSteamMachine.class, machine);
         }
-        if (RecipeHelper.getRecipeEUtTier(recipe) > GTValues.LV || !steamMachine.checkVenting()) {
-            return ModifierFunction.NULL;
+        int recipeTier = RecipeHelper.getRecipeEUtTier(recipe);
+        if (recipeTier > GTValues.LV) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                    Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)])));
+        }
+        if (!steamMachine.checkVenting()) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.vent_obstructed"));
         }
 
         var builder = ModifierFunction.builder().conditions(VentCondition.INSTANCE);
@@ -225,6 +232,9 @@ public class SimpleSteamMachine extends SteamWorkableMachine implements IExhaust
         Position pos = new Position((Math.max(group.getSize().width + 4 + 8, 176) - 4 - group.getSize().width) / 2 + 4,
                 32);
         group.setSelfPosition(pos);
+        TooltipsPanel tooltipsPanel = new TooltipsPanel();
+        tooltipsPanel.setSelfPosition(new Position(178, 2));
+        tooltipsPanel.attachTooltips(recipeLogic);
         return new ModularUI(176, 166, this, entityPlayer)
                 .background(GuiTextures.BACKGROUND_STEAM.get(isHighPressure))
                 .widget(group)
@@ -233,6 +243,7 @@ public class SimpleSteamMachine extends SteamWorkableMachine implements IExhaust
                         pos.y + group.getSize().height / 2 - 9, 18, 18,
                         GuiTextures.INDICATOR_NO_STEAM.get(isHighPressure))
                         .setPredicate(recipeLogic::isWaiting))
+                .widget(tooltipsPanel)
                 .widget(UITemplate.bindPlayerInventory(entityPlayer.getInventory(),
                         GuiTextures.SLOT_STEAM.get(isHighPressure), 7, 84, true));
     }

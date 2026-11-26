@@ -16,6 +16,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 public interface IMufflerMachine extends IMultiPart, IEnvironmentalHazardEmitter {
@@ -63,6 +65,15 @@ public interface IMufflerMachine extends IMultiPart, IEnvironmentalHazardEmitter
             return null;
         }
         return IMultiPart.super.modifyRecipe(recipe);
+    }
+
+    @Override
+    @Nullable
+    default Component getModifyRecipeFailReason(GTRecipe recipe) {
+        if (!isFrontFaceFree()) {
+            return Component.translatable("gtceu.multiblock.universal.muffler_obstructed");
+        }
+        return null;
     }
 
     @Override

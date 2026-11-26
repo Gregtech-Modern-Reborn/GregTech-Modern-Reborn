@@ -230,6 +230,12 @@ public class LargeBoilerMachine extends WorkableMultiblockMachine implements IEx
             buttonText.append(" ");
             buttonText.append(ComponentPanelWidget.withButton(Component.literal("[+]"), "add"));
             textList.add(buttonText);
+
+            Component reason = recipeLogic.getWaitingReason();
+            if (reason != null) {
+                textList.add(Component.translatable("gtceu.multiblock.recipe_fail_reason", reason)
+                        .withStyle(ChatFormatting.RED));
+            }
         }
     }
 

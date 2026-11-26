@@ -47,6 +47,7 @@ public class LangHandler {
         provider.add("recipe.capability.eu.name", "GTCEu Energy");
         provider.add("recipe.capability.fluid.name", "Fluid");
         provider.add("recipe.capability.item.name", "Item");
+        provider.add("recipe.capability.cwu.name", "Computation");
         multiLang(provider, "gtceu.oc.tooltip", "Min: %s", "Left click to increase the OC",
                 "Right click to decrease the OC", "Middle click to reset the OC",
                 "Hold Shift to change by Perfect OC");
@@ -1089,6 +1090,7 @@ public class LangHandler {
         provider.add("gtceu.multiblock.not_enough_energy", "WARNING: Machine needs more energy.");
         provider.add("gtceu.multiblock.not_enough_energy_output", "WARNING: Energy Dynamo Tier Too Low!");
         provider.add("gtceu.multiblock.waiting", "WARNING: Machine is waiting.");
+        provider.add("gtceu.multiblock.recipe_fail_reason", "Reason: %s");
         provider.add("gtceu.multiblock.batch_enabled", "Batching Mode: Enabled (%sx)");
         provider.add("gtceu.machine.batch_enabled", "Batching Enabled");
         provider.add("gtceu.machine.batch_disabled", "Batching Disabled");
@@ -1238,6 +1240,23 @@ public class LangHandler {
         provider.add("gtceu.recipe_logic.condition_fails", "Condition Fails");
         provider.add("gtceu.recipe_logic.no_contents", "Recipe has no Contents");
         provider.add("gtceu.recipe_logic.no_capabilities", "Machine has no Capabilities");
+        provider.add("gtceu.recipe_logic.insufficient_tier", "Insufficient Voltage Tier (Requires %s)");
+        provider.add("gtceu.recipe_logic.insufficient_temperature", "Insufficient Coil Temperature (Requires %sK)");
+        provider.add("gtceu.recipe_logic.insufficient_startup_capacity",
+                "Insufficient Fusion Energy Capacity (Requires %s EU)");
+        provider.add("gtceu.recipe_logic.insufficient_startup_energy",
+                "Insufficient Fusion Startup Energy (Needs %s EU)");
+        provider.add("gtceu.recipe_logic.insufficient_lubricant", "Insufficient Lubricant");
+        provider.add("gtceu.recipe_logic.insufficient_parallel", "Cannot Satisfy Recipe Parallel / Space");
+        provider.add("gtceu.recipe_logic.no_rotor", "No Rotor Installed");
+        provider.add("gtceu.recipe_logic.missing_research", "Missing Research Data");
+        provider.add("gtceu.recipe_logic.vent_obstructed", "Steam Exhaust Vent Obstructed");
+        provider.add("gtceu.recipe_logic.environment_hazard", "Environmental Hazard Too High");
+        provider.add("gtceu.recipe_logic.power_fail_suspended", "Suspended: Insufficient Energy");
+        provider.add("gtceu.recipe_logic.assembly_line.item_order", "Assembly Line Item Input Order Mismatch");
+        provider.add("gtceu.recipe_logic.assembly_line.fluid_order", "Assembly Line Fluid Input Order Mismatch");
+        provider.add("gtceu.recipe_logic.modifier_fails", "Recipe Rejected by Machine Configuration");
+        provider.add("gtceu.recipe_logic.before_working_fails", "Machine Pre-Check Failed");
         provider.add("gtceu.gui.cover_setting.title", "Cover Settings");
         provider.add("gtceu.gui.output_setting.title", "Output Settings");
         provider.add("gtceu.gui.circuit.title", "Circuit Settings");

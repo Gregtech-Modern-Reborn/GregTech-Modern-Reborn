@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.UITemplate;
+import com.gregtechceu.gtceu.api.gui.fancy.TooltipsPanel;
 import com.gregtechceu.gtceu.api.gui.widget.SlotWidget;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
@@ -23,6 +24,7 @@ import com.lowdragmc.lowdraglib.gui.widget.ProgressWidget;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.RequireRerender;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
+import com.lowdragmc.lowdraglib.utils.Position;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
@@ -153,6 +155,9 @@ public class PrimitiveBlastFurnaceMachine extends PrimitiveWorkableMachine imple
 
     @Override
     public ModularUI createUI(Player entityPlayer) {
+        TooltipsPanel tooltipsPanel = new TooltipsPanel();
+        tooltipsPanel.setSelfPosition(new Position(178, 2));
+        tooltipsPanel.attachTooltips(recipeLogic);
         return new ModularUI(176, 166, this, entityPlayer)
                 .background(GuiTextures.PRIMITIVE_BACKGROUND)
                 .widget(new LabelWidget(5, 5, getBlockState().getBlock().getDescriptionId()))
@@ -176,6 +181,7 @@ public class PrimitiveBlastFurnaceMachine extends PrimitiveWorkableMachine imple
                 .widget(new SlotWidget(exportItems.storage, 2, 140, 38, true, false)
                         .setBackgroundTexture(
                                 new GuiTextureGroup(GuiTextures.PRIMITIVE_SLOT, GuiTextures.PRIMITIVE_DUST_OVERLAY)))
+                .widget(tooltipsPanel)
                 .widget(UITemplate.bindPlayerInventory(entityPlayer.getInventory(),
                         GuiTextures.PRIMITIVE_SLOT, 7, 84, true));
     }

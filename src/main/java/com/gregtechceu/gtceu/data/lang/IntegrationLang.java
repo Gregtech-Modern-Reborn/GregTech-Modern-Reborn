@@ -31,6 +31,33 @@ public class IntegrationLang {
     /** JEI, REI, EMI */
     private static void initRecipeViewerLang(RegistrateLangProvider provider) {
         provider.add("gtceu.jei.multiblock_info", "Multiblock Info");
+        provider.add("gtceu.jei.multiblock_info.page.tooltip", "Switch Structure Pattern (%s/%s)");
+        provider.add("gtceu.jei.multiblock_info.layer.all.tooltip", "Layer View: All Layers (Click to slice)");
+        provider.add("gtceu.jei.multiblock_info.layer.single.tooltip",
+                "Layer View: Layer %s / %s (Click for next)");
+        provider.add("gtceu.jei.multiblock_info.highlight.on.tooltip",
+                "Functional Highlight: ON (Click to disable)");
+        provider.add("gtceu.jei.multiblock_info.highlight.off.tooltip",
+                "Functional Highlight: OFF (Click to enable)");
+        provider.add("gtceu.jei.multiblock_info.legend.title", "Block Types");
+        provider.add("gtceu.jei.multiblock_info.legend.solo_reset", "Solo [Reset]");
+        provider.add("gtceu.jei.multiblock_info.legend.count", "Blocks: %s");
+        provider.add("gtceu.jei.multiblock_info.legend.click_solo", "Click to solo this type (X-ray)");
+        provider.add("gtceu.jei.multiblock_info.legend.click_all", "Click to show all types");
+        provider.add("gtceu.jei.multiblock_info.category.controller", "Controller");
+        provider.add("gtceu.jei.multiblock_info.category.item_input", "Item Input");
+        provider.add("gtceu.jei.multiblock_info.category.item_output", "Item Output");
+        provider.add("gtceu.jei.multiblock_info.category.fluid_input", "Fluid Input");
+        provider.add("gtceu.jei.multiblock_info.category.fluid_output", "Fluid Output");
+        provider.add("gtceu.jei.multiblock_info.category.energy", "Energy / Laser");
+        provider.add("gtceu.jei.multiblock_info.category.maintenance", "Maintenance");
+        provider.add("gtceu.jei.multiblock_info.category.muffler", "Muffler");
+        provider.add("gtceu.jei.multiblock_info.category.parallel", "Parallel");
+        provider.add("gtceu.jei.multiblock_info.category.special_hatch", "Special Hatch");
+        provider.add("gtceu.jei.multiblock_info.category.flexible_hatch", "Multi-Hatch");
+        provider.add("gtceu.jei.multiblock_info.category.coil_tiered", "Coil / Tiered");
+        provider.add("gtceu.jei.multiblock_info.category.glass_frame", "Glass / Frame");
+        provider.add("gtceu.jei.multiblock_info.category.casing", "Casing");
         provider.add("gtceu.jei.ore_processing_diagram", "Ore Processing Diagram");
         provider.add("gtceu.jei.ore_vein_diagram", "Ore Vein Diagram");
         provider.add("gtceu.jei.programmed_circuit", "Programmed Circuit Page");

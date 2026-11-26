@@ -120,6 +120,7 @@ public class WorkableElectricMultiblockMachine extends WorkableMultiblockMachine
                 .addParallelsLine(numParallels, exact)
                 .addBatchModeLine(isBatchEnabled(), batchParallels)
                 .addWorkingStatusLine()
+                .addWaitingReasonLine(recipeLogic.getWaitingReason())
                 .addProgressLine(recipeLogic.getProgress(), recipeLogic.getMaxProgress(),
                         recipeLogic.getProgressPercent())
                 .addOutputLines(recipeLogic.getLastRecipe());
@@ -169,6 +170,7 @@ public class WorkableElectricMultiblockMachine extends WorkableMultiblockMachine
 
     @Override
     public void attachTooltips(TooltipsPanel tooltipsPanel) {
+        IFancyUIMachine.super.attachTooltips(tooltipsPanel);
         for (IMultiPart part : getParts()) {
             part.attachFancyTooltipsToController(this, tooltipsPanel);
         }

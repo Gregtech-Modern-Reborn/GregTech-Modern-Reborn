@@ -127,6 +127,14 @@ public interface IMultiPart extends IMachineFeature, IFancyUIMachine {
     }
 
     /**
+     * Pure diagnostic explaining why {@link #modifyRecipe(GTRecipe)} rejects {@code recipe}, if any.
+     */
+    @Nullable
+    default Component getModifyRecipeFailReason(GTRecipe recipe) {
+        return null;
+    }
+
+    /**
      * Add text to the multiblock's screen.
      * 
      * @param textList the text list to add to.

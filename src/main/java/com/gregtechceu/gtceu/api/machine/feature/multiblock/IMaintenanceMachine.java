@@ -13,6 +13,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 
 public interface IMaintenanceMachine extends IMultiPart {
@@ -146,6 +148,15 @@ public interface IMaintenanceMachine extends IMultiPart {
             }
         }
         return recipe;
+    }
+
+    @Override
+    @Nullable
+    default Component getModifyRecipeFailReason(GTRecipe recipe) {
+        if (ConfigHolder.INSTANCE.machines.enableMaintenance && hasMaintenanceProblems()) {
+            return Component.translatable("gtceu.multiblock.universal.has_problems");
+        }
+        return null;
     }
 
     //////////////////////////////////////

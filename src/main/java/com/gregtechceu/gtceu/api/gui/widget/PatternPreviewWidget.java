@@ -1,7 +1,6 @@
 package com.gregtechceu.gtceu.api.gui.widget;
 
 import com.gregtechceu.gtceu.GTCEu;
-import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -17,6 +16,7 @@ import com.gregtechceu.gtceu.integration.xei.handlers.item.CycleItemStackHandler
 import com.lowdragmc.lowdraglib.client.scene.WorldSceneRenderer;
 import com.lowdragmc.lowdraglib.client.utils.RenderUtils;
 import com.lowdragmc.lowdraglib.gui.editor.ColorPattern;
+import com.lowdragmc.lowdraglib.gui.texture.ColorBorderTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ColorRectTexture;
 import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
@@ -53,19 +53,21 @@ import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import me.shedaniel.rei.impl.client.gui.screen.AbstractDisplayViewingScreen;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.gregtechceu.gtceu.common.data.GTMachines.*;
-import static com.gregtechceu.gtceu.common.data.machines.GCYMMachines.PARALLEL_HATCH;
-
 @OnlyIn(Dist.CLIENT)
 public class PatternPreviewWidget extends WidgetGroup {
 
-    private static final float LINE_WIDTH = 0.1f;
+    public static final int PREVIEW_WIDTH = 160;
+    public static final int LEGEND_WIDTH = 86;
+    public static final int WIDGET_WIDTH = PREVIEW_WIDTH + LEGEND_WIDTH;
+    public static final int WIDGET_HEIGHT = 160;
+
     private boolean isLoaded;
     private static TrackedDummyWorld LEVEL;
 
@@ -76,6 +78,10 @@ public class PatternPreviewWidget extends WidgetGroup {
 
     private final PreviewSceneWidget sceneWidget;
     private final DraggableScrollableWidgetGroup scrollableWidgetGroup;
+    private final PatternHighlightLegendWidget legendWidget;
+    private final ButtonWidget pageButton;
+    private final ButtonWidget layerButton;
+    private final ButtonWidget highlightButton;
 
     public final MultiblockMachineDefinition controllerDefinition;
     public final MBPattern[] patterns;
@@ -83,6 +89,8 @@ public class PatternPreviewWidget extends WidgetGroup {
     private final List<SimplePredicate> predicates;
 
     private boolean isHighLight;
+    @Nullable
+    private PatternBlockCategory soloCategory;
     private int index;
     public int layer;
 
@@ -90,7 +98,7 @@ public class PatternPreviewWidget extends WidgetGroup {
     private SlotWidget[] candidates;
 
     protected PatternPreviewWidget(MultiblockMachineDefinition controllerDefinition) {
-        super(0, 0, 160, 160);
+        super(0, 0, WIDGET_WIDTH, WIDGET_HEIGHT);
 
         setClientSideWidget();
 
@@ -99,6 +107,7 @@ public class PatternPreviewWidget extends WidgetGroup {
 
         layer = -1;
         isHighLight = false;
+        soloCategory = null;
 
         sceneWidget = new PreviewSceneWidget(3, 3, 150, 150, LEVEL);
         sceneWidget.setOnSelected(this::onPosSelected);
@@ -124,10 +133,10 @@ public class PatternPreviewWidget extends WidgetGroup {
             }
         }
         addWidget(new ImageWidget(
-                3, 3, 160, 10,
+                3, 3, 154, 10,
                 new TextTexture(controllerDefinition.getDescriptionId(), -1)
                         .setType(TextTexture.TextType.ROLL)
-                        .setWidth(170)
+                        .setWidth(154)
                         .setDropShadow(true)));
 
         this.patterns = CACHE.computeIfAbsent(controllerDefinition, definition -> {
@@ -143,38 +152,106 @@ public class PatternPreviewWidget extends WidgetGroup {
 
         });
 
-        addWidget(new ButtonWidget(
+        pageButton = new ButtonWidget(
                 138, 30, 18, 18,
                 new GuiTextureGroup(
                         ColorPattern.T_GRAY.rectTexture(),
                         new TextTexture("1").setSupplier(() -> "P:" + index)),
-                (x) -> setPage((index + 1 >= patterns.length) ? 0 : index + 1)).setHoverBorderTexture(1, -1));
+                (x) -> setPage((index + 1 >= patterns.length) ? 0 : index + 1)).setHoverBorderTexture(1, -1);
+        addWidget(pageButton);
 
-        addWidget(new ButtonWidget(
+        layerButton = new ButtonWidget(
                 138, 50, 18, 18,
                 new GuiTextureGroup(
                         ColorPattern.T_GRAY.rectTexture(),
                         new TextTexture("1").setSupplier(
                                 () -> layer >= 0 ? "L:" + layer : "ALL")),
-                cd -> updateLayer()).setHoverBorderTexture(1, -1));
+                cd -> updateLayer()).setHoverBorderTexture(1, -1);
+        addWidget(layerButton);
 
-        addWidget(new ButtonWidget(
+        highlightButton = new ButtonWidget(
                 138, 70, 18, 18,
                 new GuiTextureGroup(
                         ColorPattern.T_GRAY.rectTexture(),
                         new TextTexture("1").setSupplier(
                                 () -> isHighLight ? "ON" : "OFF")),
-                cd -> updateHighLight()).setHoverBorderTexture(1, -1));
+                cd -> updateHighLight()).setHoverBorderTexture(1, -1);
+        addWidget(highlightButton);
+
+        // Added AFTER scrollableWidgetGroup so JEI ProxyRecipeWidget flat slot indices stay invariant
+        legendWidget = new PatternHighlightLegendWidget(160, 3, 83, 154, this::onSoloCategoryChanged);
+        legendWidget.setVisible(false);
+        legendWidget.setActive(false);
+        addWidget(legendWidget);
 
         setPage(0);
+        refreshControlTooltips();
     }
 
     private void updateHighLight() {
         isHighLight = !isHighLight;
+        if (!isHighLight) {
+            soloCategory = null;
+        }
+        legendWidget.setVisible(isHighLight);
+        legendWidget.setActive(isHighLight);
+        updateHighlightButtonVisual();
+        refreshHighlightState();
+        refreshControlTooltips();
+    }
+
+    private void onSoloCategoryChanged(@Nullable PatternBlockCategory category) {
+        soloCategory = category;
+        legendWidget.setSoloCategory(soloCategory);
+        sceneWidget.markHighlightDirty();
+    }
+
+    private void updateHighlightButtonVisual() {
+        TextTexture label = new TextTexture("1").setSupplier(() -> isHighLight ? "ON" : "OFF");
+        if (isHighLight) {
+            highlightButton.setButtonTexture(
+                    ColorPattern.T_GRAY.rectTexture(),
+                    new ColorBorderTexture(1, 0xFF00E676),
+                    label);
+        } else {
+            highlightButton.setButtonTexture(
+                    ColorPattern.T_GRAY.rectTexture(),
+                    label);
+        }
+    }
+
+    private void refreshControlTooltips() {
+        int totalPages = Math.max(1, patterns.length);
+        pageButton.setHoverTooltips(Component.translatable(
+                "gtceu.jei.multiblock_info.page.tooltip", index + 1, totalPages));
+
+        if (layer >= 0 && index >= 0 && index < patterns.length) {
+            MBPattern pattern = patterns[index];
+            int totalLayers = Math.max(1, pattern.maxY - pattern.minY + 1);
+            layerButton.setHoverTooltips(Component.translatable(
+                    "gtceu.jei.multiblock_info.layer.single.tooltip", layer + 1, totalLayers));
+        } else {
+            layerButton.setHoverTooltips(Component.translatable(
+                    "gtceu.jei.multiblock_info.layer.all.tooltip"));
+        }
+
+        highlightButton.setHoverTooltips(Component.translatable(isHighLight ?
+                "gtceu.jei.multiblock_info.highlight.on.tooltip" :
+                "gtceu.jei.multiblock_info.highlight.off.tooltip"));
+    }
+
+    private void refreshHighlightState() {
+        sceneWidget.rebuildCategoryCache();
+        Map<PatternBlockCategory, Integer> counts = sceneWidget.getCategoryCounts();
+        if (soloCategory != null && counts.getOrDefault(soloCategory, 0) == 0) {
+            soloCategory = null;
+        }
+        legendWidget.updateEntries(counts, soloCategory);
         sceneWidget.markHighlightDirty();
     }
 
     private void updateLayer() {
+        if (index < 0 || index >= patterns.length) return;
         MBPattern pattern = patterns[index];
 
         if (layer + 1 >= -1 && layer + 1 <= pattern.maxY - pattern.minY) {
@@ -190,7 +267,8 @@ public class PatternPreviewWidget extends WidgetGroup {
         }
 
         setupScene(pattern);
-        sceneWidget.markHighlightDirty();
+        refreshHighlightState();
+        refreshControlTooltips();
     }
 
     public static BlockPos locateNextRegion() {
@@ -401,11 +479,13 @@ public class PatternPreviewWidget extends WidgetGroup {
 
         this.index = index;
         this.layer = -1;
+        this.soloCategory = null;
 
         MBPattern pattern = patterns[index];
 
         setupScene(pattern);
-        sceneWidget.markHighlightDirty();
+        refreshHighlightState();
+        refreshControlTooltips();
 
         if (slotWidgets != null) {
             for (SlotWidget s : slotWidgets) {
@@ -450,7 +530,7 @@ public class PatternPreviewWidget extends WidgetGroup {
             controllerBase.onStructureInvalid();
         }
 
-        sceneWidget.markHighlightDirty();
+        refreshHighlightState();
     }
 
     private void onPosSelected(BlockPos pos, Direction facing) {
@@ -490,7 +570,7 @@ public class PatternPreviewWidget extends WidgetGroup {
         candidates = new SlotWidget[stacks.size()];
         CycleItemStackHandler handler = new CycleItemStackHandler(stacks);
 
-        int maxCol = (160 - (((slotWidgets.length - 1) / 9 + 1) * 18) - 35) % 18;
+        int maxCol = Math.max(1, (160 - (((slotWidgets.length - 1) / 9 + 1) * 18) - 35) % 18);
 
         for (int i = 0; i < stacks.size(); i++) {
 
@@ -538,7 +618,8 @@ public class PatternPreviewWidget extends WidgetGroup {
 
     private final class PreviewSceneWidget extends SceneWidget {
 
-        private static final float LINE_HALF_WIDTH = 0.1f;
+        private static final float FACE_EXPAND = 0.004f;
+        private static final float LINE_EXPAND = 0.0055f;
 
         @Override
         @OnlyIn(Dist.CLIENT)
@@ -595,11 +676,14 @@ public class PatternPreviewWidget extends WidgetGroup {
             }
         }
 
-        private final Map<BlockPos, Integer> colorCaches = new HashMap<>();
+        private final Map<BlockPos, PatternBlockCategory> categoryCache = new HashMap<>();
+        private final EnumMap<PatternBlockCategory, Integer> categoryCounts = new EnumMap<>(PatternBlockCategory.class);
 
-        private VertexBuffer highlightVbo;
+        @Nullable
+        private VertexBuffer highlightFaceVbo;
+        @Nullable
+        private VertexBuffer highlightLineVbo;
         private boolean highlightDirty = true;
-        private int vertexCount;
 
         public PreviewSceneWidget(int x, int y, int w, int h, TrackedDummyWorld world) {
             super(x, y, w, h, world);
@@ -607,215 +691,187 @@ public class PatternPreviewWidget extends WidgetGroup {
 
         public void markHighlightDirty() {
             highlightDirty = true;
-            colorCaches.clear();
+        }
+
+        public void rebuildCategoryCache() {
+            categoryCache.clear();
+            categoryCounts.clear();
+            if (core.isEmpty() || index < 0 || index >= patterns.length) {
+                return;
+            }
+            MBPattern pattern = patterns[index];
+            Map<TraceabilityPredicate, EnumSet<PatternBlockCategory>> predicateCache = new IdentityHashMap<>();
+            for (BlockPos pos : core) {
+                BlockInfo blockInfo = pattern.blockMap.get(pos);
+                BlockState state = blockInfo != null ? blockInfo.getBlockState() : LEVEL.getBlockState(pos);
+                TraceabilityPredicate predicate = pattern.predicateMap.get(pos);
+                PatternBlockCategory category = PatternBlockCategory.classify(
+                        state, LEVEL.getBlockEntity(pos), predicate, predicateCache);
+                if (category != null) {
+                    categoryCache.put(pos, category);
+                    categoryCounts.merge(category, 1, Integer::sum);
+                }
+            }
+        }
+
+        public Map<PatternBlockCategory, Integer> getCategoryCounts() {
+            return categoryCounts;
+        }
+
+        private void closeHighlightBuffers() {
+            if (highlightFaceVbo != null) {
+                highlightFaceVbo.close();
+                highlightFaceVbo = null;
+            }
+            if (highlightLineVbo != null) {
+                highlightLineVbo.close();
+                highlightLineVbo = null;
+            }
+            highlightDirty = true;
+        }
+
+        @Override
+        public void releaseCacheBuffer() {
+            super.releaseCacheBuffer();
+            closeHighlightBuffers();
         }
 
         private void rebuildHighlightBuffer() {
+            closeHighlightBuffers();
             highlightDirty = false;
 
-            if (highlightVbo != null) {
-                highlightVbo.close();
-                highlightVbo = null;
+            if (!isHighLight || core.isEmpty() || index < 0 || index >= patterns.length) return;
+
+            if (categoryCache.isEmpty()) {
+                rebuildCategoryCache();
             }
 
-            if (!isHighLight || core.isEmpty()) return;
+            Map<BlockPos, PatternBlockCategory> activeBlocks = new HashMap<>();
+            for (Map.Entry<BlockPos, PatternBlockCategory> entry : categoryCache.entrySet()) {
+                PatternBlockCategory category = entry.getValue();
+                if (category == null) continue;
+                if (soloCategory != null && category != soloCategory) continue;
+                activeBlocks.put(entry.getKey(), category);
+            }
 
-            Map<BlockPos, TraceabilityPredicate> predicateMap = patterns[index].controllerBase
-                    .getMultiblockState()
-                    .getMatchContext()
-                    .get("predicates");
+            if (activeBlocks.isEmpty()) return;
 
-            if (predicateMap == null) return;
-
+            boolean isSolo = soloCategory != null;
             BufferBuilder builder = Tesselator.getInstance().getBuilder();
 
-            builder.begin(VertexFormat.Mode.QUADS,
-                    DefaultVertexFormat.POSITION_COLOR);
+            // 1. Translucent faces VBO (skip internal faces shared with same-category neighbors)
+            builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+            int faceQuads = 0;
+            for (Map.Entry<BlockPos, PatternBlockCategory> entry : activeBlocks.entrySet()) {
+                BlockPos pos = entry.getKey();
+                PatternBlockCategory cat = entry.getValue();
+                float r = cat.getRed();
+                float g = cat.getGreen();
+                float b = cat.getBlue();
+                float a = cat.getFaceAlpha(isSolo);
+                if (a <= 0.0f) continue;
 
-            vertexCount = 0;
-
-            for (BlockPos pos : core) {
-
-                if (selectedPosFace != null && pos.equals(selectedPosFace.pos))
-                    continue;
-
-                TraceabilityPredicate p = predicateMap.get(pos);
-                if (p == null) continue;
-                if (selectedPosFace != null && pos == selectedPosFace.pos) return;
-                int color = 0;
-                if (!colorCaches.containsKey(pos)) {
-                    if (predicateMap.containsKey(pos)) {
-                        var predicate = predicateMap.get(pos);
-                        List<ItemStack> candidates = new ArrayList<ItemStack>();
-                        predicate.common.forEach(y -> candidates.addAll(y.getCandidates()));
-                        predicate.limited.forEach(y -> candidates.addAll(y.getCandidates()));
-                        int cnt = 0;
-                        for (var candidate : candidates) {
-                            if (cnt > 1) break;
-                            if (candidate.equals(ITEM_IMPORT_BUS[GTValues.LV].asStack(), false) ||
-                                    candidate.equals(FLUID_IMPORT_HATCH[GTValues.LV].asStack(), false) ||
-                                    candidate.equals(STEAM_IMPORT_BUS.asStack(), false)) {
-                                cnt++;
-                                color = 0x00ff00ff;// 绿色
-                                continue;
-                            }
-                            if (candidate.equals(ITEM_EXPORT_BUS[GTValues.LV].asStack(), false) ||
-                                    candidate.equals(FLUID_EXPORT_HATCH[GTValues.LV].asStack(), false) ||
-                                    candidate.equals(STEAM_EXPORT_BUS.asStack(), false)) {
-                                cnt++;
-                                color = 0xff8000ff;// 橙色
-                                continue;
-                            }
-                            if (candidate.equals(ENERGY_INPUT_HATCH[GTValues.LV].asStack(), false) ||
-                                    candidate.equals(ENERGY_OUTPUT_HATCH[GTValues.LV].asStack(), false) ||
-                                    candidate.equals(LASER_INPUT_HATCH_256[GTValues.IV].asStack(), false) ||
-                                    candidate.equals(LASER_OUTPUT_HATCH_256[GTValues.IV].asStack(), false) ||
-                                    candidate.equals(STEAM_HATCH.asStack())) {
-                                cnt++;
-                                color = 0xffff00ff;// 黄色
-                                continue;
-                            }
-                            if (candidate.equals(MAINTENANCE_HATCH.asStack(), false)) {
-                                cnt++;
-                                color = 0x00ffffff;// 青色
-                                continue;
-                            }
-                            if (candidate.equals(MUFFLER_HATCH[GTValues.LV].asStack(), false)) {
-                                cnt++;
-                                color = 0x800080ff;// 紫色
-                                continue;
-                            }
-                            if (candidate.equals(PARALLEL_HATCH[GTValues.IV].asStack(), false)) {
-                                cnt++;
-                                color = 0xf0ffffff;// 蔚蓝色
-                            }
-                        }
-
-                        if (cnt > 1) {
-                            color = 0x3b2525ff;
-                        }
-                        colorCaches.put(pos, color);
-                    }
-                } else {
-                    color = colorCaches.get(pos);
-                }
-                appendWire(builder, pos, color);
-                vertexCount += 24;
+                faceQuads += appendBoxFaces(builder, pos, cat, activeBlocks, r, g, b, a);
+            }
+            BufferBuilder.RenderedBuffer faceRendered = builder.end();
+            if (faceQuads > 0) {
+                highlightFaceVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+                highlightFaceVbo.bind();
+                highlightFaceVbo.upload(faceRendered);
+                VertexBuffer.unbind();
+            } else {
+                faceRendered.release();
             }
 
-            BufferBuilder.RenderedBuffer rendered = builder.end();
+            // 2. Crisp wireframe outline VBO (1px GL_LINES, immune to JEI sub-viewport scaling)
+            builder.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+            int lineEdges = 0;
+            for (Map.Entry<BlockPos, PatternBlockCategory> entry : activeBlocks.entrySet()) {
+                BlockPos pos = entry.getKey();
+                PatternBlockCategory cat = entry.getValue();
+                float r = cat.getRed();
+                float g = cat.getGreen();
+                float b = cat.getBlue();
+                float a = cat.getLineAlpha(isSolo);
+                if (a <= 0.0f) continue;
 
-            highlightVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
-            highlightVbo.bind();
-            highlightVbo.upload(rendered);
-            VertexBuffer.unbind();
-
-            // rendered.release();
+                appendBoxLines(builder, pos, r, g, b, a);
+                lineEdges += 12;
+            }
+            BufferBuilder.RenderedBuffer lineRendered = builder.end();
+            if (lineEdges > 0) {
+                highlightLineVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+                highlightLineVbo.bind();
+                highlightLineVbo.upload(lineRendered);
+                VertexBuffer.unbind();
+            } else {
+                lineRendered.release();
+            }
         }
 
-        private void appendWire(BufferBuilder b, BlockPos pos, int rgba) {
-            float r = ((rgba >> 24) & 255) / 255f;
-            float g = ((rgba >> 16) & 255) / 255f;
-            float bl = ((rgba >> 8) & 255) / 255f;
-            float a = (rgba & 255) / 255f;
+        private int appendBoxFaces(BufferBuilder builder, BlockPos pos, PatternBlockCategory category,
+                                   Map<BlockPos, PatternBlockCategory> activeBlocks,
+                                   float r, float g, float b, float a) {
+            float x1 = pos.getX() - FACE_EXPAND;
+            float y1 = pos.getY() - FACE_EXPAND;
+            float z1 = pos.getZ() - FACE_EXPAND;
+            float x2 = pos.getX() + 1.0f + FACE_EXPAND;
+            float y2 = pos.getY() + 1.0f + FACE_EXPAND;
+            float z2 = pos.getZ() + 1.0f + FACE_EXPAND;
 
-            float x = pos.getX();
-            float y = pos.getY();
-            float z = pos.getZ();
-
-            float x2 = x + 1.0f;
-            float y2 = y + 1.0f;
-            float z2 = z + 1.0f;
-
-            // bottom
-            appendEdgeX(b, x, x2, y, z, r, g, bl, a);
-            appendEdgeZ(b, z, z2, x2, y, r, g, bl, a);
-            appendEdgeX(b, x, x2, y, z2, r, g, bl, a);
-            appendEdgeZ(b, z, z2, x, y, r, g, bl, a);
-
-            // top
-            appendEdgeX(b, x, x2, y2, z, r, g, bl, a);
-            appendEdgeZ(b, z, z2, x2, y2, r, g, bl, a);
-            appendEdgeX(b, x, x2, y2, z2, r, g, bl, a);
-            appendEdgeZ(b, z, z2, x, y2, r, g, bl, a);
-
-            // vertical
-            appendEdgeY(b, y, y2, x, z, r, g, bl, a);
-            appendEdgeY(b, y, y2, x2, z, r, g, bl, a);
-            appendEdgeY(b, y, y2, x2, z2, r, g, bl, a);
-            appendEdgeY(b, y, y2, x, z2, r, g, bl, a);
+            int quads = 0;
+            if (activeBlocks.get(pos.south()) != category) {
+                addQuad(builder, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
+                quads++;
+            }
+            if (activeBlocks.get(pos.north()) != category) {
+                addQuad(builder, x2, y1, z1, x1, y1, z1, x1, y2, z1, x2, y2, z1, r, g, b, a);
+                quads++;
+            }
+            if (activeBlocks.get(pos.above()) != category) {
+                addQuad(builder, x1, y2, z2, x2, y2, z2, x2, y2, z1, x1, y2, z1, r, g, b, a);
+                quads++;
+            }
+            if (activeBlocks.get(pos.below()) != category) {
+                addQuad(builder, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, r, g, b, a);
+                quads++;
+            }
+            if (activeBlocks.get(pos.east()) != category) {
+                addQuad(builder, x2, y1, z2, x2, y1, z1, x2, y2, z1, x2, y2, z2, r, g, b, a);
+                quads++;
+            }
+            if (activeBlocks.get(pos.west()) != category) {
+                addQuad(builder, x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, r, g, b, a);
+                quads++;
+            }
+            return quads;
         }
 
-        private void appendEdgeX(BufferBuilder b,
-                                 float x1, float x2, float y, float z,
-                                 float r, float g, float bl, float a) {
-            float w = LINE_HALF_WIDTH;
+        private void appendBoxLines(BufferBuilder builder, BlockPos pos, float r, float g, float b, float a) {
+            float x1 = pos.getX() - LINE_EXPAND;
+            float y1 = pos.getY() - LINE_EXPAND;
+            float z1 = pos.getZ() - LINE_EXPAND;
+            float x2 = pos.getX() + 1.0f + LINE_EXPAND;
+            float y2 = pos.getY() + 1.0f + LINE_EXPAND;
+            float z2 = pos.getZ() + 1.0f + LINE_EXPAND;
 
-            // Quad in XY plane (expand in Y)
-            addQuad(
-                    b,
-                    x1, y - w, z,
-                    x2, y - w, z,
-                    x2, y + w, z,
-                    x1, y + w, z,
-                    r, g, bl, a);
+            // Bottom rectangle
+            addLine(builder, x1, y1, z1, x2, y1, z1, r, g, b, a);
+            addLine(builder, x2, y1, z1, x2, y1, z2, r, g, b, a);
+            addLine(builder, x2, y1, z2, x1, y1, z2, r, g, b, a);
+            addLine(builder, x1, y1, z2, x1, y1, z1, r, g, b, a);
 
-            // Quad in XZ plane (expand in Z)
-            addQuad(
-                    b,
-                    x1, y, z - w,
-                    x2, y, z - w,
-                    x2, y, z + w,
-                    x1, y, z + w,
-                    r, g, bl, a);
-        }
+            // Top rectangle
+            addLine(builder, x1, y2, z1, x2, y2, z1, r, g, b, a);
+            addLine(builder, x2, y2, z1, x2, y2, z2, r, g, b, a);
+            addLine(builder, x2, y2, z2, x1, y2, z2, r, g, b, a);
+            addLine(builder, x1, y2, z2, x1, y2, z1, r, g, b, a);
 
-        private void appendEdgeY(BufferBuilder b,
-                                 float y1, float y2, float x, float z,
-                                 float r, float g, float bl, float a) {
-            float w = LINE_HALF_WIDTH;
-
-            // Quad in XY plane (expand in X)
-            addQuad(
-                    b,
-                    x - w, y1, z,
-                    x + w, y1, z,
-                    x + w, y2, z,
-                    x - w, y2, z,
-                    r, g, bl, a);
-
-            // Quad in YZ plane (expand in Z)
-            addQuad(
-                    b,
-                    x, y1, z - w,
-                    x, y1, z + w,
-                    x, y2, z + w,
-                    x, y2, z - w,
-                    r, g, bl, a);
-        }
-
-        private void appendEdgeZ(BufferBuilder b,
-                                 float z1, float z2, float x, float y,
-                                 float r, float g, float bl, float a) {
-            float w = LINE_HALF_WIDTH;
-
-            // Quad in XZ plane (expand in X)
-            addQuad(
-                    b,
-                    x - w, y, z1,
-                    x + w, y, z1,
-                    x + w, y, z2,
-                    x - w, y, z2,
-                    r, g, bl, a);
-
-            // Quad in YZ plane (expand in Y)
-            addQuad(
-                    b,
-                    x, y - w, z1,
-                    x, y + w, z1,
-                    x, y + w, z2,
-                    x, y - w, z2,
-                    r, g, bl, a);
+            // Vertical edges
+            addLine(builder, x1, y1, z1, x1, y2, z1, r, g, b, a);
+            addLine(builder, x2, y1, z1, x2, y2, z1, r, g, b, a);
+            addLine(builder, x2, y1, z2, x2, y2, z2, r, g, b, a);
+            addLine(builder, x1, y1, z2, x1, y2, z2, r, g, b, a);
         }
 
         private void addQuad(BufferBuilder b,
@@ -830,6 +886,14 @@ public class PatternPreviewWidget extends WidgetGroup {
             b.vertex(x4, y4, z4).color(r, g, bl, a).endVertex();
         }
 
+        private void addLine(BufferBuilder b,
+                             float x1, float y1, float z1,
+                             float x2, float y2, float z2,
+                             float r, float g, float bl, float a) {
+            b.vertex(x1, y1, z1).color(r, g, bl, a).endVertex();
+            b.vertex(x2, y2, z2).color(r, g, bl, a).endVertex();
+        }
+
         private void renderHighlight() {
             if (!isHighLight) return;
 
@@ -837,22 +901,45 @@ public class PatternPreviewWidget extends WidgetGroup {
                 rebuildHighlightBuffer();
             }
 
-            if (highlightVbo == null) return;
+            if (highlightFaceVbo == null && highlightLineVbo == null) return;
 
+            var shader = GameRenderer.getPositionColorShader();
+            if (shader == null) return;
+
+            boolean xRay = soloCategory != null;
             RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            RenderSystem.disableDepthTest();
-            RenderSystem.disableCull();
-            highlightVbo.bind();
-
-            highlightVbo.drawWithShader(
-                    RenderSystem.getModelViewMatrix(),
-                    RenderSystem.getProjectionMatrix(),
-                    RenderSystem.getShader());
+            RenderSystem.depthMask(false);
+            if (xRay) {
+                RenderSystem.disableDepthTest();
+            } else {
+                RenderSystem.enableDepthTest();
+            }
             RenderSystem.enableCull();
-            RenderSystem.enableDepthTest();
-            RenderSystem.disableBlend();
+
+            if (highlightFaceVbo != null) {
+                highlightFaceVbo.bind();
+                highlightFaceVbo.drawWithShader(
+                        RenderSystem.getModelViewMatrix(),
+                        RenderSystem.getProjectionMatrix(),
+                        shader);
+            }
+
+            if (highlightLineVbo != null) {
+                highlightLineVbo.bind();
+                highlightLineVbo.drawWithShader(
+                        RenderSystem.getModelViewMatrix(),
+                        RenderSystem.getProjectionMatrix(),
+                        shader);
+            }
+
             VertexBuffer.unbind();
+            RenderSystem.depthMask(true);
+            RenderSystem.enableDepthTest();
+            RenderSystem.enableCull();
+            RenderSystem.disableBlend();
         }
 
         @Override

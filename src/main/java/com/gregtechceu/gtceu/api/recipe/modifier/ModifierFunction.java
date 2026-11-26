@@ -10,6 +10,8 @@ import com.gregtechceu.gtceu.api.recipe.content.ContentModifier;
 import com.gregtechceu.gtceu.api.recipe.ingredient.EnergyStack;
 import com.gregtechceu.gtceu.utils.GTMath;
 
+import net.minecraft.network.chat.Component;
+
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Contract;
@@ -56,12 +58,42 @@ public interface ModifierFunction {
     GTRecipe apply(@NotNull GTRecipe recipe);
 
     /**
+     * Optional human-readable reason explaining why this modifier cancelled a recipe.
+     */
+    @Nullable
+    default Component getCancelReason() {
+        return null;
+    }
+
+    /**
+     * Returns a cancelling modifier that always returns {@code null} and carries a diagnostic reason.
+     */
+    static ModifierFunction cancel(@NotNull Component reason) {
+        return new CancelledModifier(reason);
+    }
+
+    record CancelledModifier(@NotNull Component reason) implements ModifierFunction {
+
+        @Override
+        public @Nullable GTRecipe apply(@NotNull GTRecipe recipe) {
+            return null;
+        }
+
+        @Override
+        public @NotNull Component getCancelReason() {
+            return reason;
+        }
+    }
+
+    /**
      * Returns a composed function that first applies {@code before} to its input, then applies this function.
      * 
      * @param before the function to apply first
      * @return The composed function of {@code this.apply(before.apply(recipe))}
      */
     default ModifierFunction compose(@NotNull ModifierFunction before) {
+        if (before.getCancelReason() != null) return before;
+        if (this.getCancelReason() != null) return this;
         return recipe -> applySafe(before.apply(recipe));
     }
 
@@ -72,6 +104,8 @@ public interface ModifierFunction {
      * @return The composed function of {@code after.apply(this.apply(recipe))}
      */
     default ModifierFunction andThen(@NotNull ModifierFunction after) {
+        if (this.getCancelReason() != null) return this;
+        if (after.getCancelReason() != null) return after;
         return recipe -> after.applySafe(apply(recipe));
     }
 
@@ -153,7 +187,9 @@ public interface ModifierFunction {
          * @return A new {@link ModifierFunction} from the params of this builder
          */
         public ModifierFunction build() {
-            if (parallels == 0) return NULL;
+            if (parallels == 0) {
+                return cancel(Component.translatable("gtceu.recipe_logic.insufficient_parallel"));
+            }
             return recipe -> {
                 var newConditions = new ArrayList<>(recipe.conditions);
                 newConditions.addAll(addedConditions);
