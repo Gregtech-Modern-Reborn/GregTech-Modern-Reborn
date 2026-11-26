@@ -15,6 +15,7 @@ import com.gregtechceu.gtceu.config.ConfigHolder;
 
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.fluids.FluidStack;
@@ -49,10 +50,19 @@ public class AssemblyLineMachine extends WorkableElectricMultiblockMachine {
 
         var config = ConfigHolder.INSTANCE.machines;
         if (!config.orderedAssemblyLineItems && !config.orderedAssemblyLineFluids) return true;
-        if (!checkItemInputs(recipe)) return false;
+        if (!checkItemInputs(recipe)) {
+            recipeLogic.setLastBeforeWorkingFailReason(
+                    Component.translatable("gtceu.recipe_logic.assembly_line.item_order"));
+            return false;
+        }
 
         if (!config.orderedAssemblyLineFluids) return true;
-        return checkFluidInputs(recipe);
+        if (!checkFluidInputs(recipe)) {
+            recipeLogic.setLastBeforeWorkingFailReason(
+                    Component.translatable("gtceu.recipe_logic.assembly_line.fluid_order"));
+            return false;
+        }
+        return true;
     }
 
     public static Comparator<IMultiPart> partSorter(MultiblockControllerMachine mc) {

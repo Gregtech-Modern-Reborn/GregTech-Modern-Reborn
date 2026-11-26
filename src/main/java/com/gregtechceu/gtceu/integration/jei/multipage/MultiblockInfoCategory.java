@@ -1,6 +1,7 @@
 package com.gregtechceu.gtceu.integration.jei.multipage;
 
 import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.gui.widget.PatternPreviewWidget;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines;
@@ -46,7 +47,8 @@ public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockIn
 
     public MultiblockInfoCategory(IJeiHelpers helpers) {
         IGuiHelper guiHelper = helpers.getGuiHelper();
-        this.background = guiHelper.createBlankDrawable(160, 160);
+        this.background = guiHelper.createBlankDrawable(
+                PatternPreviewWidget.WIDGET_WIDTH, PatternPreviewWidget.WIDGET_HEIGHT);
         this.icon = helpers.getGuiHelper().createDrawableItemStack(GTMultiMachines.ELECTRIC_BLAST_FURNACE.asStack());
     }
 
@@ -86,6 +88,7 @@ public class MultiblockInfoCategory extends ModularUIRecipeCategory<MultiblockIn
                             if (slot.getRect().getY() != 132) return false;
                             String name = slotName.get();
                             int index = Integer.parseInt(name.substring(5));
+                            if (index < 0 || index >= widgets.size()) return false;
                             Widget widget = widgets.get(index);
                             slot.setPosition(widget.getPositionX(), widget.getPositionY());
                             return slot.isMouseOver(mouseX, mouseY);

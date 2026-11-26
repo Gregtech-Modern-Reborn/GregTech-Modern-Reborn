@@ -131,21 +131,24 @@ public class LargeCombustionEngineMachine extends WorkableElectricMultiblockMach
             return RecipeModifier.nullWrongType(LargeCombustionEngineMachine.class, machine);
         }
         EnergyStack EUt = recipe.getOutputEUt();
-        // has lubricant
-        if (!EUt.isEmpty() && !engineMachine.isIntakesObstructed() &&
-                RecipeHelper.matchRecipe(engineMachine, engineMachine.getLubricantRecipe()).isSuccess()) {
-            int maxParallel = (int) (engineMachine.getOverclockVoltage() / EUt.getTotalEU()); // get maximum parallel
-            int actualParallel = ParallelLogic.getParallelAmount(engineMachine, recipe, maxParallel);
-            double eutMultiplier = actualParallel * engineMachine.getProductionBoost();
-
-            return ModifierFunction.builder()
-                    .inputModifier(ContentModifier.multiplier(actualParallel))
-                    .outputModifier(ContentModifier.multiplier(actualParallel))
-                    .eutMultiplier(eutMultiplier)
-                    .parallels(actualParallel)
-                    .build();
+        if (EUt.isEmpty()) return ModifierFunction.NULL;
+        if (engineMachine.isIntakesObstructed()) {
+            return ModifierFunction.cancel(
+                    Component.translatable("gtceu.multiblock.large_combustion_engine.obstructed"));
         }
-        return ModifierFunction.NULL;
+        if (!RecipeHelper.matchRecipe(engineMachine, engineMachine.getLubricantRecipe()).isSuccess()) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_lubricant"));
+        }
+        int maxParallel = (int) (engineMachine.getOverclockVoltage() / EUt.getTotalEU()); // get maximum parallel
+        int actualParallel = ParallelLogic.getParallelAmount(engineMachine, recipe, maxParallel);
+        double eutMultiplier = actualParallel * engineMachine.getProductionBoost();
+
+        return ModifierFunction.builder()
+                .inputModifier(ContentModifier.multiplier(actualParallel))
+                .outputModifier(ContentModifier.multiplier(actualParallel))
+                .eutMultiplier(eutMultiplier)
+                .parallels(actualParallel)
+                .build();
     }
 
     @Override
@@ -209,7 +212,8 @@ public class LargeCombustionEngineMachine extends WorkableElectricMultiblockMach
             builder.addCustom(tl -> tl.add(Component.translatable(key).withStyle(ChatFormatting.AQUA)));
         }
 
-        builder.addWorkingStatusLine();
+        builder.addWorkingStatusLine()
+                .addWaitingReasonLine(recipeLogic.getWaitingReason());
     }
 
     @Nullable

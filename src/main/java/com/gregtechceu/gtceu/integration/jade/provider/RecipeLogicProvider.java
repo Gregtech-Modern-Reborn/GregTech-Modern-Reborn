@@ -16,6 +16,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
@@ -55,6 +56,12 @@ public class RecipeLogicProvider extends CapabilityBlockProvider<RecipeLogic> {
 
         if (!recipeInfo.isEmpty()) {
             data.put("Recipe", recipeInfo);
+        }
+        if (capability.shouldDisplayHudReason()) {
+            Component reason = capability.getWaitingReason();
+            if (reason != null) {
+                data.putString("FailReason", Component.Serializer.toJson(reason));
+            }
         }
     }
 
@@ -119,6 +126,12 @@ public class RecipeLogicProvider extends CapabilityBlockProvider<RecipeLogic> {
                         tooltip.add(Component.translatable("gtceu.top.energy_production").append(" ").append(text));
                     }
                 }
+            }
+        } else if (capData.contains("FailReason", Tag.TAG_STRING)) {
+            Component reason = Component.Serializer.fromJson(capData.getString("FailReason"));
+            if (reason != null) {
+                tooltip.add(Component.translatable("gtceu.multiblock.recipe_fail_reason", reason)
+                        .withStyle(ChatFormatting.RED));
             }
         }
     }

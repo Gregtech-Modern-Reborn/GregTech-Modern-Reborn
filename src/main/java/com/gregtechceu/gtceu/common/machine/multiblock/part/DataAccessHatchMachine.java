@@ -42,6 +42,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -189,6 +190,11 @@ public class DataAccessHatchMachine extends TieredPartMachine
     @Override
     public GTRecipe modifyRecipe(GTRecipe recipe) {
         return IDataAccessHatch.super.modifyRecipe(recipe);
+    }
+
+    @Override
+    public @Nullable Component getModifyRecipeFailReason(GTRecipe recipe) {
+        return IDataAccessHatch.super.getModifyRecipeFailReason(recipe);
     }
 
     @Override

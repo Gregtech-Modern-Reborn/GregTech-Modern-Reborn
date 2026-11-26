@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -199,6 +200,18 @@ public interface IRotorHolderMachine extends IMultiPart {
             return null;
         }
         return IMultiPart.super.modifyRecipe(recipe);
+    }
+
+    @Override
+    @Nullable
+    default Component getModifyRecipeFailReason(GTRecipe recipe) {
+        if (!hasRotor()) {
+            return Component.translatable("gtceu.recipe_logic.no_rotor");
+        }
+        if (!isFrontFaceFree()) {
+            return Component.translatable("gtceu.multiblock.universal.rotor_obstructed");
+        }
+        return null;
     }
 
     //////////////////////////////////////

@@ -111,7 +111,11 @@ public class SteamParallelMultiblockMachine extends WorkableMultiblockMachine
         if (!(machine instanceof SteamParallelMultiblockMachine steamMachine)) {
             return RecipeModifier.nullWrongType(SteamParallelMultiblockMachine.class, machine);
         }
-        if (RecipeHelper.getRecipeEUtTier(recipe) > GTValues.LV) return ModifierFunction.NULL;
+        int recipeTier = RecipeHelper.getRecipeEUtTier(recipe);
+        if (recipeTier > GTValues.LV) {
+            return ModifierFunction.cancel(Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                    Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)])));
+        }
 
         // Duration = 1.5x base duration
         // EUt (not steam) = (4/3) * (2/3) * parallels * base EUt, up to a max of 32 EUt
@@ -153,7 +157,11 @@ public class SteamParallelMultiblockMachine extends WorkableMultiblockMachine
                 textList.add(Component.translatable("gtceu.multiblock.idling"));
             }
 
-            if (recipeLogic.isWaiting()) {
+            Component reason = recipeLogic.getWaitingReason();
+            if (reason != null) {
+                textList.add(Component.translatable("gtceu.multiblock.recipe_fail_reason", reason)
+                        .withStyle(ChatFormatting.RED));
+            } else if (recipeLogic.isWaiting()) {
                 textList.add(Component.translatable("gtceu.multiblock.steam.low_steam")
                         .setStyle(Style.EMPTY.withColor(ChatFormatting.RED)));
             }

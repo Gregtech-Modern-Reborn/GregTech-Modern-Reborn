@@ -1,6 +1,7 @@
 package com.gregtechceu.gtceu.api.machine.trait;
 
 import com.gregtechceu.gtceu.GTCEu;
+import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.IWorkable;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
@@ -9,10 +10,17 @@ import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyTooltip;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
+import com.gregtechceu.gtceu.api.machine.feature.IExhaustVentMachine;
+import com.gregtechceu.gtceu.api.machine.feature.IOverclockMachine;
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine;
+import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMaintenanceMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
+import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
+import com.gregtechceu.gtceu.api.machine.multiblock.CoilWorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
+import com.gregtechceu.gtceu.api.machine.steam.SimpleSteamMachine;
+import com.gregtechceu.gtceu.api.machine.steam.SteamWorkableMachine;
 import com.gregtechceu.gtceu.api.recipe.ActionResult;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
@@ -23,6 +31,9 @@ import com.gregtechceu.gtceu.api.recipe.ingredient.SizedIngredient;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.api.sound.AutoReleasedSound;
 import com.gregtechceu.gtceu.common.cover.MachineControllerCover;
+import com.gregtechceu.gtceu.common.machine.multiblock.electric.FusionReactorMachine;
+import com.gregtechceu.gtceu.common.machine.multiblock.steam.SteamParallelMultiblockMachine;
+import com.gregtechceu.gtceu.utils.FormattingUtil;
 import com.gregtechceu.gtceu.utils.GTMath;
 import com.gregtechceu.gtceu.utils.RecipeUtils;
 
@@ -37,6 +48,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -108,9 +120,18 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     protected boolean isActive;
 
     @Nullable
+    @Getter
     @Persisted
     @DescSynced
     private Component waitingReason = null;
+    @Nullable
+    @Setter
+    private Component lastModifierFailReason = null;
+    @Nullable
+    @Setter
+    private Component lastBeforeWorkingFailReason = null;
+    @Nullable
+    private Component candidateFailReason = null;
     /**
      * unsafe, it may not be found from {@link RecipeManager}. Do not index it.
      */
@@ -206,9 +227,13 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
         duration = 0;
         isActive = false;
         lastFailedMatches = null;
+        lastModifierFailReason = null;
+        lastBeforeWorkingFailReason = null;
+        candidateFailReason = null;
         if (status != Status.SUSPEND) {
             setStatus(Status.IDLE);
         }
+        setWaitingReason(null);
         MultiParallelCount = 1;
         isMultiParallelLogic = false;
         ActiveModesList = new ArrayList<Boolean>();
@@ -300,17 +325,24 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     }
 
     public boolean checkMatchedRecipeAvailable(GTRecipe match) {
+        lastModifierFailReason = null;
         var modified = machine.fullModifyRecipe(match);
         if (modified != null) {
             var recipeMatch = checkRecipe(modified);
             if (recipeMatch.isSuccess()) {
                 setupRecipe(modified);
+            } else {
+                recordCandidateFailReason(formatActionFailure(recipeMatch));
             }
             if (lastRecipe != null && getStatus() == Status.WORKING) {
                 lastOriginRecipe = match;
                 lastFailedMatches = null;
+                candidateFailReason = null;
                 return true;
             }
+        } else {
+            recordCandidateFailReason(lastModifierFailReason != null ? lastModifierFailReason :
+                    Component.translatable("gtceu.recipe_logic.modifier_fails"));
         }
         return false;
     }
@@ -341,7 +373,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 progress++;
                 totalContinuousRunningTime++;
             } else {
-                setWaiting(handleTick.reason());
+                setWaiting(formatActionFailure(handleTick));
                 // Machine isn't getting enough power, suspend after 5 attempts.
                 if (handleTick.io() == IO.IN && handleTick.capability() == EURecipeCapability.CAP) {
 
@@ -364,13 +396,14 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                         if (machine.self() instanceof IMultiController && !preventPowerFail) {
                             runAttempt = 0;
                             setStatus(Status.SUSPEND);
+                            setWaitingReason(Component.translatable("gtceu.recipe_logic.power_fail_suspended"));
                         }
                     }
                     runDelay = runAttempt * 60;
                 }
             }
         } else {
-            setWaiting(conditionResult.reason());
+            setWaiting(formatActionFailure(conditionResult));
         }
         if (isWaiting()) {
             regressRecipe();
@@ -392,6 +425,7 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
 
     public void findAndHandleRecipe() {
         lastFailedMatches = null;
+        candidateFailReason = null;
 
         if (!isMultiParallelLogic) {
             // NormalMode
@@ -407,9 +441,16 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 handleSearchingRecipes(searchRecipe());
             }
             recipeDirty = false;
+            if (lastRecipe == null || getStatus() != Status.WORKING) {
+                Component reason = candidateFailReason != null ? candidateFailReason : diagnoseRecipeFailure();
+                if (getStatus() == Status.IDLE || reason != null) {
+                    setWaitingReason(reason);
+                }
+            }
         } else {
 
             GTRecipe recipeAll = null;
+            Component multiParallelFailReason = null;
             if (machine.getRecipeTypes() == null) return;
             for (int i = 0; i < machine.getRecipeTypes().length; ++i) {
                 if (!ActiveModesList.get(i)) continue;
@@ -425,7 +466,13 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                     if (threadCount >= MultiParallelCount) break;
 
                     handleSearchingRecipes(searchRecipe());
-                    if (lastRecipe == null) break;
+                    if (lastRecipe == null) {
+                        if (Recipe_List.isEmpty() && multiParallelFailReason == null) {
+                            multiParallelFailReason = candidateFailReason != null ? candidateFailReason :
+                                    diagnoseRecipeFailure();
+                        }
+                        break;
+                    }
 
                     var handledIO = handleRecipeIO(lastRecipe, IO.IN);
                     if (handledIO.isSuccess()) {
@@ -435,6 +482,9 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                         lastOriginRecipe = null;
                         lastFailedMatches = null;
                     } else {
+                        if (multiParallelFailReason == null) {
+                            multiParallelFailReason = formatActionFailure(handledIO);
+                        }
                         FailesCount++;
                     }
                     if (FailesCount > 2) break;
@@ -447,12 +497,24 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 // if (recipe == null) return;
                 // setupRecipe(recipe);
             }
-            if (recipeAll == null) return;
+            if (recipeAll == null) {
+                if (getStatus() == Status.IDLE || multiParallelFailReason != null) {
+                    setWaitingReason(multiParallelFailReason);
+                }
+                return;
+            }
             setupRecipe(recipeAll);
+            if (lastRecipe == null || getStatus() != Status.WORKING) {
+                Component reason = candidateFailReason != null ? candidateFailReason : multiParallelFailReason;
+                if (getStatus() == Status.IDLE || reason != null) {
+                    setWaitingReason(reason);
+                }
+            }
         }
     }
 
     protected void handleSearchingRecipes(@NotNull Iterator<GTRecipe> matches) {
+        candidateFailReason = null;
         while (matches.hasNext()) {
             GTRecipe match = matches.next();
             if (match == null) continue;
@@ -467,6 +529,102 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             }
             lastFailedMatches.add(match);
         }
+    }
+
+    protected void recordCandidateFailReason(@Nullable Component reason) {
+        if (candidateFailReason == null && reason != null && !reason.equals(Component.empty())) {
+            candidateFailReason = reason;
+        }
+    }
+
+    @Nullable
+    protected Component formatActionFailure(@Nullable ActionResult result) {
+        if (result == null || result.isSuccess()) return null;
+        if (result.io() == IO.IN && result.capability() == EURecipeCapability.CAP &&
+                (machine instanceof SteamWorkableMachine || machine instanceof SteamParallelMultiblockMachine)) {
+            return Component.translatable("gtceu.multiblock.steam.low_steam");
+        }
+        Component reason = result.reason();
+        return (reason == null || reason.equals(Component.empty())) ? null : reason;
+    }
+
+    protected ActionResult matchRecipeInputsOnly(GTRecipe recipe) {
+        if (!machine.hasCapabilityProxies()) return ActionResult.FAIL_NO_CAPABILITIES;
+        return RecipeHelper.handleRecipe(machine, recipe, IO.IN, recipe.inputs,
+                Collections.emptyMap(), false, true);
+    }
+
+    @Nullable
+    protected Component diagnoseRecipeFailure() {
+        if (!machine.hasCapabilityProxies()) return null;
+        var matches = machine.getRecipeType().searchRecipe(machine, r -> matchRecipeInputsOnly(r).isSuccess());
+        while (matches.hasNext()) {
+            GTRecipe candidate = matches.next();
+            if (candidate == null) continue;
+            Component reason = diagnoseCandidate(candidate);
+            if (reason != null) return reason;
+        }
+        return null;
+    }
+
+    @Nullable
+    protected Component diagnoseCandidate(GTRecipe recipe) {
+        if (machine instanceof IMultiController controller) {
+            for (IMultiPart part : controller.getParts()) {
+                Component partReason = part.getModifyRecipeFailReason(recipe);
+                if (partReason != null) return partReason;
+            }
+        }
+        var conditionResult = RecipeHelper.checkConditions(recipe, this);
+        if (!conditionResult.isSuccess()) {
+            return formatActionFailure(conditionResult);
+        }
+        int recipeTier = RecipeHelper.getRecipeEUtTier(recipe);
+        if (machine instanceof CoilWorkableElectricMultiblockMachine coilMachine && recipe.data.contains("ebf_temp")) {
+            int blastTemp = coilMachine.getCoilType().getCoilTemperature() +
+                    (100 * Math.max(0, coilMachine.getTier() - GTValues.MV));
+            int recipeTemp = recipe.data.getInt("ebf_temp");
+            if (recipeTemp > blastTemp) {
+                return Component.translatable("gtceu.recipe_logic.insufficient_temperature",
+                        FormattingUtil.formatNumbers(recipeTemp));
+            }
+        }
+        if (machine instanceof FusionReactorMachine fusion && recipe.data.contains("eu_to_start")) {
+            if (recipeTier > fusion.getTier()) {
+                return Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                        Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)]));
+            }
+            long euToStart = recipe.data.getLong("eu_to_start");
+            if (euToStart > fusion.getInternalEnergyContainer().getEnergyCapacity()) {
+                return Component.translatable("gtceu.recipe_logic.insufficient_startup_capacity",
+                        FormattingUtil.formatNumberReadable2F(euToStart, false));
+            }
+            long heatDiff = euToStart - fusion.getHeat();
+            if (heatDiff > 0 && fusion.getInternalEnergyContainer().getEnergyStored() < heatDiff) {
+                return Component.translatable("gtceu.recipe_logic.insufficient_startup_energy",
+                        FormattingUtil.formatNumberReadable2F(heatDiff, false));
+            }
+        }
+        if (!recipe.getInputEUt().isEmpty()) {
+            if (machine instanceof IOverclockMachine ocMachine && recipeTier > ocMachine.getMaxOverclockTier()) {
+                return Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                        Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)]));
+            }
+            if ((machine instanceof SimpleSteamMachine || machine instanceof SteamParallelMultiblockMachine) &&
+                    recipeTier > GTValues.LV) {
+                return Component.translatable("gtceu.recipe_logic.insufficient_tier",
+                        Component.literal(GTValues.VNF[Math.min(recipeTier, GTValues.VNF.length - 1)]));
+            }
+        }
+        if (machine instanceof SimpleSteamMachine steamMachine && steamMachine.isNeedsVenting() &&
+                steamMachine.isVentingBlocked()) {
+            return Component.translatable("gtceu.recipe_logic.vent_obstructed");
+        }
+        var matchResult = matchRecipe(recipe);
+        if (!matchResult.isSuccess()) {
+            return formatActionFailure(matchResult);
+        }
+        return null;
     }
 
     // In this function,our target to merge all recipes to one recipe
@@ -585,7 +743,11 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
     }
 
     public void setupRecipe(GTRecipe recipe) {
+        lastBeforeWorkingFailReason = null;
         if (!machine.beforeWorking(recipe)) {
+            Component failReason = lastBeforeWorkingFailReason != null ? lastBeforeWorkingFailReason :
+                    Component.translatable("gtceu.recipe_logic.before_working_fails");
+            recordCandidateFailReason(failReason);
             setStatus(Status.IDLE);
             consecutiveRecipes = 0;
             progress = 0;
@@ -609,6 +771,8 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             progress = 0;
             duration = recipe.duration;
             isActive = true;
+        } else {
+            recordCandidateFailReason(formatActionFailure(handledIO));
         }
     }
 
@@ -625,15 +789,58 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
             setRenderState(getRenderState().setValue(GTMachineModelProperties.RECIPE_LOGIC_STATUS, status));
             updateTickSubscription();
             if (this.status != Status.WAITING) {
-                waitingReason = null;
+                setWaitingReason(null);
             }
+        }
+    }
+
+    public void setWaitingReason(@Nullable Component reason) {
+        if (reason != null && reason.equals(Component.empty())) {
+            reason = null;
+        }
+        if (!Objects.equals(this.waitingReason, reason)) {
+            this.waitingReason = reason;
         }
     }
 
     public void setWaiting(@Nullable Component reason) {
         setStatus(Status.WAITING);
-        waitingReason = reason;
+        setWaitingReason(reason);
         machine.onWaiting();
+    }
+
+    public boolean shouldDisplayHudReason() {
+        if (isWorking() || waitingReason == null) return false;
+        if (machine instanceof IMultiController controller && !controller.isFormed()) {
+            return false;
+        }
+        if (containsTranslationKey(waitingReason, "gtceu.multiblock.universal.has_problems") &&
+                machine instanceof IMultiController controller) {
+            for (IMultiPart part : controller.getParts()) {
+                if (part instanceof IMaintenanceMachine maintenance && maintenance.hasMaintenanceProblems()) {
+                    return false;
+                }
+            }
+        }
+        if ((containsTranslationKey(waitingReason, "gtceu.recipe_logic.vent_obstructed") ||
+                containsTranslationKey(waitingReason, "recipe.condition.steam_vent.tooltip")) &&
+                machine instanceof IExhaustVentMachine vent && vent.isVentingBlocked() && vent.isNeedsVenting()) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean containsTranslationKey(@Nullable Component component, String key) {
+        if (component == null) return false;
+        if (component.getContents() instanceof TranslatableContents tc && key.equals(tc.getKey())) {
+            return true;
+        }
+        for (Component sibling : component.getSiblings()) {
+            if (containsTranslationKey(sibling, key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -709,7 +916,11 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                     if (suspendAfterFinish) {
                         setStatus(Status.SUSPEND);
                     } else {
+                        Component failReason = this.waitingReason;
                         setStatus(Status.IDLE);
+                        if (failReason != null) {
+                            setWaitingReason(failReason);
+                        }
                     }
                     consecutiveRecipes = 0;
                     progress = 0;
@@ -744,9 +955,13 @@ public class RecipeLogic extends MachineTrait implements IEnhancedManaged, IWork
                 if (suspendAfterFinish) {
                     setStatus(Status.SUSPEND);
                 } else {
+                    Component failReason = this.waitingReason;
                     setStatus(Status.IDLE);
-                    if (recipeCheck.io() != IO.IN || recipeCheck.capability() == EURecipeCapability.CAP) {
-                        waitingReason = recipeCheck.reason();
+                    if (failReason != null) {
+                        setWaitingReason(failReason);
+                    } else if (!recipeCheck.isSuccess() &&
+                            (recipeCheck.io() != IO.IN || recipeCheck.capability() == EURecipeCapability.CAP)) {
+                        setWaitingReason(formatActionFailure(recipeCheck));
                     }
                 }
                 consecutiveRecipes = 0;

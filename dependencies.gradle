@@ -75,8 +75,9 @@ dependencies {
     modCompileOnly(forge.cc.tweaked.forge.api)
 
     // Standard runtime mods //
-    // The dev jar excludes jarJar embeds; Configuration must also be a named runtime mod.
-    modLocalRuntime(forge.configuration)
+    // Note: ldlib, registrate, and configuration are already provided as named runtime mods via
+    // modApi above; duplicating them in modLocalRuntime causes ModDevGradle to resolve the
+    // unremapped SRG artifact on runtimeClasspath (breaking runData / runCleanServer).
     modClientLocalRuntime(forge.jade)
     modLocalRuntime(forge.guideme)
     modLocalRuntime(forge.ae2)

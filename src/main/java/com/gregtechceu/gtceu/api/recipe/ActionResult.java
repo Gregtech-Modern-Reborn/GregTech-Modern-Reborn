@@ -25,6 +25,14 @@ public record ActionResult(boolean isSuccess, @Nullable Component reason, @Nulla
         return new ActionResult(false, component, capability, io);
     }
 
+    public static ActionResult fail(@Nullable Component component) {
+        return new ActionResult(false, component, null, null);
+    }
+
+    public boolean hasReason() {
+        return reason != null;
+    }
+
     public Component reason() {
         if (reason == null) return Component.empty();
         return reason;

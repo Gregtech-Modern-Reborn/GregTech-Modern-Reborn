@@ -22,6 +22,8 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -306,6 +308,19 @@ public class MultiblockDisplayText {
             if (!checkState || (isWorkingEnabled && !isActive)) {
                 textList.add(Component.translatable(idlingKey).withStyle(ChatFormatting.GRAY));
             }
+            return this;
+        }
+
+        /**
+         * Adds a recipe failure or waiting reason line when present.
+         * <br>
+         * Added if the structure is formed and the passed reason is non-null and non-empty.
+         */
+        public Builder addWaitingReasonLine(@Nullable Component waitingReason) {
+            if (!isStructureFormed || waitingReason == null || waitingReason.equals(Component.empty()))
+                return this;
+            textList.add(Component.translatable("gtceu.multiblock.recipe_fail_reason", waitingReason)
+                    .withStyle(ChatFormatting.RED));
             return this;
         }
 

@@ -84,6 +84,12 @@ public class RecipeLogicInfoProvider extends CapabilityInfoProvider<RecipeLogic>
                             .style(TextStyleClass.INFO));
                 }
             }
+        } else if (capability.shouldDisplayHudReason()) {
+            Component reason = capability.getWaitingReason();
+            if (reason != null) {
+                probeInfo.text(CompoundText.create()
+                        .error(Component.translatable("gtceu.multiblock.recipe_fail_reason", reason)));
+            }
         }
     }
 }

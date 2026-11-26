@@ -184,7 +184,8 @@ public class DataBankMachine extends WorkableElectricMultiblockMachine
                         "gtceu.multiblock.idling",
                         "gtceu.multiblock.data_bank.providing")
                 .addEnergyUsageExactLine(getEnergyUsage())
-                .addWorkingStatusLine();
+                .addWorkingStatusLine()
+                .addWaitingReasonLine(recipeLogic.getWaitingReason());
     }
 
     /*

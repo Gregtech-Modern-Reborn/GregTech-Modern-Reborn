@@ -505,7 +505,11 @@ public class CleanroomMachine extends WorkableElectricMultiblockMachine
                 textList.add(Component.translatable("gtceu.multiblock.idling"));
             }
 
-            if (recipeLogic.isWaiting()) {
+            Component reason = recipeLogic.getWaitingReason();
+            if (reason != null) {
+                textList.add(Component.translatable("gtceu.multiblock.recipe_fail_reason", reason)
+                        .withStyle(ChatFormatting.RED));
+            } else if (recipeLogic.isWaiting()) {
                 textList.add(Component.translatable("gtceu.multiblock.waiting")
                         .setStyle(Style.EMPTY.withColor(ChatFormatting.RED)));
             }

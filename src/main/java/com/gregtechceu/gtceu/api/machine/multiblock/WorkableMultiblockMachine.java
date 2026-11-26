@@ -25,6 +25,7 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -203,16 +204,29 @@ public abstract class WorkableMultiblockMachine extends MultiblockControllerMach
     @Nullable
     @Override
     public final GTRecipe doModifyRecipe(GTRecipe recipe) {
+        recipeLogic.setLastModifierFailReason(null);
         for (IMultiPart part : getParts()) {
-            recipe = part.modifyRecipe(recipe);
-            if (recipe == null) return null;
+            GTRecipe next = part.modifyRecipe(recipe);
+            if (next == null) {
+                Component reason = part.getModifyRecipeFailReason(recipe);
+                if (reason != null) {
+                    recipeLogic.setLastModifierFailReason(reason);
+                }
+                return null;
+            }
+            recipe = next;
         }
         return getRealRecipe(recipe);
     }
 
     @Nullable
     protected GTRecipe getRealRecipe(GTRecipe recipe) {
-        return self().getDefinition().getRecipeModifier().applyModifier(self(), recipe);
+        var func = self().getDefinition().getRecipeModifier().getModifier(self(), recipe);
+        var modified = func.apply(recipe);
+        if (modified == null && func.getCancelReason() != null) {
+            recipeLogic.setLastModifierFailReason(func.getCancelReason());
+        }
+        return modified;
     }
 
     public void updateActiveBlocks(boolean active) {
