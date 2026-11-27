@@ -252,9 +252,12 @@ public class BlockPattern {
                             for (SimplePredicate limit : predicate.limited) {
                                 if (limit.minLayerCount > 0) {
                                     int curr = cacheLayer.getInt(limit);
+                                    int currGlobal = cacheGlobal.getInt(limit);
                                     if (curr < limit.minLayerCount &&
-                                            (limit.maxLayerCount == -1 || curr < limit.maxLayerCount)) {
+                                            (limit.maxLayerCount == -1 || curr < limit.maxLayerCount) &&
+                                            (limit.maxCount == -1 || currGlobal < limit.maxCount)) {
                                         cacheLayer.addTo(limit, 1);
+                                        cacheGlobal.addTo(limit, 1);
                                     } else {
                                         continue;
                                     }
@@ -269,8 +272,12 @@ public class BlockPattern {
                                 for (SimplePredicate limit : predicate.limited) {
                                     if (limit.minCount > 0) {
                                         int curr = cacheGlobal.getInt(limit);
-                                        if (curr < limit.minCount && (limit.maxCount == -1 || curr < limit.maxCount)) {
+                                        int currLayer = cacheLayer.getInt(limit);
+                                        if (curr < limit.minCount &&
+                                                (limit.maxCount == -1 || curr < limit.maxCount) &&
+                                                (limit.maxLayerCount == -1 || currLayer < limit.maxLayerCount)) {
                                             cacheGlobal.addTo(limit, 1);
+                                            cacheLayer.addTo(limit, 1);
                                         } else {
                                             continue;
                                         }
@@ -285,11 +292,11 @@ public class BlockPattern {
                             if (!find) { // no limited
                                 for (SimplePredicate limit : predicate.limited) {
                                     if (limit.maxLayerCount != -1 &&
-                                            cacheLayer.getOrDefault(limit, Integer.MAX_VALUE) == limit.maxLayerCount) {
+                                            cacheLayer.getInt(limit) >= limit.maxLayerCount) {
                                         continue;
                                     }
                                     if (limit.maxCount != -1 &&
-                                            cacheGlobal.getOrDefault(limit, Integer.MAX_VALUE) == limit.maxCount) {
+                                            cacheGlobal.getInt(limit) >= limit.maxCount) {
                                         continue;
                                     }
                                     cacheLayer.addTo(limit, 1);

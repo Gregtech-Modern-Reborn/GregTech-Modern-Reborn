@@ -31,6 +31,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
@@ -622,10 +623,13 @@ public class GCYMMachines {
             .appearanceBlock(CASING_WATERTIGHT)
             .pattern(definition -> {
                 TraceabilityPredicate casingPredicate = blocks(CASING_WATERTIGHT.get()).setMinGlobalLimited(40);
-                TraceabilityPredicate exportPredicate = abilities(PartAbility.EXPORT_FLUIDS_1X);
-                if (GTCEu.Mods.isAE2Loaded())
-                    exportPredicate = exportPredicate.or(blocks(GTAEMachines.FLUID_EXPORT_HATCH_ME.get()));
-                exportPredicate.setMaxLayerLimited(1);
+                List<Block> exportBlocks = new ArrayList<>(PartAbility.EXPORT_FLUIDS_1X.getAllBlocks());
+                if (GTCEu.Mods.isAE2Loaded()) {
+                    exportBlocks.add(GTAEMachines.FLUID_EXPORT_HATCH_ME.getBlock());
+                }
+                TraceabilityPredicate exportPredicate = blocks(exportBlocks.toArray(Block[]::new))
+                        .setMinGlobalLimited(1)
+                        .setMaxLayerLimited(1);
                 return FactoryBlockPattern.start(RIGHT, BACK, UP)
                         .aisle("#YYY#", "YYYYY", "YYYYY", "YYYYY", "#YYY#")
                         .aisle("#YSY#", "YAAAY", "YAAAY", "YAAAY", "#YYY#")

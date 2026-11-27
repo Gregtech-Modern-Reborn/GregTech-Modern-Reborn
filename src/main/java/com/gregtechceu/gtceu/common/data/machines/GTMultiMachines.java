@@ -444,11 +444,12 @@ public class GTMultiMachines {
             .recipeModifiers(OC_NON_PERFECT_SUBTICK, BATCH_MODE)
             .appearanceBlock(CASING_STAINLESS_CLEAN)
             .pattern(definition -> {
-                TraceabilityPredicate exportPredicate = abilities(PartAbility.EXPORT_FLUIDS_1X);
+                List<Block> exportBlocks = new ArrayList<>(PartAbility.EXPORT_FLUIDS_1X.getAllBlocks());
                 if (GTCEu.Mods.isAE2Loaded()) {
-                    exportPredicate = exportPredicate.or(blocks(GTAEMachines.FLUID_EXPORT_HATCH_ME.get()));
+                    exportBlocks.add(GTAEMachines.FLUID_EXPORT_HATCH_ME.getBlock());
                 }
-                exportPredicate.setMaxLayerLimited(1);
+                TraceabilityPredicate exportPredicate = blocks(exportBlocks.toArray(Block[]::new))
+                        .setMaxLayerLimited(1);
                 TraceabilityPredicate maint = autoAbilities(true, false, false)
                         .setMaxGlobalLimited(1);
                 return FactoryBlockPattern.start(RIGHT, BACK, UP)
